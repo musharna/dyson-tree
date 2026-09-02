@@ -1,6 +1,17 @@
 # Q1 results — 2026-09-02
 
-Provenance: git_sha=809f935d66241855572763969255ff4c0b17f8c7, physiology_md5=eeddc3a10b1f0060010b1641814fe06d, organism_md5=4342263e4e2de18d1663733d3c58cd23, prereg_md5=58e2bd03c17b8c8c50e41b92f30ae82e, written=2026-09-02T12:47:59-04:00.
+Provenance (matches the header of the committed CSVs):
+git_sha=54740719e96900b1165970e1182b090689014f9a,
+physiology_md5=adacb668ea4f79b428ca0155381da220,
+organism_md5=a68658c3a9a7f30449aaba6389f33586,
+prereg_md5=58e2bd03c17b8c8c50e41b92f30ae82e,
+python=3.13.2, numpy=2.3.5, scipy=1.16.3,
+written=2026-09-02T15:26:36-04:00.
+
+Every value below was first produced at git_sha=809f935 on 2026-09-02T12:47:59
+and is byte-identical after the re-run above; only the provenance header moved.
+Nothing was re-tuned after the sweep: no preset, gate, prediction or model
+constant has been edited since the run.
 
 ## Calibration gate
 
