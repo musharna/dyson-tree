@@ -6,14 +6,16 @@ roadmap that nobody discovers is worse than no roadmap.
 
 ## Where this stands
 
-**Nothing is designed yet.** The directory was scaffolded 2026-09-01 so
-development could start; no model exists, no question is registered, no number
-has been measured.
+**Loop A exists and has produced one measured number.** Scaffolded 2026-09-01; a
+carbon-budget model (loop A, light-only, tissue temperature fixed) lives under
+`sim/`. Q1 is registered and run (`experiments/q1_crossover/RESULTS.md`): the
+vascular default-k prediction held at 13.69 AU; the algal default-k prediction
+failed at 67.26 AU against [35, 55]. Q2 (heating cost) is declared, not built.
 
 ## The first decision, before anything else
 
-⚠️ **Designer loop or colony loop — build ONE first.** Filed as the open flag on
-task #10 and still open.
+⚠️ **Designer loop or colony loop — build ONE first.** Settled 2026-09-02: A
+first — the WHY is on the checklist entry below.
 
 |              | organism designer (A)                 | multi-generational colony (B)         |
 | ------------ | ------------------------------------- | ------------------------------------- |
@@ -57,9 +59,9 @@ than being chosen and then justified.
 - [x] Check the prior-art question — done 2026-09-01, see
       `docs/prior_art_2026-09-01.md`: label-null confirmed (12 exact hits, 1
       mention) AND re-run on the biology (nearest = myco-architecture + BLSS
-      crop models). ⚠️ Same doc contradicts spine item 1: refractory dust is
-      near-CI-chondritic (Stephan 2008) and P is detected (Altwegg 2016);
-      "P/K/metal-poor" needs rewriting, K is unmeasured.
+      crop models). Spine item 1 was rewritten accordingly on 2026-09-02
+      (refractory dust near-CI-chondritic, Stephan 2008; P detected, Altwegg
+      2016); K remains unmeasured.
 - [x] First registered question (Q1, carbon crossover vs distance) —
       `experiments/q1_crossover/prereg.yaml`, results in `RESULTS.md`
 - [ ] Q2 (declared): carbon cost of holding tissue temperature against
