@@ -61,8 +61,12 @@ than being chosen and then justified.
       (LMF 0.20-0.80 excluding adult trees, Poorter & Sack 2012), which puts
       vascular r\* in [7.62, 17.79] AU against a registered [12, 22] — the
       grounded range extends BELOW the band rather than confirming it.
-      `a_max` has NO ceiling yet: every candidate source was paywalled, so no
-      number was recorded. Spine items other than these two are untouched.
+      `a_max` CLOSED 2026-09-02 from a CC-0 DATASET (Westerband et al. 2022,
+      Dryad, 675 measurements / 530 species / 67 sites) after every paper proved
+      paywalled: Asat median 8.75, max 29.52 umol CO2 m-2 s-1. The vascular
+      `a_max` = 10.0 sits at the empirical MEDIAN. But the ceiling turned out
+      NOT to be the fix — see the algal-gate item below. Spine items other than
+      these two are untouched.
 - [x] Check the prior-art question — done 2026-09-01, see
       `docs/prior_art_2026-09-01.md`: label-null confirmed (12 exact hits, 1
       mention) AND re-run on the biology (nearest = myco-architecture + BLSS
@@ -81,7 +85,16 @@ than being chosen and then justified.
       miss and Q2 re-registers. WHY not macroalgal: it needed a new
       compensation-point source AND left LMR free needing its own citation.
       Binding on the NEXT registration — Q1's prereg stays frozen.
-      See `docs/bio_grounding_2026-09-02.md` §3. It is uncited, structurally
+      See `docs/bio_grounding_2026-09-02.md` §3.
+- [ ] **The algal gate needs a LOWER bound on I_c, not an `a_max` ceiling.**
+      Found 2026-09-02: at the MAXIMUM Asat across 530 species the algal gate
+      still PASSES (I_c = 0.1626 <= 1.0) and returns NO crossover inside
+      [0.5, 100] AU. A ceiling on `a_max` was necessary but not sufficient —
+      the defect is the gate's floor of 0.0, which cannot exclude an
+      arbitrarily efficient organism, and efficiency is what pushes r\* past
+      the horizon. Fix: take a real microalgal compensation-point floor from
+      Richardson, Beardall & Raven 1983, already the algal gate's own source.
+      See `docs/bio_grounding_2026-09-02.md` §4. It is uncited, structurally
       invisible to the Q1 calibration gate (which solves against LEAF
       respiration while the answer divides by it), and a lever wide enough to
       decide the verdict on its own — at 0.5 instead of 0.8 the algal r\*
