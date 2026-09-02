@@ -73,11 +73,20 @@ def compensation_irradiance(org: Organism, k: float | None = None) -> float:
 
 
 def crossover_distance_for(
-    org: Organism, k: float | None = None, r_min: float = 0.5, r_max: float = 100.0
+    org: Organism,
+    k: float | None = None,
+    r_min: float = 0.5,
+    r_max: float = 100.0,
+    n_grid: int = 400,
 ) -> float:
-    """Distance where whole-organism net carbon crosses zero."""
+    """Distance where whole-organism net carbon crosses zero.
+
+    n_grid is the bracketing grid for the root search. The runner passes the
+    pre-registration's declared `sweep.n_grid` so the number reported in
+    crossover.csv comes from the grid the pre-registration names, rather than
+    from a second, hidden default."""
     return crossover_distance(
-        lambda r: org.net_carbon(r, k=k), r_min=r_min, r_max=r_max
+        lambda r: org.net_carbon(r, k=k), r_min=r_min, r_max=r_max, n_grid=n_grid
     )
 
 

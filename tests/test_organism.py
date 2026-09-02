@@ -1,7 +1,6 @@
 import pytest
 
 from sim.organism import ALGAL, PRESETS, VASCULAR, Organism, compensation_irradiance
-from sim.physiology import irradiance
 
 
 # --- calibration gates (the scientific tests) -------------------------------
@@ -86,7 +85,6 @@ def test_net_carbon_uses_leaf_mass_ratio():
 
 
 def test_net_carbon_k_override():
-    i1 = irradiance(1.0)
     assert VASCULAR.net_carbon(1.0, k=VASCULAR.k) == pytest.approx(
         VASCULAR.net_carbon(1.0)
     )

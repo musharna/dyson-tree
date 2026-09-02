@@ -152,6 +152,23 @@ def test_real_prereg_passes_and_writes_all_csvs_with_provenance(tmp_path):
     assert len(cross) == 1 + 3 + 3  # header + 3 k values per preset
 
 
+def test_runner_passes_prereg_n_grid_to_the_root_search(tmp_path, monkeypatch):
+    """prereg declares one n_grid. It used to govern only sweep.csv's
+    resolution while the root bracket used a hidden default of 400."""
+    prereg = yaml.safe_load(PREREG.read_text())
+    declared = int(prereg["sweep"]["n_grid"])
+    seen = []
+    real = run.crossover_distance_for
+
+    def spy(org, **kw):
+        seen.append(kw.get("n_grid"))
+        return real(org, **kw)
+
+    monkeypatch.setattr(run, "crossover_distance_for", spy)
+    assert run.main(["--prereg", str(PREREG), "--out", str(tmp_path / "o")]) == 0
+    assert seen and set(seen) == {declared}, seen
+
+
 def test_assumption_mismatch_refuses_to_run(tmp_path):
     bad = yaml.safe_load(PREREG.read_text())
     bad["assumptions"]["par_fraction"] = 0.5

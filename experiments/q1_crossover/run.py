@@ -11,11 +11,13 @@ import argparse
 import csv
 import datetime as dt
 import hashlib
+import platform
 import subprocess
 import sys
 from pathlib import Path
 
 import numpy as np
+import scipy
 import yaml
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
@@ -117,12 +119,18 @@ def git_sha() -> str:
 
 
 def provenance_lines(prereg_path: Path) -> list[str]:
+    """Source hashes alone are not enough: r* comes out of scipy's brentq on a
+    numpy grid, so a numeric-stack upgrade can move the number while every md5
+    and the git sha stay byte-identical. Record the stack too."""
     sha = git_sha()
     return [
         f"# git_sha={sha}",
         f"# physiology_md5={_md5(PHYSIOLOGY_PATH)}",
         f"# organism_md5={_md5(ORGANISM_PATH)}",
         f"# prereg_md5={_md5(prereg_path)}",
+        f"# python={platform.python_version()}",
+        f"# numpy={np.__version__}",
+        f"# scipy={scipy.__version__}",
         f"# written={dt.datetime.now().astimezone().isoformat(timespec='seconds')}",
     ]
 
@@ -214,7 +222,11 @@ def main(argv: list[str] | None = None) -> int:
                     }
                 )
             r_star = crossover_distance_for(
-                org, k=k, r_min=float(sw["r_min_au"]), r_max=float(sw["r_max_au"])
+                org,
+                k=k,
+                r_min=float(sw["r_min_au"]),
+                r_max=float(sw["r_max_au"]),
+                n_grid=int(sw["n_grid"]),
             )
             inside = plo <= r_star <= phi
             cross_rows.append(

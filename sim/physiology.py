@@ -62,6 +62,13 @@ def crossover_distance(net_fn, r_min=0.5, r_max=100.0, n_grid=400):
     grid = np.geomspace(r_min, r_max, n_grid)
     vals = np.array([net_fn(float(r)) for r in grid])
     sign = np.sign(vals)
+    # Strict `< 0` misses the measure-zero case where a grid node lands exactly
+    # on the root: np.sign gives 0 there, the product is 0, not negative, and
+    # this raises "no sign change" while the min/max in its own message
+    # straddle zero. Left strict deliberately — a node landing exactly on the
+    # root is not reachable from the registered grid, and loosening it to <= 0
+    # would also fire on any flat zero run. If the message ever contradicts
+    # itself this way, that is the cause.
     idx = np.where(sign[:-1] * sign[1:] < 0)[0]
     if len(idx) == 0:
         raise ValueError(
