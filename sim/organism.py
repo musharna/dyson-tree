@@ -16,6 +16,7 @@ from sim.physiology import (
     irradiance,
     respiration,
 )
+from sim.thermal import equilibrium_temperature, temperature_response
 
 
 @dataclass(frozen=True)
@@ -26,6 +27,11 @@ class Organism:
     r_d: float  # µmol CO2 m⁻² s⁻¹, leaf dark respiration at t_ref
     leaf_mass_ratio: float  # fraction of organism mass that is photosynthetic, (0, 1]
     t_set: float = T_REF_K  # K, tissue temperature set-point (fixed in v1)
+    area_ratio: float = 2.0  # radiating area / projected area: 2 lamina, 4 sphere
+    t_min: float = 265.15  # K, photosynthesis floor
+    t_opt: float = 298.15  # K, response optimum (declared assumption, not grounded)
+    emissivity: float = 1.0  # declared assumption
+    albedo: float = 0.0  # declared assumption
 
     def __post_init__(self):
         if self.a_max <= 0:
@@ -40,6 +46,18 @@ class Organism:
             )
         if self.t_set <= 0:
             raise ValueError(f"t_set must be > 0 K, got {self.t_set}")
+        if self.area_ratio <= 0:
+            raise ValueError(f"area_ratio must be > 0, got {self.area_ratio}")
+        if not (0 < self.emissivity <= 1):
+            raise ValueError(f"emissivity must be in (0, 1], got {self.emissivity}")
+        if not (0 <= self.albedo < 1):
+            raise ValueError(f"albedo must be in [0, 1), got {self.albedo}")
+        if self.t_min <= 0:
+            raise ValueError(f"t_min must be > 0 K, got {self.t_min}")
+        if self.t_opt <= self.t_min:
+            raise ValueError(
+                f"t_opt must be > t_min, got t_opt={self.t_opt}, t_min={self.t_min}"
+            )
 
     def leaf_respiration(self) -> float:
         """Dark respiration per unit photosynthetic area at t_set."""
@@ -58,6 +76,20 @@ class Organism:
             gross_assimilation(irradiance(r_au), self.a_max, kk)
             - self.organism_respiration()
         )
+
+    def net_carbon_at_equilibrium(self, r_au: float, k: float | None = None) -> float:
+        """Net carbon for a PASSIVE organism whose temperature follows radiative
+        equilibrium at r_au. Both terms move with distance: assimilation is scaled
+        by the temperature response, and respiration is evaluated at the
+        equilibrium temperature rather than at a fixed set-point.
+
+        net_carbon() is the Q1 path and is deliberately left untouched: making it
+        temperature-dependent would change Q1's committed numbers."""
+        kk = self.k if k is None else k
+        t = equilibrium_temperature(r_au, self.area_ratio, self.emissivity, self.albedo)
+        f = temperature_response(t, self.t_min, self.t_opt)
+        gross = gross_assimilation(irradiance(r_au), self.a_max, kk) * f
+        return gross - respiration(self.r_d, t) / self.leaf_mass_ratio
 
 
 def compensation_irradiance(org: Organism, k: float | None = None) -> float:
