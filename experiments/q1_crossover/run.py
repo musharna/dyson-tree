@@ -4,6 +4,7 @@
 Exit codes: 0 = gate passed and sweep written; 2 = gate failed (calibration.csv
 written, nothing else). Any other error propagates as an exception.
 """
+
 from __future__ import annotations
 
 import argparse
@@ -49,17 +50,36 @@ def assert_assumptions_match(prereg: dict) -> None:
 
 
 def build(name: str, p: dict, t_set: float) -> Organism:
-    return Organism(name, a_max=p["a_max"], k=p["k"], r_d=p["r_d"],
-                    leaf_mass_ratio=p["leaf_mass_ratio"], t_set=t_set)
+    return Organism(
+        name,
+        a_max=p["a_max"],
+        k=p["k"],
+        r_d=p["r_d"],
+        leaf_mass_ratio=p["leaf_mass_ratio"],
+        t_set=t_set,
+    )
 
 
 def _md5(path: Path) -> str:
     return hashlib.md5(path.read_bytes()).hexdigest()
 
 
+def git_sha() -> str:
+    """HEAD sha, or a loud error carrying git's own stderr. check=True alone
+    raises a CalledProcessError whose message is only the exit status."""
+    proc = subprocess.run(
+        ["git", "rev-parse", "HEAD"], cwd=REPO_ROOT, capture_output=True, text=True
+    )
+    if proc.returncode != 0:
+        raise RuntimeError(
+            f"git rev-parse HEAD failed in {REPO_ROOT} "
+            f"(exit {proc.returncode}): {proc.stderr.strip() or '<no stderr>'}"
+        )
+    return proc.stdout.strip()
+
+
 def provenance_lines(prereg_path: Path) -> list[str]:
-    sha = subprocess.run(["git", "rev-parse", "HEAD"], cwd=REPO_ROOT, check=True,
-                         capture_output=True, text=True).stdout.strip()
+    sha = git_sha()
     return [
         f"# git_sha={sha}",
         f"# physiology_md5={_md5(PHYSIOLOGY_PATH)}",
@@ -69,7 +89,9 @@ def provenance_lines(prereg_path: Path) -> list[str]:
     ]
 
 
-def write_csv(path: Path, header: list[str], fieldnames: list[str], rows: list[dict]) -> None:
+def write_csv(
+    path: Path, header: list[str], fieldnames: list[str], rows: list[dict]
+) -> None:
     with open(path, "w", newline="") as fh:
         for line in header:
             fh.write(line + "\n")
@@ -81,7 +103,9 @@ def write_csv(path: Path, header: list[str], fieldnames: list[str], rows: list[d
 
 def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(description=__doc__)
-    ap.add_argument("--prereg", type=Path, default=Path(__file__).with_name("prereg.yaml"))
+    ap.add_argument(
+        "--prereg", type=Path, default=Path(__file__).with_name("prereg.yaml")
+    )
     ap.add_argument("--out", type=Path, default=Path(__file__).parent)
     args = ap.parse_args(argv)
 
@@ -101,15 +125,35 @@ def main(argv: list[str] | None = None) -> int:
         lo, hi = (float(x) for x in p["gate_umol"])
         passed = lo <= obs <= hi
         all_pass &= passed
-        cal_rows.append({"class": name, "k": org.k, "observed_umol": f"{obs:.4f}",
-                         "gate_lo": lo, "gate_hi": hi, "passed": passed})
-    write_csv(args.out / "calibration.csv", header,
-              ["class", "k", "observed_umol", "gate_lo", "gate_hi", "passed"], cal_rows)
+        cal_rows.append(
+            {
+                "class": name,
+                "k": org.k,
+                "observed_umol": f"{obs:.4f}",
+                "gate_lo": lo,
+                "gate_hi": hi,
+                "passed": passed,
+            }
+        )
+    write_csv(
+        args.out / "calibration.csv",
+        header,
+        ["class", "k", "observed_umol", "gate_lo", "gate_hi", "passed"],
+        cal_rows,
+    )
     for r in cal_rows:
-        print(f"calibration {r['class']}: I_c={r['observed_umol']} gate=[{r['gate_lo']}, {r['gate_hi']}] "
-              f"{'pass' if r['passed'] else 'FAIL'}")
+        print(
+            f"calibration {r['class']}: I_c={r['observed_umol']} gate=[{r['gate_lo']}, {r['gate_hi']}] "
+            f"{'pass' if r['passed'] else 'FAIL'}"
+        )
     if not all_pass:
+        # Not-writing is not enough: --out defaults to the experiment directory,
+        # so a previous PASSING run's crossover.csv/sweep.csv are already sitting
+        # there and would be read as this run's result under a stale header.
+        for stale in ("sweep.csv", "crossover.csv"):
+            (args.out / stale).unlink(missing_ok=True)
         print("GATE FAILED: crossover not reported. Fix r_d only, re-register, re-run.")
+        print(f"removed any stale sweep.csv/crossover.csv from {args.out}")
         return 2
 
     # 2. sweep
@@ -122,17 +166,41 @@ def main(argv: list[str] | None = None) -> int:
         for k in p["k_grid"]:
             k = float(k)
             for r in grid:
-                sweep_rows.append({"class": name, "k": k, "r_au": f"{r:.6g}",
-                                   "net_carbon": f"{org.net_carbon(float(r), k=k):.6g}"})
-            r_star = crossover_distance_for(org, k=k, r_min=float(sw["r_min_au"]), r_max=float(sw["r_max_au"]))
+                sweep_rows.append(
+                    {
+                        "class": name,
+                        "k": k,
+                        "r_au": f"{r:.6g}",
+                        "net_carbon": f"{org.net_carbon(float(r), k=k):.6g}",
+                    }
+                )
+            r_star = crossover_distance_for(
+                org, k=k, r_min=float(sw["r_min_au"]), r_max=float(sw["r_max_au"])
+            )
             inside = plo <= r_star <= phi
-            cross_rows.append({"class": name, "k": k, "r_star_au": f"{r_star:.4f}",
-                               "pred_lo": plo, "pred_hi": phi, "inside": inside})
-            print(f"crossover {name} k={k:g}: r*={r_star:.2f} AU predicted=[{plo:g}, {phi:g}] "
-                  f"{'inside' if inside else 'OUTSIDE'}")
-    write_csv(args.out / "sweep.csv", header, ["class", "k", "r_au", "net_carbon"], sweep_rows)
-    write_csv(args.out / "crossover.csv", header,
-              ["class", "k", "r_star_au", "pred_lo", "pred_hi", "inside"], cross_rows)
+            cross_rows.append(
+                {
+                    "class": name,
+                    "k": k,
+                    "r_star_au": f"{r_star:.4f}",
+                    "pred_lo": plo,
+                    "pred_hi": phi,
+                    "inside": inside,
+                }
+            )
+            print(
+                f"crossover {name} k={k:g}: r*={r_star:.2f} AU predicted=[{plo:g}, {phi:g}] "
+                f"{'inside' if inside else 'OUTSIDE'}"
+            )
+    write_csv(
+        args.out / "sweep.csv", header, ["class", "k", "r_au", "net_carbon"], sweep_rows
+    )
+    write_csv(
+        args.out / "crossover.csv",
+        header,
+        ["class", "k", "r_star_au", "pred_lo", "pred_hi", "inside"],
+        cross_rows,
+    )
     return 0
 
 
