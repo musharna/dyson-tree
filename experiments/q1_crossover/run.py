@@ -22,7 +22,12 @@ REPO_ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(REPO_ROOT))
 
 from sim import physiology  # noqa: E402
-from sim.organism import Organism, compensation_irradiance, crossover_distance_for  # noqa: E402
+from sim.organism import (  # noqa: E402
+    PRESETS,
+    Organism,
+    compensation_irradiance,
+    crossover_distance_for,
+)
 
 PHYSIOLOGY_PATH = REPO_ROOT / "sim" / "physiology.py"
 ORGANISM_PATH = REPO_ROOT / "sim" / "organism.py"
@@ -46,6 +51,39 @@ def assert_assumptions_match(prereg: dict) -> None:
         if not np.isclose(a[key], code_value):
             raise ValueError(
                 f"prereg assumption {key}={a[key]} does not match sim/physiology.py {key}={code_value}"
+            )
+
+
+# Organism fields the prereg and sim/organism.py must agree on. gate_umol,
+# k_grid and predicted_r_star_au are experiment design and have no module
+# counterpart, so they are not compared here.
+PRESET_FIELDS = ("a_max", "k", "r_d", "leaf_mass_ratio")
+
+
+def assert_presets_match(prereg: dict) -> None:
+    """The runner builds organisms from prereg['presets'] while the calibration
+    tests gate sim.organism.PRESETS. Two sources of truth for the same numbers;
+    this is what makes them one. A prereg r_d could otherwise drift anywhere
+    inside the gate's width with a green suite and a different published r*."""
+    p_presets = prereg["presets"]
+    if set(p_presets) != set(PRESETS):
+        raise ValueError(
+            f"prereg presets {sorted(p_presets)} do not match "
+            f"sim/organism.py PRESETS {sorted(PRESETS)}"
+        )
+    t_set = float(prereg["assumptions"]["t_set_k"])
+    for name, p in p_presets.items():
+        preset = PRESETS[name]
+        for field in PRESET_FIELDS:
+            if not np.isclose(float(p[field]), getattr(preset, field)):
+                raise ValueError(
+                    f"prereg preset {name}.{field}={p[field]} does not match "
+                    f"sim/organism.py PRESETS[{name!r}].{field}={getattr(preset, field)}"
+                )
+        if not np.isclose(t_set, preset.t_set):
+            raise ValueError(
+                f"prereg assumption t_set_k={t_set} does not match "
+                f"sim/organism.py PRESETS[{name!r}].t_set={preset.t_set}"
             )
 
 
@@ -111,6 +149,7 @@ def main(argv: list[str] | None = None) -> int:
 
     prereg = load_prereg(args.prereg)
     assert_assumptions_match(prereg)
+    assert_presets_match(prereg)
     t_set = float(prereg["assumptions"]["t_set_k"])
     args.out.mkdir(parents=True, exist_ok=True)
     header = provenance_lines(args.prereg)
