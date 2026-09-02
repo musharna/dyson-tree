@@ -30,9 +30,10 @@ That is the property to protect when choosing.
 These are the three places where the sim can be wrong in a way that matters, so
 each needs a number and a source before it becomes a mechanic:
 
-1. **Cometary element budget** — CHON-rich, P/K/metal-poor. The scarce elements
-   are the design constraint; get the composition from a real measurement, not
-   from a plausible-sounding ratio.
+1. **Cometary element budget** — organic-C-rich (~50% by mass), refractory
+   fraction near-CI-chondritic, Ca-depleted; P present, K unmeasured
+   (`docs/prior_art_2026-09-01.md` §3). Element scarcity is NOT a free
+   constraint; not modelled in Q1.
 2. **Biological pressure vessel** — tensile strength vs wall thickness at ~1 atm.
    A materials problem with a right answer.
 3. **Light compensation point under 1/r² insolation** — where photosynthesis
@@ -45,8 +46,12 @@ than being chosen and then justified.
 
 ## Not yet done
 
-- [ ] Brainstorm the design (`superpowers:brainstorming`, then `deep-sim-design`)
-- [ ] Settle designer-loop vs colony-loop and record WHY
+- [x] Brainstorm the design — 2026-09-02, spec at
+      `docs/superpowers/specs/2026-09-02-q1-carbon-crossover-design.md`
+- [x] Settle designer-loop vs colony-loop — A first (2026-09-02). WHY: B needs
+      A's budget trusted underneath it; A is the cheapest path to a measured
+      answer, and light (spine item 3) turned out to be the binding constraint,
+      which A can treat as a swept input.
 - [ ] Ground each science-spine item with a real number and a citation, via
       `bio-grounding`; verify citations per the project's citation chain
 - [x] Check the prior-art question — done 2026-09-01, see
@@ -55,4 +60,7 @@ than being chosen and then justified.
       crop models). ⚠️ Same doc contradicts spine item 1: refractory dust is
       near-CI-chondritic (Stephan 2008) and P is detected (Altwegg 2016);
       "P/K/metal-poor" needs rewriting, K is unmeasured.
-- [ ] First registered question + pre-registration, before any runner exists
+- [x] First registered question (Q1, carbon crossover vs distance) —
+      `experiments/q1_crossover/prereg.yaml`, results in `RESULTS.md`
+- [ ] Q2 (declared): carbon cost of holding tissue temperature against
+      radiative loss; second crossover

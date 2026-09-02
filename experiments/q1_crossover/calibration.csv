@@ -1,0 +1,8 @@
+# git_sha=809f935d66241855572763969255ff4c0b17f8c7
+# physiology_md5=eeddc3a10b1f0060010b1641814fe06d
+# organism_md5=4342263e4e2de18d1663733d3c58cd23
+# prereg_md5=58e2bd03c17b8c8c50e41b92f30ae82e
+# written=2026-09-02T12:47:59-04:00
+class,k,observed_umol,gate_lo,gate_hi,passed
+vascular,100.0,6.9519,5.3,9.0,True
+algal,20.0,0.4918,0.0,1.0,True
