@@ -46,7 +46,7 @@ each needs a number and a source before it becomes a mechanic:
 spaceflight experiments) — the architecture follows those measurements rather
 than being chosen and then justified.
 
-## Not yet done
+## Checklist
 
 - [x] Brainstorm the design — 2026-09-02, spec at
       `docs/superpowers/specs/2026-09-02-q1-carbon-crossover-design.md`
@@ -64,5 +64,14 @@ than being chosen and then justified.
       2016); K remains unmeasured.
 - [x] First registered question (Q1, carbon crossover vs distance) —
       `experiments/q1_crossover/prereg.yaml`, results in `RESULTS.md`
+- [ ] **Prerequisite for Q2: gate `leaf_mass_ratio` against a real
+      leaf-mass-ratio / thallus-fraction source.** It is uncited, structurally
+      invisible to the Q1 calibration gate (which solves against LEAF
+      respiration while the answer divides by it), and the largest single
+      source of uncertainty in Q1's r\* — at 0.5 instead of 0.8 the algal r\*
+      lands inside its registered band. Q2's heating cost scales with the same
+      non-photosynthetic mass fraction, so it inherits the problem.
+      `experiments/q1_crossover/RESULTS.md`, "The uncited assumption that sets
+      the scale".
 - [ ] Q2 (declared): carbon cost of holding tissue temperature against
       radiative loss; second crossover

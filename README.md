@@ -1,8 +1,15 @@
 # Dyson tree
 
-A sim-zoo design track. **Scaffolded 2026-09-01; the design has NOT been done
-yet** — this directory exists so development can start, not because anything is
-settled. Tracked as task #10.
+A sim-zoo design track. **Loop A exists and has produced one measured number.**
+Scaffolded 2026-09-01; the design was run on 2026-09-02
+(`docs/superpowers/specs/2026-09-02-q1-carbon-crossover-design.md`), and a
+carbon-budget model — loop A, light-only, tissue temperature fixed — lives
+under `sim/`. Q1 is registered and run: the vascular default-k prediction held
+at 13.69 AU, the algal default-k prediction failed at 67.26 AU against
+[35, 55]. Read the result and its caveats in
+**`experiments/q1_crossover/RESULTS.md`**; `docs/ROADMAP.md` stays canonical for
+"what phase, what's next". Q2 (heating cost) is declared, not built. Tracked as
+task #10.
 
 ## The brief, as filed
 
@@ -25,32 +32,41 @@ anything:
 spaceflight experiments). Gated means: the architecture follows the measurements,
 not the other way round.
 
-## ⚠️ The open decision, flagged at filing and still open
+## ✅ The open decision, now settled
 
 **The designer and the colony economy are TWO LOOPS. Build one first.** They have
 different tick rates, different player verbs and different failure modes, and a
-design that tries to be both at once usually ends up being neither. Nothing here
-commits to which one goes first — that is the first thing the design track has
-to settle.
+design that tries to be both at once usually ends up being neither. Settled
+2026-09-02: **A first.** B needs A's budget trusted underneath it, A is the
+cheapest path to a measured answer, and light (spine item 3) turned out to be
+the binding constraint, which A can treat as a swept input. See
+`docs/ROADMAP.md` for the reasoning of record.
 
-## Before writing code here
+## Before adding to the model
 
-Run the design properly rather than starting from whatever is easiest to
-implement:
+The design track is the work and the code is downstream of it, so keep the
+order:
 
-- `superpowers:brainstorming` before any implementation — the design track is the
-  work, and the code is downstream of it.
+- `superpowers:brainstorming` before any new mechanic — Q1 went through it and
+  the spec is the binding authority for what the runner does.
 - `deep-sim-design` for what to simulate individually versus as a field, and for
   what the observer actually perturbs.
 - `bio-grounding` before any borrowed biological mechanism becomes a load-bearing
   design primitive. The science spine above is exactly the kind of thing that
   degrades into flavour text if it is not checked against real numbers.
+  `leaf_mass_ratio` is the standing example: uncited, invisible to the
+  calibration gate, and the largest single source of uncertainty in Q1's answer.
 
-⚠️ Prior scouting exists and is a **hypothesis, not state** — re-verify before
-building on it: `~/.claude/projects/-home-mjarnold/memory/bio_sim_candidates_grounded_2026-07-31.md`
-carries a note that a Dyson-tree literature truth exists but that the search
-probed the NAME rather than the biology. Treat that as "the prior art question is
-open", not as a finished review.
+Every registered question ships a pre-registration written before its runner,
+a calibration gate that must pass before any result is reported, and CSVs
+carrying a provenance header (git sha, source md5s, numeric-stack versions).
+`tests/test_runner.py::test_committed_csvs_regenerate_exactly` re-runs the
+experiment and diffs it against what is committed, so the record cannot drift
+away from the code that claims to produce it.
+
+The prior-art question was checked on 2026-09-01 —
+`docs/prior_art_2026-09-01.md`, re-run on the biology rather than only the
+name — and is no longer open.
 
 ## Layout
 
