@@ -1,6 +1,6 @@
 import pytest
 
-from sim.thermal import SIGMA_W_M2_K4, equilibrium_temperature
+from sim.thermal import SIGMA_W_M2_K4, equilibrium_temperature, temperature_response
 
 
 def test_sphere_at_1_au_matches_blackbody_value():
@@ -53,3 +53,35 @@ def test_out_of_range_inputs_raise_naming_the_value(kwargs, needle):
         equilibrium_temperature(**kwargs)
     # positive control: the legitimate call in the same test still works
     assert equilibrium_temperature(1.0, area_ratio=4.0) > 0
+
+
+def test_response_is_zero_at_and_below_t_min():
+    assert temperature_response(265.15, t_min=265.15, t_opt=298.15) == 0.0
+    assert temperature_response(200.0, t_min=265.15, t_opt=298.15) == 0.0
+
+
+def test_response_is_one_at_and_above_t_opt():
+    assert temperature_response(298.15, t_min=265.15, t_opt=298.15) == 1.0
+    assert temperature_response(310.0, t_min=265.15, t_opt=298.15) == 1.0
+
+
+def test_response_is_linear_between_the_two_endpoints():
+    # midpoint of [265.15, 298.15] is 281.65
+    assert temperature_response(281.65, t_min=265.15, t_opt=298.15) == pytest.approx(
+        0.5
+    )
+
+
+def test_response_is_monotonic_in_temperature():
+    prev = -1.0
+    for t in range(260, 305):
+        v = temperature_response(float(t), t_min=265.15, t_opt=298.15)
+        assert v >= prev
+        prev = v
+
+
+def test_response_rejects_t_opt_not_above_t_min():
+    with pytest.raises(ValueError, match="t_opt"):
+        temperature_response(280.0, t_min=298.15, t_opt=265.15)
+    # positive control
+    assert temperature_response(280.0, t_min=265.15, t_opt=298.15) > 0

@@ -40,3 +40,20 @@ def equilibrium_temperature(
         raise ValueError(f"albedo must be in [0, 1), got {albedo}")
     s = TSI_W_M2 / r_au**2
     return float((s * (1 - albedo) / (area_ratio * emissivity * SIGMA_W_M2_K4)) ** 0.25)
+
+
+def temperature_response(t: float, t_min: float, t_opt: float) -> float:
+    """Normalized rate multiplier in [0, 1] for photosynthesis at temperature t.
+
+    Linear from 0 at t_min to 1 at t_opt, flat above t_opt. Parameterized ONLY by
+    t_min and t_opt: the literature rate anchors at 5 °C and 0 °C are deliberately
+    NOT used here so the runner can hold them out as an independent gate. A curve
+    fitted through the anchors could not fail a check against those same anchors.
+    """
+    if t_opt <= t_min:
+        raise ValueError(f"t_opt must be > t_min, got t_opt={t_opt}, t_min={t_min}")
+    if t <= t_min:
+        return 0.0
+    if t >= t_opt:
+        return 1.0
+    return float((t - t_min) / (t_opt - t_min))
