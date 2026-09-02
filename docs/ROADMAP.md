@@ -71,15 +71,17 @@ than being chosen and then justified.
       2016); K remains unmeasured.
 - [x] First registered question (Q1, carbon crossover vs distance) —
       `experiments/q1_crossover/prereg.yaml`, results in `RESULTS.md`
-- [ ] **Prerequisite for Q2: decide the algal organism before re-registering.**
-      Grounding found the algal preset incoherent: its gate source (Richardson
-      et al. 1983) is about UNICELLULAR microalgae, while its
-      `leaf_mass_ratio: 0.8` is justified as a THALLUS (a macroalga). Either
-      keep the unicellular organism, in which case LMR is pinned at 1.0 by
-      structure and algal r\* moves to 75.43 AU (further outside [35, 55]), or
-      keep the thallus, in which case the GATE must be re-sourced. Also still
-      open: gate `leaf_mass_ratio` against a real
-      leaf-mass-ratio / thallus-fraction source.** It is uncited, structurally
+- [x] **Algal organism SETTLED 2026-09-02: UNICELLULAR.** Grounding found the
+      preset incoherent — its gate source (Richardson et al. 1983) is about
+      unicellular microalgae while its `leaf_mass_ratio: 0.8` was justified as
+      a THALLUS (a macroalga). Chose unicellular: the gate citation is already
+      correct, so the fix costs one number — LMR becomes 1.0 and stops being a
+      free parameter, pinned by structure. Algal r\* moves to 75.43 AU, further
+      outside Q1's [35, 55]; accepted, since that band is already a reported
+      miss and Q2 re-registers. WHY not macroalgal: it needed a new
+      compensation-point source AND left LMR free needing its own citation.
+      Binding on the NEXT registration — Q1's prereg stays frozen.
+      See `docs/bio_grounding_2026-09-02.md` §3. It is uncited, structurally
       invisible to the Q1 calibration gate (which solves against LEAF
       respiration while the answer divides by it), and a lever wide enough to
       decide the verdict on its own — at 0.5 instead of 0.8 the algal r\*

@@ -88,6 +88,24 @@ Two coherent repairs exist, and they are a genuine fork for Q2:
 What is not defensible is the present combination, which takes the gate from organism 1
 and the mass ratio from organism 2.
 
+### DECIDED 2026-09-02: option 1 — the algal class is UNICELLULAR
+
+Chosen because it is the only repair that costs one number. The gate citation
+(Richardson, Beardall & Raven 1983) is already correct for a unicellular alga, so nothing
+needs re-sourcing; `leaf_mass_ratio` becomes 1.0 and **stops being a free parameter**,
+pinned by the organism's structure rather than by an assumption. Option 2 would have
+required a new macroalgal compensation-point source *and* left LMR free needing its own
+thallus-fraction citation.
+
+Consequence, accepted deliberately: algal r\* moves to 75.4338 AU, *further* from Q1's
+registered [35, 55]. This does not make the miss worse in any meaningful sense — Q1's band
+is already reported as missed, and Q2 re-registers. Fixing the organism makes the miss
+**interpretable** (the model overshoots for a coherent organism) instead of ambiguous (the
+model overshoots for a chimera of two organisms).
+
+**Binding on the next registration, not on Q1.** `experiments/q1_crossover/prereg.yaml`
+stays frozen; Q1's committed numbers stand as run.
+
 ## 4. `a_max` upper bound — UNRESOLVED THIS SESSION
 
 The final review showed the algal gate is one-sided (I_c ≤ 1.0) and so places **no upper
