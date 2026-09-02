@@ -1,0 +1,40 @@
+# Q1 pre-registration. Written BEFORE the sweep runs. Do not edit after run.py has produced crossover.csv.
+registered: 2026-09-02
+question: >
+  For a single organism of photosystem class C, with tissue temperature held at a
+  set-point, at what heliocentric distance r* does whole-organism net carbon
+  assimilation cross zero?
+spec: docs/superpowers/specs/2026-09-02-q1-carbon-crossover-design.md
+grounding: docs/prior_art_2026-09-01.md
+
+# Must match sim/physiology.py constants; run.py refuses to run on mismatch.
+assumptions:
+  tsi_w_m2: 1360.8        # Kopp & Lean 2011, 10.1029/2010GL045777
+  par_fraction: 0.45      # assumption
+  photons_per_j: 4.57     # assumption
+  t_ref_k: 293.0
+  q10: 2.0                # assumption
+  t_set_k: 293.0          # v1: tissue temperature fixed; heating cost is v2
+
+presets:
+  vascular:
+    a_max: 10.0
+    k: 100.0
+    r_d: 0.65               # calibration knob; gives I_c = 100*0.65/9.35 = 6.95
+    leaf_mass_ratio: 0.5    # assumption: half the mass is photosynthetic
+    gate_umol: [5.3, 9.0]   # Craine & Reich 2005, 10.1111/j.1469-8137.2005.01420.x
+    k_grid: [50.0, 100.0, 200.0]
+    predicted_r_star_au: [12.0, 22.0]
+  algal:
+    a_max: 10.0
+    k: 20.0
+    r_d: 0.24               # calibration knob; gives I_c = 20*0.24/9.76 = 0.49
+    leaf_mass_ratio: 0.8    # assumption: thallus mostly photosynthetic
+    gate_umol: [0.0, 1.0]   # Richardson 1983, 10.1111/j.1469-8137.1983.tb03422.x
+    k_grid: [10.0, 20.0, 40.0]
+    predicted_r_star_au: [35.0, 55.0]
+
+sweep:
+  r_min_au: 0.5
+  r_max_au: 100.0
+  n_grid: 200
