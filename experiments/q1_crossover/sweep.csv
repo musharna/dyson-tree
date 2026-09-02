@@ -1,8 +1,11 @@
-# git_sha=809f935d66241855572763969255ff4c0b17f8c7
-# physiology_md5=eeddc3a10b1f0060010b1641814fe06d
-# organism_md5=4342263e4e2de18d1663733d3c58cd23
+# git_sha=54740719e96900b1165970e1182b090689014f9a
+# physiology_md5=adacb668ea4f79b428ca0155381da220
+# organism_md5=a68658c3a9a7f30449aaba6389f33586
 # prereg_md5=58e2bd03c17b8c8c50e41b92f30ae82e
-# written=2026-09-02T12:47:59-04:00
+# python=3.13.2
+# numpy=2.3.5
+# scipy=1.16.3
+# written=2026-09-02T15:26:36-04:00
 class,k,r_au,net_carbon
 vascular,50.0,0.5,8.65553
 vascular,50.0,0.513491,8.65311

@@ -146,10 +146,68 @@ def test_real_prereg_passes_and_writes_all_csvs_with_provenance(tmp_path):
         assert any(l.startswith("# physiology_md5=") for l in header), name
         assert any(l.startswith("# organism_md5=") for l in header), name
         assert any(l.startswith("# prereg_md5=") for l in header), name
+        assert any(l.startswith("# python=") for l in header), name
+        assert any(l.startswith("# numpy=") for l in header), name
+        assert any(l.startswith("# scipy=") for l in header), name
         assert len(body) >= 2, name
     _, cross = _read_header_and_rows(out / "crossover.csv")
     assert cross[0] == "class,k,r_star_au,pred_lo,pred_hi,inside"
     assert len(cross) == 1 + 3 + 3  # header + 3 k values per preset
+
+    # sweep.csv is the only place the pre-registration's declared n_grid is
+    # observable. `>= 2` passed on a sweep that emitted one row per series.
+    prereg = yaml.safe_load(PREREG.read_text())
+    n_grid = int(prereg["sweep"]["n_grid"])
+    expected = 1 + sum(  # column header + one row per (preset, k, grid point)
+        len(p["k_grid"]) * n_grid for p in prereg["presets"].values()
+    )
+    _, sweep = _read_header_and_rows(out / "sweep.csv")
+    assert sweep[0] == "class,k,r_au,net_carbon"
+    assert len(sweep) == expected, (
+        f"sweep.csv has {len(sweep)} lines, pre-registration implies {expected} "
+        f"(n_grid={n_grid})"
+    )
+
+
+def test_committed_csvs_regenerate_exactly(tmp_path):
+    """The branch's whole thesis: the committed record is what this code
+    produces. Re-run and diff against what is checked in. git_sha and written
+    are the only lines allowed to move — everything else, body and provenance,
+    must match, so a source or numeric-stack change that is not followed by a
+    re-run fails here."""
+    import difflib
+
+    volatile = ("# git_sha=", "# written=")
+    out = tmp_path / "regen"
+    assert run.main(["--prereg", str(PREREG), "--out", str(out)]) == 0
+    for name in ("calibration.csv", "sweep.csv", "crossover.csv"):
+        committed = REPO / "experiments" / "q1_crossover" / name
+
+        def stable(path):
+            return [
+                line
+                for line in path.read_text().splitlines()
+                if not line.startswith(volatile)
+            ]
+
+        want, got = stable(committed), stable(out / name)
+        if want != got:
+            diff = "\n".join(
+                list(
+                    difflib.unified_diff(
+                        want,
+                        got,
+                        fromfile=f"committed/{name}",
+                        tofile=f"rerun/{name}",
+                        lineterm="",
+                    )
+                )[:40]
+            )
+            raise AssertionError(
+                f"{name} does not regenerate from the current code. Re-run "
+                f"experiments/q1_crossover/run.py and commit, or explain the "
+                f"numeric change:\n{diff}"
+            )
 
 
 def test_runner_passes_prereg_n_grid_to_the_root_search(tmp_path, monkeypatch):
