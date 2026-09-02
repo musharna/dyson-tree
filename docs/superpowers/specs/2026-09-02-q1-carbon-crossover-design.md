@@ -54,7 +54,7 @@ Plots: `experiments/q1_crossover/plot.R`, sourcing `docs/analysis/theme.R` (crea
 
 `tests/` under pytest, split by what each can fail on:
 
-- **Physics identities:** `irradiance(1) ≈ 2000` under the stated assumptions; `irradiance(10) == irradiance(1)/100`. Guard refactors.
+- **Physics identities:** `irradiance(1) ≈ 2798` under the stated assumptions (1360.8 × 0.45 × 4.57; corrected 2026-09-02 from the survey's ground-level 2000); `irradiance(10) == irradiance(1)/100`. Guard refactors.
 - **Calibration:** each preset's compensation irradiance inside its gate. The scientific test.
 - **Controls, in the same test as the healthy path:** `R_d = 0` ⇒ compensation 0 and no crossover (raises); `R_d × 2` ⇒ r* strictly inward of baseline. Asserted alongside the baseline passing, per the negative-needs-a-positive-control rule.
 - **Runner:** a failing preset ⇒ exit non-zero and `crossover.csv` absent; real presets ⇒ both CSVs exist with provenance header.
