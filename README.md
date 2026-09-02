@@ -55,7 +55,9 @@ order:
   design primitive. The science spine above is exactly the kind of thing that
   degrades into flavour text if it is not checked against real numbers.
   `leaf_mass_ratio` is the standing example: uncited, invisible to the
-  calibration gate, and the largest single source of uncertainty in Q1's answer.
+  calibration gate, and wide enough on its own to decide whether Q1's algal
+  prediction lands inside its registered band (`RESULTS.md` records `a_max` as
+  the second such parameter, and the one the algal gate constrains least).
 
 Every registered question ships a pre-registration written before its runner,
 a calibration gate that must pass before any result is reported, and CSVs

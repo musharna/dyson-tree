@@ -26,7 +26,7 @@ def test_prereg_presets_match_module_presets():
     run.assert_presets_match(yaml.safe_load(PREREG.read_text()))
 
 
-def test_preset_drift_refuses_to_run(tmp_path):
+def test_preset_drift_refuses_to_run():
     import pytest
 
     for field, value in (
@@ -150,6 +150,11 @@ def test_real_prereg_passes_and_writes_all_csvs_with_provenance(tmp_path):
         assert any(l.startswith("# numpy=") for l in header), name
         assert any(l.startswith("# scipy=") for l in header), name
         assert len(body) >= 2, name
+    # calibration.csv is one row per preset; `>= 2` cannot fail on a runner
+    # that silently drops a class, which is the whole point of the gate.
+    _, calib = _read_header_and_rows(out / "calibration.csv")
+    assert calib[0] == "class,k,observed_umol,gate_lo,gate_hi,passed"
+    assert len(calib) == 1 + len(yaml.safe_load(PREREG.read_text())["presets"])
     _, cross = _read_header_and_rows(out / "crossover.csv")
     assert cross[0] == "class,k,r_star_au,pred_lo,pred_hi,inside"
     assert len(cross) == 1 + 3 + 3  # header + 3 k values per preset

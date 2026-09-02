@@ -57,9 +57,12 @@ Read plainly:
   r\* below 47.02 AU, so 60.1% of the registered [35, 55] band — everything
   from 35 to 47.02 — was unreachable before the sweep ran. The upper end of
   the interval is unbounded: as `r_d` → 0 the compensation point goes to zero
-  and r\* diverges. Below `r_d` = 0.1104 (algal) and `r_d` = 0.0140 (vascular)
-  there is no crossover inside the [0.5, 100] AU solve window at all, so those
-  gate-passing organisms would have produced no answer rather than a wrong one.
+  and r\* diverges. Below `r_d` = 0.1104 there is no crossover inside the
+  [0.5, 100] AU solve window at all, so a gate-passing algal organism in that
+  range would have produced no answer rather than a wrong one. The vascular
+  gate has no such region: its floor is `r_d` = 0.5033, well above the 0.0140
+  at which vascular r\* would leave the window, so every gate-passing vascular
+  organism yields an answer somewhere in [11.89, 15.81] AU.
 
 This does not soften the misses; a miss is still a miss. It says the vascular
 hit carries much less information than the algal miss does.
@@ -92,14 +95,30 @@ of its band by an assumption no measurement in this experiment can see.
 parameter (`par_fraction`, `photons_per_j` and `q10` are also bare
 `# assumption`, and `a_max` and `k` carry no comment at all), and its
 per-unit sensitivity is not exceptional: d ln r\*/d ln `leaf_mass_ratio` is
-0.515 (algal) and 0.574 (vascular), against exactly 0.500 for `par_fraction`
-and `photons_per_j`, which enter as √. What singles it out is the width of its
-admissible range. `par_fraction` is physically pinned to within roughly ±10%
-(0.40–0.50 moves algal r\* only from 63.42 to 70.90 AU, and vascular r\* from
-12.90 to 14.43 AU); `leaf_mass_ratio` can be anything in (0, 1], a factor of
-five, and that span alone moves algal r\* by 2.35× and vascular r\* by 2.63×.
-It is the largest single source of uncertainty in the reported number, and the
-gate cannot report on it.
+0.515 (algal) and 0.575 (vascular), against exactly 0.500 for `par_fraction`
+and `photons_per_j`, which enter as √. What matters is not the elasticity but
+how wide a range the parameter is free to occupy. Over the 0.2–1.0 span tabled
+above, `leaf_mass_ratio` moves algal r\* by 2.35× and vascular r\* by 2.63×;
+a comparable 0.40–0.50 excursion in `par_fraction` moves algal r\* only from
+63.42 to 70.90 AU and vascular r\* from 12.90 to 14.43 AU.
+
+`leaf_mass_ratio` is not, however, the widest freedom the gate leaves open.
+`a_max` enters r\* through the same product `a_max`·`leaf_mass_ratio`/`r_d`, so
+its elasticity is identical by construction (0.515 algal, 0.575 vascular), and
+it is one of the two parameters carrying no comment at all. What differs is how
+far each gate constrains it. The vascular gate is two-sided and confines `a_max`
+to [7.87, 12.91], an r\* span of 11.89–15.81 AU (1.33×) — narrower than
+`leaf_mass_ratio`'s 2.63×, so for the vascular class `leaf_mass_ratio` is
+indeed the wider of the two. The algal gate is one-sided (I_c ≤ 1.0) and so
+places no upper bound on `a_max` whatsoever: `a_max` = 20 passes the gate at
+I_c = 0.2429 and gives r\* = 95.86 AU, and `a_max` = 30 passes at I_c = 0.1613
+with no crossover anywhere inside the [0.5, 100] AU window. For the algal class
+— the one whose prediction failed — `a_max` is the wider freedom, not
+`leaf_mass_ratio`.
+
+So the gate leaves two uncited parameters loose and reports on neither, and for
+the failing class the one it constrains least is not the one this section began
+with.
 
 Gating `leaf_mass_ratio` against a real leaf-mass-ratio / thallus-fraction
 source is a prerequisite for Q2, whose heating cost scales with the same

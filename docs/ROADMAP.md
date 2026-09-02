@@ -67,8 +67,8 @@ than being chosen and then justified.
 - [ ] **Prerequisite for Q2: gate `leaf_mass_ratio` against a real
       leaf-mass-ratio / thallus-fraction source.** It is uncited, structurally
       invisible to the Q1 calibration gate (which solves against LEAF
-      respiration while the answer divides by it), and the largest single
-      source of uncertainty in Q1's r\* — at 0.5 instead of 0.8 the algal r\*
+      respiration while the answer divides by it), and a lever wide enough to
+      decide the verdict on its own — at 0.5 instead of 0.8 the algal r\*
       lands inside its registered band. Q2's heating cost scales with the same
       non-photosynthetic mass fraction, so it inherits the problem.
       `experiments/q1_crossover/RESULTS.md`, "The uncited assumption that sets
