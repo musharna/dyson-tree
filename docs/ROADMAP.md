@@ -49,7 +49,10 @@ than being chosen and then justified.
 - [ ] Settle designer-loop vs colony-loop and record WHY
 - [ ] Ground each science-spine item with a real number and a citation, via
       `bio-grounding`; verify citations per the project's citation chain
-- [ ] Check the prior-art question — the existing scouting note flags that a
-      previous search probed the NAME rather than the biology, so the null is
-      not established
+- [x] Check the prior-art question — done 2026-09-01, see
+      `docs/prior_art_2026-09-01.md`: label-null confirmed (12 exact hits, 1
+      mention) AND re-run on the biology (nearest = myco-architecture + BLSS
+      crop models). ⚠️ Same doc contradicts spine item 1: refractory dust is
+      near-CI-chondritic (Stephan 2008) and P is detected (Altwegg 2016);
+      "P/K/metal-poor" needs rewriting, K is unmeasured.
 - [ ] First registered question + pre-registration, before any runner exists
