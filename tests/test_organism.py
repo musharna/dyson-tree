@@ -1,6 +1,8 @@
 import pytest
 
 from sim.organism import ALGAL, PRESETS, VASCULAR, Organism, compensation_irradiance
+from sim.physiology import gross_assimilation, irradiance, respiration
+from sim.thermal import equilibrium_temperature, temperature_response
 
 
 # --- calibration gates (the scientific tests) -------------------------------
@@ -108,10 +110,6 @@ def test_presets_registry():
     assert PRESETS["vascular"] is VASCULAR
 
 
-from sim.organism import ALGAL, VASCULAR, Organism
-from sim.thermal import equilibrium_temperature
-
-
 def test_q1_presets_still_construct_with_unchanged_carbon_values():
     # The new fields are defaulted, so the Q1 presets are untouched.
     assert VASCULAR.net_carbon(1.0) == pytest.approx(8.3550, abs=1e-4)
@@ -131,8 +129,13 @@ def test_equilibrium_net_carbon_uses_the_equilibrium_temperature():
     # At 1 AU a sphere sits at ~278.3 K, which is above t_min for the algal floor
     # but below t_opt, so the response multiplier is strictly between 0 and 1.
     o = Organism(
-        "algal", a_max=10.0, k=20.0, r_d=0.24, leaf_mass_ratio=1.0,
-        area_ratio=4.0, t_min=254.65,
+        "algal",
+        a_max=10.0,
+        k=20.0,
+        r_d=0.24,
+        leaf_mass_ratio=1.0,
+        area_ratio=4.0,
+        t_min=254.65,
     )
     t = equilibrium_temperature(1.0, area_ratio=4.0)
     assert 254.65 < t < 298.15
@@ -144,14 +147,74 @@ def test_equilibrium_net_carbon_is_negative_below_t_min():
     # Far enough out that T < t_min: assimilation is switched off entirely and
     # only respiration remains, so net carbon must be strictly negative.
     o = Organism(
-        "algal", a_max=10.0, k=20.0, r_d=0.24, leaf_mass_ratio=1.0,
-        area_ratio=4.0, t_min=254.65,
+        "algal",
+        a_max=10.0,
+        k=20.0,
+        r_d=0.24,
+        leaf_mass_ratio=1.0,
+        area_ratio=4.0,
+        t_min=254.65,
     )
     far = 100.0
     assert equilibrium_temperature(far, area_ratio=4.0) < 254.65
     assert o.net_carbon_at_equilibrium(far) < 0
     # positive control: near in, it is positive
     assert o.net_carbon_at_equilibrium(1.0) > 0
+
+
+def test_equilibrium_net_carbon_exact_value_pins_the_respiration_temperature():
+    """The two tests above only exercise the `* f` assimilation scaling: a variant
+    that scales assimilation correctly but evaluates respiration at t_set instead
+    of the equilibrium temperature still passes both of them. Recompute the
+    expected value independently from the documented primitives -
+    equilibrium_temperature, temperature_response, gross_assimilation, irradiance,
+    and respiration - so this pins every term, including which temperature
+    respiration sees."""
+    o = Organism(
+        "algal",
+        a_max=10.0,
+        k=20.0,
+        r_d=0.24,
+        leaf_mass_ratio=1.0,
+        area_ratio=4.0,
+        t_min=254.65,
+    )
+    r_au = 1.0
+    t = equilibrium_temperature(r_au, area_ratio=4.0)
+    f = temperature_response(t, o.t_min, o.t_opt)
+    expected = (
+        gross_assimilation(irradiance(r_au), o.a_max, o.k) * f
+        - respiration(o.r_d, t) / o.leaf_mass_ratio
+    )
+    assert o.net_carbon_at_equilibrium(r_au) == pytest.approx(expected)
+
+
+def test_equilibrium_net_carbon_uses_leaf_mass_ratio():
+    """All the equilibrium tests above use leaf_mass_ratio=1.0, so an
+    implementation that dropped the / leaf_mass_ratio divisor on the respiration
+    term would still pass every one of them. Without the divisor, gross
+    assimilation and the respiration term are identical between whole and half,
+    so halving leaf_mass_ratio must strictly lower net carbon at equilibrium,
+    exactly as it does for net_carbon()."""
+    whole = Organism(
+        "algal",
+        a_max=10.0,
+        k=20.0,
+        r_d=0.24,
+        leaf_mass_ratio=1.0,
+        area_ratio=4.0,
+        t_min=254.65,
+    )
+    half = Organism(
+        "algal",
+        a_max=10.0,
+        k=20.0,
+        r_d=0.24,
+        leaf_mass_ratio=0.5,
+        area_ratio=4.0,
+        t_min=254.65,
+    )
+    assert half.net_carbon_at_equilibrium(1.0) < whole.net_carbon_at_equilibrium(1.0)
 
 
 @pytest.mark.parametrize(
@@ -164,4 +227,7 @@ def test_new_fields_validate(field, value):
     with pytest.raises(ValueError, match=field):
         Organism("x", **kwargs)
     # positive control
-    assert Organism("x", **dict(a_max=10.0, k=20.0, r_d=0.24, leaf_mass_ratio=1.0)).a_max == 10.0
+    assert (
+        Organism("x", **dict(a_max=10.0, k=20.0, r_d=0.24, leaf_mass_ratio=1.0)).a_max
+        == 10.0
+    )
