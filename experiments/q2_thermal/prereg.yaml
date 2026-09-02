@@ -1,0 +1,74 @@
+# Q2 pre-registration. Written BEFORE run.py produces limits.csv. Do not edit after.
+registered: 2026-09-02
+question: >
+  For a passive organism at radiative equilibrium, with photosynthetic rate following
+  an empirically-anchored temperature response rather than an extrapolated Q10, what
+  sets the outer limit -- light, carbon, or temperature -- and at what distance?
+spec: docs/superpowers/specs/2026-09-02-q2-thermal-limit-design.md
+grounding: docs/bio_grounding_2026-09-02.md
+
+# Must match sim/physiology.py and sim/thermal.py; run.py refuses to run on mismatch.
+assumptions:
+  tsi_w_m2: 1360.8 # Kopp & Lean 2011, 10.1029/2010GL045777
+  par_fraction: 0.45 # assumption
+  photons_per_j: 4.57 # assumption
+  t_ref_k: 293.0
+  q10: 2.0 # assumption
+  sigma_w_m2_k4: 5.670374419e-8 # CODATA, exact by SI definition
+  t_opt_k: 298.15 # DECLARED ASSUMPTION, NOT GROUNDED. Gate 2 judges it.
+  emissivity: 1.0 # declared assumption
+  albedo: 0.0 # declared assumption
+
+# Gate 1: thermal physics at 1 AU, sphere, emissivity 1, albedo 0.
+gate_thermal:
+  r_au: 1.0
+  area_ratio: 4.0
+  t_eq_k: [275.0, 282.0] # brackets the standard blackbody value 278.3 K
+
+# Gate 2: HELD OUT from the fit. temperature_response is parameterized only by
+# t_min and t_opt; these two anchors are never used to build it.
+# Pointing et al. 2015, 10.3389/fpls.2015.00692, quoting Koerner 2003b:
+# "Cold adapted photosynthetic tissue in vascular plants reaches 60-70% of
+#  maximum rates at 5 C and 30-40% at 0 C".
+gate_response:
+  t_min_k: 265.15 # the vascular floor used for the gate check
+  anchors:
+    - { t_k: 278.15, lo: 0.60, hi: 0.70 } # 5 C
+    - { t_k: 273.15, lo: 0.30, hi: 0.40 } # 0 C
+
+presets:
+  vascular:
+    a_max: 10.0
+    k: 100.0
+    r_d: 0.65
+    leaf_mass_ratio: 0.5
+    area_ratio: 2.0 # flat lamina: absorbs one face, radiates two
+    # Koerner 2003a via Pointing et al. 2015: chloroplasts freeze at -5 to -8 C.
+    t_min_grid: [265.15, 266.65, 268.15]
+  algal:
+    a_max: 10.0
+    k: 20.0
+    r_d: 0.24
+    leaf_mass_ratio: 1.0 # unicellular: no non-photosynthetic organ (2026-09-02)
+    area_ratio: 4.0 # sphere: absorbs cross-section, radiates whole surface
+    # Pointing et al. 2015: net photosynthesis measured to -18.5 C. The source gives
+    # ONE value, not a range; the +/- 2.5 K spread is a DECLARED ASSUMPTION.
+    t_min_grid: [252.15, 254.65, 257.15]
+
+sweep:
+  r_min_au: 0.5
+  r_max_au: 100.0
+  n_grid: 200
+
+# Computed BEFORE registering, from reachability.py. A band the gates cannot reach
+# is not a prediction.
+reachable_thermal_cutoff_au:
+  # Computed from reachability.py before registering; each entry pairs with the
+  # same index of that class's t_min_grid.
+  vascular: [1.5581, 1.5406, 1.5234]
+  algal: [1.2183, 1.1945, 1.1714]
+
+# The registered prediction.
+predicted_binding_limit:
+  vascular: temperature
+  algal: temperature
