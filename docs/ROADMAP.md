@@ -86,7 +86,20 @@ than being chosen and then justified.
       compensation-point source AND left LMR free needing its own citation.
       Binding on the NEXT registration — Q1's prereg stays frozen.
       See `docs/bio_grounding_2026-09-02.md` §3.
-- [ ] **The algal gate needs a LOWER bound on I_c, not an `a_max` ceiling.**
+- [ ] **The algal gate needs a LOWER bound on I_c — and once the organism is
+      unicellular that floor is SUFFICIENT.** For lmr = 1.0, r\* = sqrt(C/I_c)
+      exactly (C = 2798.4852), verified at 9 (a_max, k) pairs: r\* becomes a
+      pure function of the quantity the gate measures, so the gate stops being
+      blind and a floor on I_c IS a ceiling on r\*. Exact consequence: the
+      existing ceiling I_c <= 1.0 already forces r\* >= 52.9007 AU, so the
+      registered [35, 55] band was reachable only over [52.90, 55] —
+      **89.5% of it was unreachable before the sweep ran** (worse than the
+      60.1% measured at the old lmr = 0.8). Only the floor's VALUE is still
+      unsourced: 14C PI compilations structurally cannot supply it (14C
+      measures uptake, not respiration; 0.35% of the largest open compilation
+      samples the light-limited end). Needs O2-based P-R data on microalgal
+      cultures. NEXT REGISTRATION SHOULD REGISTER THE BAND IN I_c, NOT r\*.
+      Superseded framing (kept for the record):
       Found 2026-09-02: at the MAXIMUM Asat across 530 species the algal gate
       still PASSES (I_c = 0.1626 <= 1.0) and returns NO crossover inside
       [0.5, 100] AU. A ceiling on `a_max` was necessary but not sufficient —

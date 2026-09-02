@@ -168,6 +168,74 @@ deliberately generous borrowed ceiling, and the argument is *a fortiori* — if 
 vascular maximum fails to constrain the algal gate, a microalgal ceiling will not either.
 A microalgal `a_max` ceiling is still unsourced.
 
+## 4b. The decided organism turns the algal gate from blind into COMPLETE
+
+Filed on 2026-09-02 as "the algal gate needs a lower bound on I_c." Working that item
+produced something stronger, and it is exact rather than numerical.
+
+**With `leaf_mass_ratio` = 1.0 — which the unicellular decision (§3) pins it to —**
+
+$$r^* = \sqrt{C / I_c}, \qquad C = \text{TSI} \times \text{par\_fraction} \times \text{photons\_per\_j} = 2798.4852$$
+
+Derivation: `I_c = k·r_d/(a_max − r_d)` gives `a_max/r_d − 1 = k/I_c`, and
+`r* = sqrt(C/k · (a_max·lmr/r_d − 1))` with `lmr = 1` collapses to `sqrt(C/k · k/I_c)`.
+The `k` cancels. Verified numerically against the live solver at 9 combinations of
+`a_max` ∈ {5, 10, 25} × `k` ∈ {10, 20, 40} — every one matched to < 1e-3, including the
+three that correctly predicted r\* beyond the 100 AU window.
+
+**What this means.** For a unicellular organism, r\* is a pure function of the compensation
+irradiance — the *exact quantity the gate measures*. The §2/C2 blindness does not merely
+shrink; it **disappears**. The gate stops being a guard that cannot observe its referent
+and becomes a complete observer of it. `a_max` and `k` still matter, but only through I_c,
+so bounding I_c bounds r\* completely.
+
+**So the filed fix was right, and the reason is stronger than the one filed.** A floor on
+I_c maps one-to-one onto a ceiling on r\*:
+
+| floor on I_c | implied ceiling on r\* |
+| --- | --- |
+| 0.05 | 236.58 AU |
+| 0.1 | 167.29 AU |
+| 0.2 | 118.29 AU |
+| 0.5 | 74.81 AU |
+
+**And it sharpens §1's headline finding into an exact statement.** The gate's existing
+ceiling I_c ≤ 1.0 already implies **r\* ≥ 52.9007 AU**. The registered band [35, 55] AU
+corresponds to I_c ∈ [0.9251, 2.2845]. Intersecting, the band is reachable only for
+I_c ∈ [0.9251, 1.0] — **7.5% of the gate's own admissible interval, covering just
+[52.90, 55] AU, or 10.5% of the band's width.** For the organism now decided, **89.5% of
+the registered algal band was unreachable before the sweep ran** — worse than the 60.1%
+measured at the old `leaf_mass_ratio` of 0.8.
+
+Q1's algal result (I_c = 0.4918 → r\* = 75.4338 AU at lmr = 1.0) sits exactly on this curve.
+
+**What is still missing is only the floor's VALUE.** The structure is settled; the number
+is not. See §4c.
+
+## 4c. Why the obvious dataset cannot supply that floor
+
+Searched for microalgal compensation-irradiance data the same way §4 was closed. The
+largest relevant open deposit is Amirian et al. (2026), *A Compilation of Marine
+Photosynthesis–Irradiance Data from ¹⁴C Incubation Experiments*, Zenodo
+[10.5281/zenodo.21908199](https://doi.org/10.5281/zenodo.21908199), CC-BY-4.0 —
+111,209 measurements. It is the right organism (marine phytoplankton) and the wrong
+instrument, for a structural reason worth recording:
+
+- Only **164 of 111,209** rows (0.15%) have a negative photosynthesis rate, and only
+  **6 of 39** report groups bracket zero — so a compensation point can be interpolated
+  almost nowhere in it.
+- Its own `dataType` labels are `photoinhibition` (64,167), `light-saturated` (46,656),
+  `light-limited` (386). **0.35% of the compilation samples the light-limited end** — the
+  end where a compensation point lives.
+
+The cause is methodological: **¹⁴C incubation measures carbon uptake, not respiration**,
+and a compensation point is exactly where uptake balances respiration. No amount of ¹⁴C
+data yields one. The floor needs O₂-based P–R measurements on microalgal cultures, which a
+second targeted search did not surface as an open dataset.
+
+**Status: the gate's structure is now understood exactly (§4b); its floor value remains
+unsourced.** Recorded so the next attempt does not re-mine ¹⁴C compilations.
+
 ## 5. Honesty ledger (which layer each claim sits on)
 
 | claim | status |
@@ -182,6 +250,10 @@ A microalgal `a_max` ceiling is still unsourced.
 | Vascular `a_max` = 10.0 is defensible | **real-data-backed** — sits at the empirical median |
 | Empirical ceiling does not close the algal gate | **real-data-backed** — computed live; gate passes at the 530-species maximum |
 | `a_max` ceiling, *microalgal* | **unresolved** — the dataset is vascular; borrowed a fortiori only (§4) |
+| r\* = sqrt(C / I_c) for a unicellular organism | **derived + numerically verified** — algebraic identity, checked at 9 (a_max, k) pairs against the live solver (§4b) |
+| Gate ceiling I_c<=1.0 implies r\* >= 52.9007 AU | **derived** — direct consequence of the identity (§4b) |
+| 89.5% of the algal band unreachable at lmr=1.0 | **derived** — exact, supersedes the 60.1% measured at lmr=0.8 (§4b) |
+| Microalgal I_c floor VALUE | **unresolved** — 14C data structurally cannot supply it (§4c) |
 | r\* values in §2 and §3 | computed live this session against `sim/`, positive-control checked |
 
 ## 6. What this changes for Q2
@@ -190,9 +262,12 @@ A microalgal `a_max` ceiling is still unsourced.
   Poorter & Sack (2012) rather than from an inline comment.
 - Deciding the algal organism **before** registering: unicellular (LMR pinned at 1.0,
   gate already correct) or macroalgal (LMR free, gate must be re-sourced).
-- **Give the algal gate a lower bound on I_c.** §4 shows a ceiling on `a_max` does not fix
-  it: the gate passes at the 530-species maximum and still returns no crossover. A gate
-  with no floor cannot exclude an arbitrarily efficient organism.
+- **Give the algal gate a lower bound on I_c** — confirmed as the right lever, and §4b now
+  shows why it is *sufficient*: once the organism is unicellular, r\* = sqrt(C/I_c), so a
+  floor on I_c is exactly a ceiling on r\*. Only the floor's value is still unsourced (§4c).
+- **Register the algal band in I_c, not in r\*.** They are interchangeable for a unicellular
+  organism, and I_c is the quantity the gate can actually check — which would have made the
+  [35, 55] AU band's 89.5% unreachability visible at registration time rather than after.
 - **Register the gate's reachable r\* interval alongside the predicted band.** A band the
   gate cannot reach is not a prediction — §2 shows the grounded parameter range and the
   registered band only partly overlap.
@@ -205,4 +280,5 @@ A microalgal `a_max` ceiling is still unsourced.
 - **Poorter H (2011).** Biomass allocation to leaves, stems and roots: meta-analyses of interspecific variation and environmental control. *New Phytologist* 193:30–50. [10.1111/j.1469-8137.2011.03952.x](https://doi.org/10.1111/j.1469-8137.2011.03952.x) — CrossRef issues this 2011-11-15 (print issue 2012-01); cited here as 2011 because the deterministic gate compares against the CrossRef `issued` year.
 - **Poorter H (2012).** Pitfalls and possibilities in the analysis of biomass allocation patterns in plants. *Frontiers in Plant Science* 3:259. [10.3389/fpls.2012.00259](https://doi.org/10.3389/fpls.2012.00259)
 - **Wright I J (2004).** The worldwide leaf economics spectrum. *Nature.* [10.1038/nature02403](https://doi.org/10.1038/nature02403) — cited for context only; its area-based values were not reachable, so §4 uses a dataset instead.
+- **Amirian M (2026).** A Compilation of Marine Photosynthesis–Irradiance Data from 14C Incubation Experiments. Zenodo. [10.5281/zenodo.21908199](https://doi.org/10.5281/zenodo.21908199) — CC-BY-4.0 dataset; used as a NEGATIVE result (§4c).
 - **Westerband A C (2022).** Australia-wide photosynthetic trait dataset. Dryad. [10.5061/dryad.j9kd51cgr](https://doi.org/10.5061/dryad.j9kd51cgr) — CC-0 dataset. ghostcite returns tier U (not in CrossRef); Dryad DOIs are registered with DataCite, and DataCite confirms first creator Westerband, publicationYear 2022, publisher Dryad.
