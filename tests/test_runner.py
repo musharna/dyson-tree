@@ -42,6 +42,7 @@ def test_real_prereg_passes_and_writes_all_csvs_with_provenance(tmp_path):
         header, body = _read_header_and_rows(out / name)
         assert any(l.startswith("# git_sha=") for l in header), name
         assert any(l.startswith("# physiology_md5=") for l in header), name
+        assert any(l.startswith("# organism_md5=") for l in header), name
         assert any(l.startswith("# prereg_md5=") for l in header), name
         assert len(body) >= 2, name
     _, cross = _read_header_and_rows(out / "crossover.csv")

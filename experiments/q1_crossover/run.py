@@ -24,6 +24,7 @@ from sim import physiology  # noqa: E402
 from sim.organism import Organism, compensation_irradiance, crossover_distance_for  # noqa: E402
 
 PHYSIOLOGY_PATH = REPO_ROOT / "sim" / "physiology.py"
+ORGANISM_PATH = REPO_ROOT / "sim" / "organism.py"
 
 
 def load_prereg(path: Path) -> dict:
@@ -62,6 +63,7 @@ def provenance_lines(prereg_path: Path) -> list[str]:
     return [
         f"# git_sha={sha}",
         f"# physiology_md5={_md5(PHYSIOLOGY_PATH)}",
+        f"# organism_md5={_md5(ORGANISM_PATH)}",
         f"# prereg_md5={_md5(prereg_path)}",
         f"# written={dt.datetime.now().astimezone().isoformat(timespec='seconds')}",
     ]
