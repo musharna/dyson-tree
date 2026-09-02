@@ -55,7 +55,14 @@ than being chosen and then justified.
       answer, and light (spine item 3) turned out to be the binding constraint,
       which A can treat as a swept input.
 - [ ] Ground each science-spine item with a real number and a citation, via
-      `bio-grounding`; verify citations per the project's citation chain
+      `bio-grounding`; verify citations per the project's citation chain.
+      **Started 2026-09-02 for the two parameters the Q1 gate cannot see —
+      `docs/bio_grounding_2026-09-02.md`.** `leaf_mass_ratio` is now BOUNDED
+      (LMF 0.20-0.80 excluding adult trees, Poorter & Sack 2012), which puts
+      vascular r\* in [7.62, 17.79] AU against a registered [12, 22] — the
+      grounded range extends BELOW the band rather than confirming it.
+      `a_max` has NO ceiling yet: every candidate source was paywalled, so no
+      number was recorded. Spine items other than these two are untouched.
 - [x] Check the prior-art question — done 2026-09-01, see
       `docs/prior_art_2026-09-01.md`: label-null confirmed (12 exact hits, 1
       mention) AND re-run on the biology (nearest = myco-architecture + BLSS
@@ -64,7 +71,14 @@ than being chosen and then justified.
       2016); K remains unmeasured.
 - [x] First registered question (Q1, carbon crossover vs distance) —
       `experiments/q1_crossover/prereg.yaml`, results in `RESULTS.md`
-- [ ] **Prerequisite for Q2: gate `leaf_mass_ratio` against a real
+- [ ] **Prerequisite for Q2: decide the algal organism before re-registering.**
+      Grounding found the algal preset incoherent: its gate source (Richardson
+      et al. 1983) is about UNICELLULAR microalgae, while its
+      `leaf_mass_ratio: 0.8` is justified as a THALLUS (a macroalga). Either
+      keep the unicellular organism, in which case LMR is pinned at 1.0 by
+      structure and algal r\* moves to 75.43 AU (further outside [35, 55]), or
+      keep the thallus, in which case the GATE must be re-sourced. Also still
+      open: gate `leaf_mass_ratio` against a real
       leaf-mass-ratio / thallus-fraction source.** It is uncited, structurally
       invisible to the Q1 calibration gate (which solves against LEAF
       respiration while the answer divides by it), and a lever wide enough to
