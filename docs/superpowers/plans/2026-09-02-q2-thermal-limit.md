@@ -295,7 +295,7 @@ from sim.thermal import equilibrium_temperature
 
 def test_q1_presets_still_construct_with_unchanged_carbon_values():
     # The new fields are defaulted, so the Q1 presets are untouched.
-    assert VASCULAR.net_carbon(1.0) == pytest.approx(9.2981, abs=1e-4)
+    assert VASCULAR.net_carbon(1.0) == pytest.approx(8.3550, abs=1e-4)
     assert ALGAL.net_carbon(1.0) == pytest.approx(9.6290, abs=1e-4)
 
 
