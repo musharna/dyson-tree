@@ -11,6 +11,7 @@ RUN = REPO / "experiments" / "q2b_adapted" / "run.py"
 PREREG = REPO / "experiments" / "q2b_adapted" / "prereg.yaml"
 
 from experiments.q2b_adapted import run  # noqa: E402
+from sim.thermal import equilibrium_temperature  # noqa: E402
 
 PROVENANCE_KEYS = (
     "# git_sha=",
@@ -60,6 +61,7 @@ def test_gate_a_failure_aborts_everything(tmp_path):
     assert not (out / "limits.csv").exists(), (
         "stale limits.csv survived a Gate A failure"
     )
+    assert not (out / "sweep.csv").exists(), "stale sweep.csv survived a Gate A failure"
 
 
 def test_exit_2_when_no_class_passes_gate_b(tmp_path):
@@ -109,3 +111,51 @@ def test_cli_exit_code_is_2_on_gate_a_failure(tmp_path):
     assert proc.returncode == 2, proc.stderr
     assert (out / "gates.csv").exists()
     assert not (out / "limits.csv").exists()
+    assert not (out / "sweep.csv").exists()
+
+
+def test_algal_thermal_au_and_binding_are_pinned_against_the_real_prereg():
+    """Guards the two regressions a reviewer reproduced by hand: taking the
+    inner root instead of the outer one in outer_carbon_crossover, and
+    inverting the min() in classify_limit's binding selection. None of the
+    structural tests above would catch either -- they check row counts,
+    exclusion, and exit codes, never a specific outer_au or binding value.
+
+    The expected thermal_au is computed here from sim.thermal.equilibrium_temperature
+    and the prereg's own t_min directly -- NOT by calling run.classify_limit or
+    run.build and trusting their internal formula -- so this is an independent
+    check, not a tautology."""
+    prereg = yaml.safe_load(PREREG.read_text())
+    p = prereg["presets"]["algal"]
+    a = prereg["assumptions"]
+    r_home_au = float(a["r_home_au"])
+    sw = prereg["sweep"]
+    r_min, r_max, n_grid = (
+        float(sw["r_min_au"]),
+        float(sw["r_max_au"]),
+        int(sw["n_grid"]),
+    )
+
+    t_home_independent = equilibrium_temperature(
+        r_home_au, float(p["area_ratio"]), float(a["emissivity"]), float(a["albedo"])
+    )
+    expected_thermal_au = r_home_au * (t_home_independent / float(p["t_min"])) ** 2
+    assert expected_thermal_au == pytest.approx(1.1945, abs=1e-4)
+
+    # Measured via the real run in Task 4's report; pinned here so a
+    # regression that swaps idx[-1] for idx[0] (the too-hot inner root,
+    # ~0.76-0.88 AU per Task 3's Step 5) or min() for max() (which would
+    # pick "light", ~75 AU) is caught.
+    expected_outer_au = {
+        10.0: 1.2120,
+        15.0: 1.3795,
+        20.0: 1.6180,
+        25.0: 1.9723,
+        30.0: 2.5301,
+    }
+    for omega, exp_outer in expected_outer_au.items():
+        org = run.build("algal", p, a, omega)
+        result = run.classify_limit(org, r_home_au, r_min, r_max, n_grid)
+        assert result["temperature"] == pytest.approx(expected_thermal_au, rel=1e-6)
+        assert result["carbon"] == pytest.approx(exp_outer, abs=5e-4)
+        assert result["binding"] == "temperature"

@@ -32,7 +32,7 @@ from scipy.optimize import brentq
 REPO_ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(REPO_ROOT))
 
-from experiments.q2b_adapted.reachability import gate_b_verdict, sign_structure  # noqa: E402
+from experiments.q2b_adapted.reachability import gate_b_verdict  # noqa: E402
 from sim import physiology, thermal  # noqa: E402
 from sim.organism import Organism, crossover_distance_for  # noqa: E402
 from sim.thermal import adapted_optimum, equilibrium_temperature  # noqa: E402
@@ -212,10 +212,20 @@ def outer_carbon_crossover(net_fn, r_min: float, r_max: float, n_grid: int) -> f
     (not [] and not exactly the two-root pattern) is not one Task 3
     measured, and picking a root anyway would be a guess dressed up as a
     result, so it raises UnexpectedSignStructure instead.
+
+    The grid is evaluated exactly once here (not once for a separate
+    sign_structure() call and again for brentq's bracket) -- net_fn is a
+    closure over org.net_carbon_adapted, and doubling n_grid evaluations
+    per (class, omega) bought nothing since the same array serves both the
+    shape check and the bracket.
     """
     if r_min <= 0 or r_max <= r_min:
         raise ValueError(f"need 0 < r_min < r_max, got {r_min}, {r_max}")
-    transitions = sign_structure(net_fn, r_min, r_max, n_grid)
+    grid = np.geomspace(r_min, r_max, n_grid)
+    vals = np.array([net_fn(float(r)) for r in grid])
+    sign = np.sign(vals)
+    idx = np.where(sign[:-1] * sign[1:] < 0)[0]
+    transitions = [(int(sign[i]), int(sign[i + 1])) for i in idx]
     if transitions == []:
         return float("nan")
     if transitions != [(-1, 1), (1, -1)]:
@@ -226,12 +236,56 @@ def outer_carbon_crossover(net_fn, r_min: float, r_max: float, n_grid: int) -> f
             f"exactly one positive->negative transition (outer limit); got "
             f"{transitions}"
         )
-    grid = np.geomspace(r_min, r_max, n_grid)
-    vals = np.array([net_fn(float(r)) for r in grid])
-    sign = np.sign(vals)
-    idx = np.where(sign[:-1] * sign[1:] < 0)[0]
+    # Outer limit = the SECOND (positive->negative) transition, not the
+    # first: idx[0] would be the too-hot inner edge. This exact swap is the
+    # regression a fix-round mutation test now pins against.
     i = idx[-1]
     return float(brentq(net_fn, grid[i], grid[i + 1], xtol=1e-6))
+
+
+def classify_limit(
+    org: Organism, r_home_au: float, r_min: float, r_max: float, n_grid: int
+) -> dict:
+    """The three single-mechanism outer distances for one organism at one
+    omega, and which binds tightest.
+
+    Mirrors Q2's temperature/carbon_fixed_t/carbon_equilibrium min()
+    pattern, relabeled to the registered question's own wording
+    ("light, carbon, or temperature"):
+
+    - "temperature": the AU at which passive equilibrium temperature falls
+      to the class's grounded absolute floor t_min, independent of Ω and of
+      carbon balance entirely (Q2's (t_eq/t_min)**2 scaling law).
+    - "light": Q1's fixed-temperature crossover (crossover_distance_for),
+      ignoring all thermal effects.
+    - "carbon": the actual coupled model's own outer crossover
+      (outer_carbon_crossover on net_carbon_adapted) -- this is the value
+      reported as outer_au regardless of which of the three binds.
+
+    binding = whichever candidate is numerically smallest (the tightest,
+    first-reached constraint moving outward), or "none_in_window" if none
+    is finite. Pulled out as its own function so it is unit-testable
+    directly against the real prereg's numbers, independent of the CLI, the
+    sweep loop, and CSV writing.
+    """
+    t_home = equilibrium_temperature(
+        r_home_au, org.area_ratio, org.emissivity, org.albedo
+    )
+    thermal_au = r_home_au * (t_home / org.t_min) ** 2
+    try:
+        light_au = crossover_distance_for(org, r_min=r_min, r_max=r_max, n_grid=n_grid)
+    except ValueError:
+        light_au = float("nan")
+    carbon_au = outer_carbon_crossover(
+        lambda r: org.net_carbon_adapted(r, r_home_au), r_min, r_max, n_grid
+    )
+    candidates = {"temperature": thermal_au, "light": light_au, "carbon": carbon_au}
+    finite = {k: v for k, v in candidates.items() if np.isfinite(v)}
+    # min(), not max(): binding is the TIGHTEST (smallest, nearest) of the
+    # three outer distances -- the constraint reached soonest moving
+    # outward from home. A fix-round mutation test pins this direction.
+    binding = min(finite, key=finite.get) if finite else "none_in_window"
+    return {**candidates, "binding": binding}
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -307,42 +361,16 @@ def main(argv: list[str] | None = None) -> int:
                     }
                 )
 
-            # Three single-mechanism distances classify which of light,
-            # carbon, or temperature binds -- mirroring Q2's
-            # temperature/carbon_fixed_t/carbon_equilibrium min() pattern,
-            # relabeled to the registered question's own wording. "carbon"
-            # is the actual coupled model (net_carbon_adapted, both light
-            # dilution and the Gaussian thermal response) and is the number
-            # reported as outer_au; "temperature" and "light" are
-            # counterfactual single-mechanism distances used only to decide
-            # which constraint is tightest.
-            t_home = equilibrium_temperature(
-                r_home_au, org.area_ratio, org.emissivity, org.albedo
+            # classify_limit propagates UnexpectedSignStructure rather than
+            # swallowing it into NaN -- see its own and outer_carbon_crossover's
+            # docstrings.
+            result = classify_limit(org, r_home_au, r_min, r_max, n_grid)
+            thermal_au, light_au, carbon_au, binding = (
+                result["temperature"],
+                result["light"],
+                result["carbon"],
+                result["binding"],
             )
-            thermal_au = r_home_au * (t_home / org.t_min) ** 2
-            try:
-                light_au = crossover_distance_for(
-                    org, r_min=r_min, r_max=r_max, n_grid=n_grid
-                )
-            except ValueError:
-                light_au = float("nan")
-            try:
-                carbon_au = outer_carbon_crossover(
-                    lambda r, org=org: org.net_carbon_adapted(r, r_home_au),
-                    r_min=r_min,
-                    r_max=r_max,
-                    n_grid=n_grid,
-                )
-            except UnexpectedSignStructure:
-                # Must NOT become NaN: see the class docstring above.
-                raise
-            candidates = {
-                "temperature": thermal_au,
-                "light": light_au,
-                "carbon": carbon_au,
-            }
-            finite = {k: v for k, v in candidates.items() if np.isfinite(v)}
-            binding = min(finite, key=finite.get) if finite else "none_in_window"
             limit_rows.append(
                 {
                     "class": name,
