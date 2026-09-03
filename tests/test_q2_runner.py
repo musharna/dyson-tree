@@ -95,6 +95,36 @@ def test_gate_thermal_failure_exits_2_and_clears_stale_limits(tmp_path):
     assert (out / "gates.csv").exists()
 
 
+def test_gate_thermal_alone_fails_the_run(tmp_path):
+    """test_gate_thermal_failure_exits_2_and_clears_stale_limits above breaks
+    gate 1 while gate 2 is left at its real, already-failing anchors -- so
+    rc == 2 is over-determined and cannot tell correct `ok &= passed`
+    accumulation from a deleted gate-1 accumulation (gate 2 alone would still
+    force rc == 2). Here gate 2's anchors are widened to pass (in-memory copy
+    only -- prereg.yaml itself stays frozen) so gate 1 is the SOLE failure:
+    deleting `ok &= passed` for gate 1 would leave `ok` following gate 2 only,
+    which now passes, and the run would wrongly exit 0."""
+    bad = yaml.safe_load(PREREG.read_text())
+    bad["gate_thermal"]["t_eq_k"] = [1000.0, 2000.0]  # impossible band
+    for anchor in bad["gate_response"]["anchors"]:
+        anchor["lo"], anchor["hi"] = 0.0, 1.0
+    p = tmp_path / "gate1_only.yaml"
+    p.write_text(yaml.safe_dump(bad))
+    out = tmp_path / "gate1_only_out"
+
+    assert run.main(["--prereg", str(p), "--out", str(out)]) == 2
+    rows = _rows(out / "gates.csv")[1:]  # drop the CSV header row
+    thermal_rows = [r for r in rows if r.startswith("thermal,")]
+    assert thermal_rows and thermal_rows[0].split(",")[-1] == "False", (
+        f"expected the thermal gate to be the failing row: {thermal_rows}"
+    )
+    response_rows = [r for r in rows if r.startswith("response,")]
+    assert response_rows and all(r.split(",")[-1] == "True" for r in response_rows), (
+        f"positive control failed: response gate should pass here: {response_rows}"
+    )
+    assert not (out / "limits.csv").exists()
+
+
 def test_assumption_drift_refuses_to_run(tmp_path):
     bad = yaml.safe_load(PREREG.read_text())
     bad["assumptions"]["sigma_w_m2_k4"] = 1.0
@@ -146,12 +176,29 @@ def test_cli_exits_nonzero_when_a_gate_fails(tmp_path):
 
 def test_response_gate_rejects_a_wrong_functional_form(tmp_path, monkeypatch):
     """A flat response of 0.99 is physically absurd -- it says a frozen organism
-    photosynthesises at 99% of optimum. Gate 2 must reject it."""
+    photosynthesises at 99% of optimum. Gate 2 must reject it.
+
+    Against the real, frozen prereg, Gate 2 already fails on its own (mesophyte
+    t_opt vs cold-adapted anchors) and already emits `False` rows -- so
+    `rc == 2` and `any("False" in r for r in rows)` hold identically whether
+    or not the monkeypatch takes effect. Assert the recorded `observed` value
+    is the patched 0.9900 (proving the substitution actually ran) AND that
+    the thermal gate row is True (the positive control: only the response
+    gate is broken here, not thermal physics)."""
     monkeypatch.setattr(run, "temperature_response", lambda t, t_min, t_opt: 0.99)
     out = tmp_path / "wrong"
     assert run.main(["--prereg", str(PREREG), "--out", str(out)]) == 2
-    rows = _rows(out / "gates.csv")
-    assert any("False" in r for r in rows), "gate 2 accepted a flat 0.99 response"
+    rows = _rows(out / "gates.csv")[1:]  # drop the CSV header row
+    response_rows = [r for r in rows if r.startswith("response,")]
+    assert response_rows, f"no response gate rows in {rows}"
+    for r in response_rows:
+        fields = r.split(",")
+        assert fields[2] == "0.9900", f"patch did not take effect: {r}"
+        assert fields[-1] == "False", f"gate 2 accepted a flat 0.99 response: {r}"
+    thermal_rows = [r for r in rows if r.startswith("thermal,")]
+    assert thermal_rows and thermal_rows[0].split(",")[-1] == "True", (
+        f"positive control failed: thermal gate did not pass: {thermal_rows}"
+    )
     assert not (out / "limits.csv").exists()
 
 
