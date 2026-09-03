@@ -236,6 +236,88 @@ second targeted search did not surface as an open dataset.
 **Status: the gate's structure is now understood exactly (§4b); its floor value remains
 unsourced.** Recorded so the next attempt does not re-mine ¹⁴C compilations.
 
+## 4d. `t_opt` — grounded, and it says the FUNCTIONAL FORM is wrong, not the parameter
+
+Q2's Gate 2 failed and its RESULTS.md §6 asked for a `t_opt` sourced for cold-adapted
+tissue from somewhere other than the two anchors that gate it. Done here. The answer
+inverts the diagnosis I recorded before Q2 ran.
+
+**What I predicted:** that 298.15 K (25 °C) was a mesophyte optimum and a cold-adapted
+organism would want a LOWER one. **What the literature says:** cold-climate
+photoautotrophs have HIGH optima.
+
+> *"The optimum temperature for both net assimilation of CO2 and photoprotective heat
+> dissipation of three East Antarctic species was 20–30°C"*
+> — Perera-Castro et al. 2020, *Front. Plant Sci.* 11:1178, abstract
+
+> *"Polytrichastrum alpinum, which is associated with polar and alpine habitats, showed
+> the highest optimum temperature (26.3 ± 0.7°C)"* — ibid., Results
+
+Table 2 of that paper gives T_opt of ETRmax across six named Antarctic moss species
+(*Bryum pseudotriquetrum*, *Ceratodon purpureus*, *Chorisodontium aciphyllum*,
+*Polytrichastrum alpinum*, *Sanionia uncinata*, *Schistidium antarctici*) spanning
+**19.0 ± 0.9 °C to 26.3 ± 0.7 °C**. The paper's title states the point: *"Antarctic Mosses
+Have High Temperature Optima for Photosynthesis Despite Cold Climate."* The mechanism it
+gives is one this model shares — tissue runs hotter than air:
+
+> *"Antarctic mosses, however, can have canopy temperatures well above air temperature.
+> At midday, canopy temperatures can exceed 15°C"* — ibid., abstract
+
+A second, independent source disagrees, and the disagreement is real rather than noise:
+
+> *"Optimal temperature for NP of BSC was 5 °C at Site Darwin, 7 °C at Site Garwood and
+> 17 °C at Site Homburg."*
+> — Colesie et al. 2014, *ISME J* 8:2104, on lichen-dominated biological soil crusts
+> (Darwin and Garwood Antarctic; Homburg a moderate German site)
+
+So measured optima for cold-climate photoautotrophs run **5–7 °C for Antarctic lichen
+crusts** and **19–30 °C for Antarctic mosses**. Organism matters more than climate does.
+
+### The decisive comparison
+
+Under the LINEAR response Q2 implements, with `t_min` = 265.15 K, satisfying both held-out
+anchors requires:
+
+| anchor | admissible `t_opt` |
+| --- | --- |
+| 60–70% at 5 °C | [10.6, 13.7] °C |
+| 30–40% at 0 °C | [12.0, 18.7] °C |
+| **intersection** | **[12.0, 13.7] °C** |
+
+**No measured value above falls in that window.** The lichen crusts sit below it (5, 7 °C),
+the mosses above it (19–30 °C), and even the temperate crust (17 °C) misses. The window is
+bracketed from both sides and contains nothing.
+
+**Conclusion: the linear response is the defect, not `t_opt`.** A real temperature-response
+curve is concave — it rises steeply out of the cold and flattens toward a broad optimum —
+so a tissue whose optimum is 25 °C can still be at 60–70% of maximum at 5 °C. A straight
+line from `t_min` to `t_opt` cannot do that: it forces the rate at 5 °C to be a fixed
+fraction of the distance to the optimum. This is exactly what the spec said Gate 2 would
+diagnose — *"if a curve pinned at its endpoints does not independently land in both
+windows, the gate fails and the functional form is wrong"* — and it is NOT what I predicted
+the failure would mean.
+
+**Correction of the record:** Q2's `RESULTS.md` §5 attributes the gate failure to a
+mesophyte-vs-cold-adapted `t_opt` mismatch. On this grounding that attribution is wrong in
+direction: 298.15 K is *inside* the measured moss range (20–30 °C for net assimilation).
+The implied band in its §4 ([285.15, 286.82] K) is not a corrected `t_opt` — it is the
+window a linear form would need, and no organism measured here has an optimum there.
+
+### What Q3 / a re-registered Q2 should do
+
+1. Replace the linear response with a concave form — a beta or Arrhenius-with-deactivation
+   curve — parameterized by `t_min`, `t_opt` and a shape parameter fitted to neither anchor.
+2. Register `t_opt` **per class** from measurement, not one value for both: the lichen
+   /algal class near 5–7 °C, a moss-like or vascular class near 20–26 °C. Both are cited
+   above; neither is vascular, which remains the gap (see below).
+3. Keep the two anchors held out. They have now done real work twice — first failing the
+   gate, then falsifying my explanation of why.
+
+**Still ungrounded:** a measured T_opt for cold-adapted VASCULAR tissue. Both sources above
+are non-vascular (bryophyte, lichen). Körner's vascular rate anchors remain the only
+vascular-specific temperature data in this project, and they cannot be used to set `t_opt`
+without the circularity Gate 2 exists to prevent.
+
 ## 5. Honesty ledger (which layer each claim sits on)
 
 | claim | status |
@@ -250,6 +332,9 @@ unsourced.** Recorded so the next attempt does not re-mine ¹⁴C compilations.
 | Vascular `a_max` = 10.0 is defensible | **real-data-backed** — sits at the empirical median |
 | Empirical ceiling does not close the algal gate | **real-data-backed** — computed live; gate passes at the 530-species maximum |
 | `a_max` ceiling, *microalgal* | **unresolved** — the dataset is vascular; borrowed a fortiori only (§4) |
+| Cold-climate photoautotrophs have HIGH T_opt (19–30 °C mosses; 5–7 °C lichen crusts) | **real-mechanism-backed** — verbatim, species- and site-resolved, both refs ghostcite-clean (§4d) |
+| The LINEAR response, not `t_opt`, is what fails Gate 2 | **derived** — the anchors' admissible window is [12.0, 13.7] °C and no measured optimum lies in it (§4d) |
+| T_opt for cold-adapted VASCULAR tissue | **unresolved** — both sources are bryophyte/lichen (§4d) |
 | r\* = sqrt(C / I_c) for a unicellular organism | **derived + numerically verified** — algebraic identity, checked at 9 (a_max, k) pairs against the live solver (§4b) |
 | Gate ceiling I_c<=1.0 implies r\* >= 52.9007 AU | **derived** — direct consequence of the identity (§4b) |
 | 89.5% of the algal band unreachable at lmr=1.0 | **derived** — exact, supersedes the 60.1% measured at lmr=0.8 (§4b) |
@@ -280,5 +365,7 @@ unsourced.** Recorded so the next attempt does not re-mine ¹⁴C compilations.
 - **Poorter H (2011).** Biomass allocation to leaves, stems and roots: meta-analyses of interspecific variation and environmental control. *New Phytologist* 193:30–50. [10.1111/j.1469-8137.2011.03952.x](https://doi.org/10.1111/j.1469-8137.2011.03952.x) — CrossRef issues this 2011-11-15 (print issue 2012-01); cited here as 2011 because the deterministic gate compares against the CrossRef `issued` year.
 - **Poorter H (2012).** Pitfalls and possibilities in the analysis of biomass allocation patterns in plants. *Frontiers in Plant Science* 3:259. [10.3389/fpls.2012.00259](https://doi.org/10.3389/fpls.2012.00259)
 - **Wright I J (2004).** The worldwide leaf economics spectrum. *Nature.* [10.1038/nature02403](https://doi.org/10.1038/nature02403) — cited for context only; its area-based values were not reachable, so §4 uses a dataset instead.
+- **Perera-Castro A V (2020).** It Is Hot in the Sun: Antarctic Mosses Have High Temperature Optima for Photosynthesis Despite Cold Climate. *Frontiers in Plant Science* 11:1178. [10.3389/fpls.2020.01178](https://doi.org/10.3389/fpls.2020.01178) — gold OA; ghostcite clean.
+- **Colesie C (2014).** Habitat stress initiates changes in composition, CO2 gas exchange and C-allocation as life traits in biological soil crusts. *The ISME Journal.* [10.1038/ismej.2014.47](https://doi.org/10.1038/ismej.2014.47) — green OA (PMC4184013); ghostcite clean.
 - **Amirian M (2026).** A Compilation of Marine Photosynthesis–Irradiance Data from 14C Incubation Experiments. Zenodo. [10.5281/zenodo.21908199](https://doi.org/10.5281/zenodo.21908199) — CC-BY-4.0 dataset; used as a NEGATIVE result (§4c).
 - **Westerband A C (2022).** Australia-wide photosynthetic trait dataset. Dryad. [10.5061/dryad.j9kd51cgr](https://doi.org/10.5061/dryad.j9kd51cgr) — CC-0 dataset. ghostcite returns tier U (not in CrossRef); Dryad DOIs are registered with DataCite, and DataCite confirms first creator Westerband, publicationYear 2022, publisher Dryad.

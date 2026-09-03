@@ -122,6 +122,19 @@ than being chosen and then justified.
       non-photosynthetic mass fraction, so it inherits the problem.
       `experiments/q1_crossover/RESULTS.md`, "The uncited assumption that sets
       the scale".
+- [ ] **`t_opt` GROUNDED 2026-09-02, and it moved the diagnosis — see
+      `docs/bio_grounding_2026-09-02.md` §4d.** Cold-climate photoautotrophs have
+      HIGH optima, not low: Antarctic mosses 19.0-26.3 C (ETRmax, six named
+      species) and 20-30 C for net CO2 assimilation (Perera-Castro et al. 2020);
+      Antarctic lichen soil crusts 5 and 7 C, temperate 17 C (Colesie et al.
+      2014). The LINEAR response needs t_opt in [12.0, 13.7] C to satisfy both
+      held-out anchors, and NO measured optimum falls in that window - the
+      lichens sit below it, the mosses above. **So the functional form is the
+      defect, not t_opt**, which is what the spec said Gate 2 would diagnose and
+      NOT what I predicted before the run. A re-registered Q2 needs a concave
+      response (beta or Arrhenius-with-deactivation) and a per-class t_opt.
+      Still ungrounded: T_opt for cold-adapted VASCULAR tissue - both sources
+      are non-vascular.
 - [ ] **Q2 registered and run, but NOT complete — the question was asked and
       the gate blocked the answer.** `experiments/q2_thermal/prereg.yaml`,
       `run.py`, results in `experiments/q2_thermal/RESULTS.md`. Gate 1
