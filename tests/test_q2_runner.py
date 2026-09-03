@@ -1,3 +1,4 @@
+import csv
 import subprocess
 import sys
 from pathlib import Path
@@ -11,6 +12,15 @@ RUN = REPO / "experiments" / "q2_thermal" / "run.py"
 PREREG = REPO / "experiments" / "q2_thermal" / "prereg.yaml"
 
 from experiments.q2_thermal import run  # noqa: E402
+from sim.organism import Organism  # noqa: E402
+from sim.physiology import crossover_distance  # noqa: E402
+from sim.thermal import equilibrium_temperature, temperature_response  # noqa: E402
+
+
+def _dict_rows(path):
+    """CSV rows as dicts, provenance-comment lines stripped."""
+    lines = [ln for ln in path.read_text().splitlines() if not ln.startswith("#")]
+    return list(csv.DictReader(lines))
 
 
 def _rows(path):
@@ -255,6 +265,128 @@ def test_synthetic_all_pass_prereg_exercises_the_rc0_path(tmp_path):
     assert len(limits_rows) == expected_limits, (
         f"limits.csv has {len(limits_rows)} lines, prereg implies {expected_limits} "
         "(one row per class,t_min pair, plus header)"
+    )
+
+    # --- value assertions -----------------------------------------------
+    # Everything above checks provenance keys, row counts, and the header
+    # line -- none of it pins a single number or a `binding` verdict. Four
+    # mutants each pass this whole test 77/77 unnoticed: build() hardcoding
+    # t_min=265.15 instead of the swept value, `binding = max(...)` instead
+    # of `min(...)`, sweep.csv's t_eq column emitting a constant "300.0000",
+    # and gate 1's `ok &= passed` deleted (the last is covered by
+    # test_gate_thermal_alone_fails_the_run instead). The checks below
+    # recompute expected numbers from the documented primitives directly --
+    # never by calling back into run.py's own sweep/selection code -- so they
+    # cannot pass just because run.py agrees with itself.
+    a = prereg["assumptions"]
+    sweep_dicts = _dict_rows(out / "sweep.csv")
+    limits_dicts = _dict_rows(out / "limits.csv")
+
+    from collections import defaultdict
+
+    by_key = defaultdict(list)
+    for row in sweep_dicts:
+        by_key[(row["class"], row["t_min"])].append(row)
+
+    for (cls, t_min_str), rows_for_key in by_key.items():
+        preset = prereg["presets"][cls]
+        t_min = float(t_min_str)
+        # Pick a row where the response is neither saturated at 0 (T <= t_min)
+        # nor at 1 (T >= t_opt) -- those two flats are exactly where a
+        # hardcoded t_min could coincidentally still match, since f(T)=1 for
+        # T >= t_opt regardless of which t_min was used to build the curve.
+        mid_rows = [r for r in rows_for_key if 0.05 < float(r["response"]) < 0.95]
+        assert mid_rows, (
+            f"{cls}/{t_min_str}: no sweep row in the response's linear zone"
+        )
+        row = mid_rows[len(mid_rows) // 2]
+        r_au = float(row["r_au"])
+        t_eq_expected = equilibrium_temperature(
+            r_au,
+            float(preset["area_ratio"]),
+            float(a["emissivity"]),
+            float(a["albedo"]),
+        )
+        # t_eq: kills a constant "300.0000" column outright.
+        assert float(row["t_eq"]) == pytest.approx(t_eq_expected, abs=1e-3), (
+            f"{cls}/{t_min_str} r={r_au}: t_eq {row['t_eq']} != independently "
+            f"computed {t_eq_expected:.4f}"
+        )
+        # response computed against the SWEPT t_min (not whatever build() may
+        # have hardcoded internally) -- this is the one that catches build()
+        # silently ignoring its t_min argument, since the two organism
+        # classes are built from a different t_min at each grid point.
+        response_expected = temperature_response(
+            t_eq_expected, t_min, float(a["t_opt_k"])
+        )
+        assert float(row["response"]) == pytest.approx(response_expected, rel=1e-4), (
+            f"{cls}/{t_min_str} r={r_au}: response {row['response']} != "
+            f"independently computed {response_expected:.6g} for t_min={t_min}"
+        )
+
+    # thermal_au must differ across a class's three registered t_min values --
+    # a build() that hardcoded t_min for the Organism would still leave
+    # thermal_au varying today (it is computed from the loop's own t_min, not
+    # org.t_min), but this pins the observable directly rather than assuming
+    # that wiring, and would catch a future refactor that routed thermal_au
+    # through org.t_min instead.
+    for cls in ("vascular", "algal"):
+        vals = {r["thermal_au"] for r in limits_dicts if r["class"] == cls}
+        assert len(vals) == 3, (
+            f"{cls}: expected 3 distinct thermal_au values across t_min_grid, "
+            f"got {vals}"
+        )
+
+    # binding, hand-derived independently for one row (vascular, t_min=265.15):
+    # each of the three candidate distances is recomputed from primitives
+    # (Organism, crossover_distance, outer_equilibrium_carbon_crossover), then
+    # `min()` is applied here in the test, separately from run.py's own
+    # candidates/min() call -- this is what a binding=max() mutant fails.
+    preset = prereg["presets"]["vascular"]
+    t_min_check = float(preset["t_min_grid"][0])
+    org_check = Organism(
+        "vascular",
+        a_max=preset["a_max"],
+        k=preset["k"],
+        r_d=preset["r_d"],
+        leaf_mass_ratio=preset["leaf_mass_ratio"],
+        area_ratio=preset["area_ratio"],
+        t_min=t_min_check,
+        t_opt=float(a["t_opt_k"]),
+        emissivity=float(a["emissivity"]),
+        albedo=float(a["albedo"]),
+    )
+    sw = prereg["sweep"]
+    r_min, r_max, ng = (
+        float(sw["r_min_au"]),
+        float(sw["r_max_au"]),
+        int(sw["n_grid"]),
+    )
+    t_1au = equilibrium_temperature(
+        1.0, org_check.area_ratio, org_check.emissivity, org_check.albedo
+    )
+    thermal_expected = (t_1au / t_min_check) ** 2
+    carbon_fixed_expected = crossover_distance(
+        org_check.net_carbon, r_min=r_min, r_max=r_max, n_grid=ng
+    )
+    carbon_eq_expected = run.outer_equilibrium_carbon_crossover(
+        org_check.net_carbon_at_equilibrium, r_min, r_max, ng
+    )
+    candidates_expected = {
+        "temperature": thermal_expected,
+        "carbon_fixed_t": carbon_fixed_expected,
+        "carbon_equilibrium": carbon_eq_expected,
+    }
+    binding_expected = min(candidates_expected, key=candidates_expected.get)
+
+    row = next(
+        r
+        for r in limits_dicts
+        if r["class"] == "vascular" and float(r["t_min"]) == t_min_check
+    )
+    assert row["binding"] == binding_expected, (
+        f"binding {row['binding']} != hand-derived {binding_expected} "
+        f"(candidates={candidates_expected})"
     )
 
 
