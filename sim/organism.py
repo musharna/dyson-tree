@@ -16,7 +16,12 @@ from sim.physiology import (
     irradiance,
     respiration,
 )
-from sim.thermal import equilibrium_temperature, temperature_response
+from sim.thermal import (
+    adapted_optimum,
+    equilibrium_temperature,
+    temperature_response,
+    temperature_response_gaussian,
+)
 
 
 @dataclass(frozen=True)
@@ -32,6 +37,7 @@ class Organism:
     t_opt: float = 298.15  # K, response optimum (declared assumption, not grounded)
     emissivity: float = 1.0  # declared assumption
     albedo: float = 0.0  # declared assumption
+    omega: float = 20.0  # K, Gaussian width; DECLARED ASSUMPTION, not grounded
 
     def __post_init__(self):
         if self.a_max <= 0:
@@ -58,6 +64,8 @@ class Organism:
             raise ValueError(
                 f"t_opt must be > t_min, got t_opt={self.t_opt}, t_min={self.t_min}"
             )
+        if self.omega <= 0:
+            raise ValueError(f"omega must be > 0, got {self.omega}")
 
     def leaf_respiration(self) -> float:
         """Dark respiration per unit photosynthetic area at t_set."""
@@ -88,6 +96,29 @@ class Organism:
         kk = self.k if k is None else k
         t = equilibrium_temperature(r_au, self.area_ratio, self.emissivity, self.albedo)
         f = temperature_response(t, self.t_min, self.t_opt)
+        gross = gross_assimilation(irradiance(r_au), self.a_max, kk) * f
+        return gross - respiration(self.r_d, t) / self.leaf_mass_ratio
+
+    def net_carbon_adapted(
+        self, r_au: float, r_home_au: float, k: float | None = None
+    ) -> float:
+        """Net carbon for a passive organism whose photosynthetic optimum was set
+        by its equilibrium temperature at r_home_au, then swept to r_au.
+
+        Adaptation is to the HABITAT temperature, not the instantaneous one: if
+        t_opt tracked tissue temperature at every distance the response would be 1
+        everywhere and temperature could never limit anything. So t_opt is fixed
+        once, at home, and the tissue then cools away from an optimum that does
+        not follow.
+
+        net_carbon() (Q1) and net_carbon_at_equilibrium() (Q2) are deliberately
+        untouched: both have committed records that must keep regenerating."""
+        kk = self.k if k is None else k
+        t = equilibrium_temperature(r_au, self.area_ratio, self.emissivity, self.albedo)
+        t_opt = adapted_optimum(
+            r_home_au, self.area_ratio, self.emissivity, self.albedo
+        )
+        f = temperature_response_gaussian(t, t_opt, self.omega)
         gross = gross_assimilation(irradiance(r_au), self.a_max, kk) * f
         return gross - respiration(self.r_d, t) / self.leaf_mass_ratio
 

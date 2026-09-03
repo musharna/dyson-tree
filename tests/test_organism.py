@@ -2,7 +2,12 @@ import pytest
 
 from sim.organism import ALGAL, PRESETS, VASCULAR, Organism, compensation_irradiance
 from sim.physiology import gross_assimilation, irradiance, respiration
-from sim.thermal import equilibrium_temperature, temperature_response
+from sim.thermal import (
+    adapted_optimum,
+    equilibrium_temperature,
+    temperature_response,
+    temperature_response_gaussian,
+)
 
 
 # --- calibration gates (the scientific tests) -------------------------------
@@ -243,3 +248,85 @@ def test_new_fields_validate(field, value):
         Organism("x", **dict(a_max=10.0, k=20.0, r_d=0.24, leaf_mass_ratio=1.0)).a_max
         == 10.0
     )
+
+
+def _algal_adapted():
+    return Organism(
+        "algal",
+        a_max=10.0,
+        k=20.0,
+        r_d=0.24,
+        leaf_mass_ratio=1.0,
+        area_ratio=4.0,
+        t_min=254.65,
+        omega=20.0,
+    )
+
+
+def test_omega_defaults_and_validates():
+    o = Organism("x", a_max=10.0, k=20.0, r_d=0.24, leaf_mass_ratio=1.0)
+    assert o.omega == 20.0
+    with pytest.raises(ValueError, match="omega"):
+        Organism("x", a_max=10.0, k=20.0, r_d=0.24, leaf_mass_ratio=1.0, omega=0.0)
+    assert Organism("x", a_max=10.0, k=20.0, r_d=0.24, leaf_mass_ratio=1.0).omega > 0
+
+
+def test_net_carbon_adapted_is_at_the_optimum_when_r_equals_r_home():
+    """At the home distance the tissue sits exactly at its adapted optimum, so the
+    Gaussian returns exactly 1 and assimilation is unscaled."""
+    o = _algal_adapted()
+    t_home = adapted_optimum(1.0, o.area_ratio, o.emissivity, o.albedo)
+    expected = (
+        gross_assimilation(irradiance(1.0), o.a_max, o.k) * 1.0
+        - respiration(o.r_d, t_home) / o.leaf_mass_ratio
+    )
+    assert o.net_carbon_adapted(1.0, r_home_au=1.0) == pytest.approx(expected, rel=1e-9)
+
+
+def test_net_carbon_adapted_pins_every_term_independently():
+    """Expected value built from primitives, NOT by calling the method under test.
+    This is what discriminates a wrong response argument, a wrong temperature for
+    respiration, or a dropped leaf_mass_ratio divisor."""
+    o = _algal_adapted()
+    r, r_home = 2.0, 1.0
+    t = equilibrium_temperature(r, o.area_ratio, o.emissivity, o.albedo)
+    t_opt = adapted_optimum(r_home, o.area_ratio, o.emissivity, o.albedo)
+    f = temperature_response_gaussian(t, t_opt, o.omega)
+    expected = (
+        gross_assimilation(irradiance(r), o.a_max, o.k) * f
+        - respiration(o.r_d, t) / o.leaf_mass_ratio
+    )
+    assert o.net_carbon_adapted(r, r_home_au=r_home) == pytest.approx(
+        expected, rel=1e-9
+    )
+    # positive control: the value is finite and the terms are not degenerate
+    assert 0.0 < f < 1.0
+
+
+def test_net_carbon_adapted_uses_leaf_mass_ratio():
+    whole = Organism(
+        "algal",
+        a_max=10.0,
+        k=20.0,
+        r_d=0.24,
+        leaf_mass_ratio=1.0,
+        area_ratio=4.0,
+        t_min=254.65,
+        omega=20.0,
+    ).net_carbon_adapted(1.0, r_home_au=1.0)
+    half = Organism(
+        "algal",
+        a_max=10.0,
+        k=20.0,
+        r_d=0.24,
+        leaf_mass_ratio=0.5,
+        area_ratio=4.0,
+        t_min=254.65,
+        omega=20.0,
+    ).net_carbon_adapted(1.0, r_home_au=1.0)
+    assert half < whole
+
+
+def test_net_carbon_adapted_does_not_disturb_the_q1_or_q2_paths():
+    assert VASCULAR.net_carbon(1.0) == pytest.approx(8.3550, abs=1e-4)
+    assert ALGAL.net_carbon(1.0) == pytest.approx(9.6290, abs=1e-4)
