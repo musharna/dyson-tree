@@ -83,7 +83,8 @@ soil crusts**: flat mats growing on the ground, whose radiative geometry sits
 close to a lamina (`area_ratio` 1–2), not a sphere (4). Modelled at
 `area_ratio=2`, the geometry its own measurement is closest to, the algal class
 predicts 57.8196 °C — 45.82 K above the window's upper edge (12.0 °C) — missing
-Gate B by roughly the same margin vascular does (28 K), and for the same
+Gate B on the same footing vascular does — 45.82 K past the window edge against
+vascular's 23.42 K, so about 1.8x further out, not the same margin — and for the same
 underlying reason: no transpirational cooling, no reflectance, and no hard
 temperature floor built into the assimilation term. This is a caveat on the one
 gate that passed, not a re-scoring of it: `area_ratio` stays frozen at its
@@ -166,11 +167,15 @@ shows.** `net_carbon_adapted` — the function this design added — carries no 
 temperature floor of its own: unlike Q2's `temperature_response` (0 below
 `t_min`, a switch), `temperature_response_gaussian` only decays asymptotically
 toward zero as habitat temperature departs from the adapted optimum. The
-registered belief was that the mechanism this experiment actually built — an
-organism's assimilation fading out as its Gaussian response detunes from
-`t_opt` moving away from home — would be the thing that finally drove net
+belief behind that label — **reconstructed here after the fact, because the
+pre-registration recorded `predicted_binding_limit.algal: carbon` with no
+rationale attached** — was that the mechanism this experiment actually built — an
+organism's assimilation fading out as its Gaussian response detunes from a
+`t_opt` fixed at home — would be the thing that finally drove net
 carbon through zero, since nothing else in the modeled carbon budget has a
-cutoff of its own. That belief was wrong: `classify_limit`'s three-way candidate
+cutoff of its own. Nothing in the frozen prereg states this; it is the reasoning
+as best it can be reconstructed, and a reader should treat it as such. That
+belief was wrong: `classify_limit`'s three-way candidate
 set also includes `temperature`, a floor with no dependence on the Gaussian
 machinery at all — `thermal_au = r_home_au * (T_eq(r_home_au)/t_min)**2`, the
 distance at which passive equilibrium temperature alone reaches the class's
@@ -220,7 +225,8 @@ assimilation of `9.6550`, giving `net = 9.6550 − 18.0694 = −8.4144` — temp
 scaled respiration outruns a saturating assimilation term even where the
 response curve sits at its peak. The companion claim, "narrower omega pushes the
 reachable zone further out," is also backwards: a narrower Gaussian raises the
-inner (hot-side) root — pulling it inward, toward home, exactly as the note's
+inner (hot-side) root from 0.7587 to 0.8787 AU — moving it OUTWARD, away from the
+Sun, which is the opposite of what the note's
 own numbers show (0.8787 AU at Ω=10 down to 0.7587 AU at Ω=30) — and pulls the
 outer root inward too (§4–5: 1.2120 AU at Ω=10 versus 2.5301 AU at Ω=30).
 Narrowing Ω shrinks the reachable zone from both ends; it does not push it
@@ -282,7 +288,9 @@ confirmed (not just assumed from the clean render):
   matching 1.2120 AU. The legend correctly lists only `algal`. A dashed vertical
   line at 1.1945 AU, labeled "binding thermal floor," marks the distance this run
   actually found limiting — it sits inside every curve's positive region, near the
-  peak, well short of where any of the five curves cross back to zero. The label
+  peak. It is NOT far short of the curves' zero-crossings: the omega=10 curve
+  crosses at 1.2120 AU, only 0.0175 AU (1.5%) beyond the floor, and the two are
+  visually coincident on the figure. The label
   overlaps the curves near the peak (a consequence of the log x-axis compressing
   everything near 1 AU) but is legible and not clipped.
 - `outer_limit_vs_omega.png`: net-carbon crossover (AU) vs. Ω, five points

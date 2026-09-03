@@ -19,14 +19,20 @@ dir.create(fig_dir, showWarnings = FALSE)
 # this is the limit the run actually found binding, NOT the carbon crossover
 # plotted below -- it is drawn on both figures so neither one visually asserts
 # the falsified "carbon" prediction on its own.
+# Hand-carried constant: limits.csv records outer_au and binding but NOT the
+# thermal candidate, so this cannot be derived from the data this script reads
+# and cannot be validated against it. If the prereg's r_home_au, area_ratio or
+# algal t_min ever change, this WILL silently desync. Value = r_home *
+# (T_eq(r_home, ar=4)/t_min)^2 = 1.0 * (278.3112/254.65)^2.
 thermal_floor_au <- 1.1945
 
 p1 <- ggplot(sweep, aes(r_au, net_carbon, colour = class, linetype = omega)) +
   geom_hline(yintercept = 0, colour = "grey40") +
   geom_vline(xintercept = thermal_floor_au, colour = "grey30", linetype = "dashed") +
+  geom_line() +
   annotate("text", x = thermal_floor_au, y = 5, label = "binding thermal floor",
            angle = 90, vjust = -0.6, hjust = 0, colour = "grey30", size = 3) +
-  geom_line() +
+  
   scale_x_log10() +
   coord_cartesian(ylim = c(-2, 10)) +
   scale_colour_dyson() +
