@@ -29,6 +29,8 @@ def equilibrium_temperature(
 
     Absorbed = S(1-albedo) per unit projected area; emitted = area_ratio *
     emissivity * sigma * T^4 per unit projected area. Setting them equal:
+    S(1-albedo) = area_ratio * emissivity * sigma * T^4, and solving for T
+    gives the expression this function returns.
     """
     if r_au <= 0:
         raise ValueError(f"r_au must be > 0, got {r_au}")

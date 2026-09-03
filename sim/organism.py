@@ -124,6 +124,19 @@ def crossover_distance_for(
 
 # Presets. a_max and k are stated assumptions (k is swept in the experiment);
 # r_d is the calibration knob. Values recorded in experiments/q1_crossover/prereg.yaml.
+# area_ratio and t_min are Q2-only fields (net_carbon(), which Q1 uses, reads
+# neither); ALGAL declares them explicitly as a sphere with the Pointing et al.
+# 2015 algal floor (254.65 K), matching experiments/q2_thermal/prereg.yaml's
+# algal preset (area_ratio: 4.0, t_min_grid middle value), rather than
+# silently inheriting VASCULAR's lamina defaults.
 VASCULAR = Organism("vascular", a_max=10.0, k=100.0, r_d=0.65, leaf_mass_ratio=0.5)
-ALGAL = Organism("algal", a_max=10.0, k=20.0, r_d=0.24, leaf_mass_ratio=0.8)
+ALGAL = Organism(
+    "algal",
+    a_max=10.0,
+    k=20.0,
+    r_d=0.24,
+    leaf_mass_ratio=0.8,
+    area_ratio=4.0,
+    t_min=254.65,
+)
 PRESETS = {VASCULAR.cls: VASCULAR, ALGAL.cls: ALGAL}

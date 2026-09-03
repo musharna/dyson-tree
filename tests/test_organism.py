@@ -111,9 +111,21 @@ def test_presets_registry():
 
 
 def test_q1_presets_still_construct_with_unchanged_carbon_values():
-    # The new fields are defaulted, so the Q1 presets are untouched.
+    # net_carbon() reads neither area_ratio nor t_min (VASCULAR leaves them
+    # defaulted; ALGAL now sets them explicitly below), so Q1's numbers are
+    # untouched either way.
     assert VASCULAR.net_carbon(1.0) == pytest.approx(8.3550, abs=1e-4)
     assert ALGAL.net_carbon(1.0) == pytest.approx(9.6290, abs=1e-4)
+
+
+def test_algal_preset_declares_sphere_geometry_and_its_own_thermal_floor():
+    """ALGAL used to set neither area_ratio nor t_min, so it silently
+    inherited VASCULAR's lamina defaults (area_ratio=2.0, t_min=265.15) --
+    a vascular freezing point on a sphere. Both the spec and
+    experiments/q2_thermal/prereg.yaml's algal preset say area_ratio=4.0
+    (sphere) and t_min=254.65 K (Pointing et al. 2015 algal floor)."""
+    assert ALGAL.area_ratio == 4.0
+    assert ALGAL.t_min == pytest.approx(254.65)
 
 
 def test_new_fields_have_defaults():
