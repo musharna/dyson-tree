@@ -127,6 +127,23 @@ def test_gaussian_stays_in_the_unit_interval_far_from_the_optimum():
         assert 0.0 <= v <= 1.0
 
 
+def test_gaussian_distinguishes_from_laplace_at_two_omega_offset():
+    """Gaussian exp(-(x^2)) vs Laplace exp(-|x|) are tangent at |x|=1 but diverge
+    beyond. At offset 2*omega: Gaussian gives exp(-4) ≈ 0.0183, Laplace gives
+    exp(-2) ≈ 0.1353. A Laplace implementation would pass all the tangent-point
+    tests but fail here. This test captures the squared term in the definition."""
+    t_opt = 298.15
+    omega = 20.0
+    offset = 2.0 * omega
+    # Expected value for Gaussian: exp(-(2*omega/omega)^2) = exp(-4)
+    expected_gaussian = math.exp(-4.0)
+    actual = temperature_response_gaussian(t_opt + offset, t_opt=t_opt, omega=omega)
+    assert actual == pytest.approx(expected_gaussian, rel=1e-12)
+    # Laplace would give exp(-2) ≈ 0.1353, which is >5x larger
+    laplace_value = math.exp(-2.0)
+    assert actual < laplace_value / 5.0
+
+
 @pytest.mark.parametrize(
     "kwargs, needle",
     [
@@ -134,6 +151,8 @@ def test_gaussian_stays_in_the_unit_interval_far_from_the_optimum():
         (dict(t=298.15, t_opt=298.15, omega=-5.0), "omega"),
         (dict(t=0.0, t_opt=298.15, omega=20.0), "t"),
         (dict(t=-10.0, t_opt=298.15, omega=20.0), "t"),
+        (dict(t=298.15, t_opt=0.0, omega=20.0), "t_opt"),
+        (dict(t=298.15, t_opt=-5.0, omega=20.0), "t_opt"),
     ],
 )
 def test_gaussian_rejects_out_of_range_inputs(kwargs, needle):
@@ -168,3 +187,18 @@ def test_adapted_optimum_rejects_a_nonpositive_home_distance():
     with pytest.raises(ValueError, match="r_au"):
         adapted_optimum(0.0, area_ratio=4.0)
     assert adapted_optimum(1.0, area_ratio=4.0) > 0
+
+
+def test_adapted_optimum_respects_emissivity_and_albedo_parameters():
+    """Verify that emissivity and albedo are actually passed to equilibrium_temperature,
+    not dropped. Tests that the delegation is complete."""
+    from sim.thermal import equilibrium_temperature
+
+    # Non-default emissivity and albedo change the result substantially
+    t_with_defaults = adapted_optimum(1.0, area_ratio=4.0)
+    t_with_modified = adapted_optimum(1.0, area_ratio=4.0, emissivity=0.9, albedo=0.2)
+    # Verify they match what equilibrium_temperature produces with same params
+    expected = equilibrium_temperature(1.0, area_ratio=4.0, emissivity=0.9, albedo=0.2)
+    assert t_with_modified == pytest.approx(expected, rel=1e-12)
+    # And verify that modifying these parameters actually changes the result
+    assert t_with_modified != t_with_defaults
