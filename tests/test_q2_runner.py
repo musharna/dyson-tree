@@ -144,10 +144,15 @@ def test_assumption_drift_refuses_to_run(tmp_path):
         run.main(["--prereg", str(p), "--out", str(tmp_path / "o")])
 
 
-def test_real_prereg_writes_all_three_csvs_with_provenance(tmp_path):
+def test_real_prereg_gate_failure_writes_gates_csv_with_provenance(tmp_path):
+    """Against the real, frozen prereg, gate 2 always fails, so rc == 0 never
+    happens here (that path -- writing sweep.csv/limits.csv -- is exercised by
+    test_synthetic_all_pass_prereg_exercises_the_rc0_path instead, on a widened
+    in-memory copy). This test's name used to promise all three CSVs while
+    only ever checking one, with a dead `if rc == 0:` branch that never ran."""
     out = tmp_path / "ok"
     rc = run.main(["--prereg", str(PREREG), "--out", str(out)])
-    assert rc in (0, 2)
+    assert rc == 2
     header = (out / "gates.csv").read_text().splitlines()
     for key in (
         "# git_sha=",
@@ -160,14 +165,6 @@ def test_real_prereg_writes_all_three_csvs_with_provenance(tmp_path):
         "# written=",
     ):
         assert any(h.startswith(key) for h in header), key
-    if rc == 0:
-        prereg = yaml.safe_load(PREREG.read_text())
-        n = int(prereg["sweep"]["n_grid"])
-        expected = 1 + sum(len(p["t_min_grid"]) * n for p in prereg["presets"].values())
-        assert len(_rows(out / "sweep.csv")) == expected, (
-            f"sweep.csv has {len(_rows(out / 'sweep.csv'))} lines, "
-            f"pre-registration implies {expected} (n_grid={n})"
-        )
 
 
 def test_cli_exits_nonzero_when_a_gate_fails(tmp_path):
@@ -416,12 +413,19 @@ def test_partial_gate_response_failure_still_exits_2(tmp_path):
 
 
 def test_committed_q2_csvs_regenerate_exactly(tmp_path):
-    """The committed record must be what the committed code produces."""
+    """The committed record must be what the committed code produces. This
+    also asserts the branch's headline claim -- "the registered run exits
+    2" -- which nothing else in this suite states against the real prereg
+    directly (test_real_prereg_gate_failure_writes_gates_csv_with_provenance
+    covers the same fact, but a regeneration test asserting nothing about the
+    return code, only that byte content matches, is silent on the one thing
+    the committed CSVs are evidence FOR)."""
     src = REPO / "experiments" / "q2_thermal"
     if not (src / "gates.csv").exists():
         pytest.skip("Q2 has not been run into the repo directory yet")
     out = tmp_path / "regen"
-    run.main(["--prereg", str(PREREG), "--out", str(out)])
+    rc = run.main(["--prereg", str(PREREG), "--out", str(out)])
+    assert rc == 2, "the registered Q2 run is expected to exit 2 (gate 2 fails)"
     for name in ("gates.csv", "sweep.csv", "limits.csv"):
         if not (src / name).exists():
             continue
