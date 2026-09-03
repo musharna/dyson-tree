@@ -1,0 +1,143 @@
+# Q2b pre-registration. Written BEFORE run.py produces limits.csv. Do not edit after.
+registered: 2026-09-02
+question: >
+  For a passive organism at radiative equilibrium, adapted at a home distance of
+  1 AU so its photosynthetic optimum equals its tissue temperature there, at what
+  heliocentric distance does whole-organism net carbon cross zero, and does the
+  outer limit come from light, carbon, or temperature?
+spec: docs/superpowers/specs/2026-09-02-q2b-adapted-optimum-design.md
+grounding: docs/bio_grounding_2026-09-02.md
+
+assumptions:
+  tsi_w_m2: 1360.8 # Kopp & Lean 2011, 10.1029/2010GL045777
+  par_fraction: 0.45 # assumption
+  photons_per_j: 4.57 # assumption
+  t_ref_k: 293.0
+  q10: 2.0 # assumption
+  sigma_w_m2_k4: 5.670374419e-8 # CODATA, exact by SI definition
+  emissivity: 1.0 # DECLARED ASSUMPTION, not grounded
+  albedo: 0.0 # DECLARED ASSUMPTION, not grounded
+  r_home_au: 1.0 # the distance the organism is adapted at
+  gate_b_half_width_k: 5.0 # DECLARED ASSUMPTION -- no source gives a tolerance
+
+# Gate A: thermal physics, retained from Q2 unchanged.
+gate_thermal:
+  r_au: 1.0
+  area_ratio: 4.0
+  t_eq_k: [275.0, 282.0]
+
+# Gate B: the adaptation premise. PARAMETER-FREE -- the model predicts t_opt from
+# geometry, and the prediction is compared against measurement.
+# Outcomes are COMPUTED AND DISCLOSED here, before the run: algal PASSES,
+# vascular FAILS by 28 K. A gate's admissible set must be known in advance; a
+# PREDICTION's answer must not, and the prediction below is not.
+gate_adaptation:
+  algal:
+    measured_c: [5.0, 7.0] # Colesie et al. 2014, Antarctic soil crusts
+    predicted_c: 5.16
+    expect: pass
+  vascular:
+    measured_c: [29.4] # Scafaro et al. 2023, cool-grown C3, 49 species
+    predicted_c: 57.82
+    expect: fail
+
+# Koerner's rate anchors are RETIRED as a gate here. Under the June Gaussian and
+# the grounded 29.4 C optimum, no omega satisfies both (scanned 1-200 C). Recorded
+# as a documented conflict, not used as a check. See the spec.
+
+presets:
+  algal:
+    a_max: 10.0
+    k: 20.0
+    r_d: 0.24
+    leaf_mass_ratio: 1.0 # unicellular: no non-photosynthetic organ
+    area_ratio: 4.0 # sphere
+    t_min: 254.65 # Pointing et al. 2015 via bio_grounding §1
+  vascular:
+    a_max: 10.0
+    k: 100.0
+    r_d: 0.65
+    leaf_mass_ratio: 0.5
+    area_ratio: 2.0 # flat lamina
+    t_min: 265.15
+
+# DECLARED ASSUMPTION, not cited. June et al. 2004 is closed access and two
+# open-access sweeps found no numeric omega. Swept because the answer is most
+# sensitive to the least grounded parameter.
+omega_grid_k: [10.0, 15.0, 20.0, 25.0, 30.0]
+
+sweep:
+  r_min_au: 0.5
+  r_max_au: 100.0
+  n_grid: 200
+
+# Measured in Step 5 BEFORE this file was written, via the exact command in
+# experiments/q2b_adapted/../.superpowers task-3-brief.md Step 5 (also verbatim
+# in task-3-report.md). NOT assumed to match Q2's linear-ramp shape
+# [(-1,1),(1,-1)], and it does NOT match for every case:
+#
+#   algal:    every omega in {10,15,20,25,30} -> [(-1, 1), (1, -1)]
+#             (one crossing into positive net carbon near home, one crossing
+#             back to negative further out -- Q2's shape, reproduced here.)
+#   vascular: omega in {10, 15, 20} -> [] (NO sign change at all: net carbon
+#             is negative across the ENTIRE [0.5, 100] AU grid, including at
+#             the 1 AU home distance -- the organism never breaks even
+#             anywhere on the swept range for these three omegas).
+#             omega in {25, 30} -> [(-1, 1), (1, -1)], Q2's shape.
+#
+# A root selector that assumes exactly one [(-1,1),(1,-1)] transition list
+# for every case will raise on vascular/omega in {10,15,20}: there is no root
+# to select, not a wrong one. Task 4 must branch on len(transitions) == 0 as
+# a legitimate, disclosed outcome (no crossover distance exists), not treat
+# it as an error to work around.
+curve_shape:
+  transitions_per_omega:
+    algal:
+      "10.0": [[-1, 1], [1, -1]]
+      "15.0": [[-1, 1], [1, -1]]
+      "20.0": [[-1, 1], [1, -1]]
+      "25.0": [[-1, 1], [1, -1]]
+      "30.0": [[-1, 1], [1, -1]]
+    vascular:
+      "10.0": []
+      "15.0": []
+      "20.0": []
+      "25.0": [[-1, 1], [1, -1]]
+      "30.0": [[-1, 1], [1, -1]]
+
+reachable:
+  note: >
+    algal: a first root (net carbon crossing from negative to positive moving
+    outward from the inner edge) exists for every omega in the grid, and moves
+    INWARD as omega widens: 0.8787 AU (omega=10) -> 0.8376 -> 0.8052 -> 0.7794
+    -> 0.7587 AU (omega=30). Narrower omega pushes the reachable zone
+    further out, because a narrower Gaussian keeps the organism pinned near
+    its adapted temperature (near 1 AU) for longer before the outward cooling
+    trend detunes it back below the response threshold.
+
+    vascular: for omega in {10, 15, 20}, net carbon is negative across the
+    WHOLE swept range [0.5, 100] AU -- there is no distance, including the 1
+    AU home distance itself, at which this organism's adapted parameters
+    produce positive net carbon. No crossover distance exists for these three
+    omegas; crossover_distance() raises "no sign change" (as designed) rather
+    than returning a number. Only at the two widest scanned omegas (25, 30)
+    does a root reappear, at 1.0840 AU (omega=25) and 1.0705 AU (omega=30) --
+    just outside the home distance, meaning even the home distance itself is
+    below the survivable window for the vascular preset except at these wide
+    omegas. This is downstream of the same Gate B failure: the vascular
+    preset's PREDICTED t_opt (57.82 C) sits so far above its equilibrium
+    temperature at 1 AU (~5-8 C) that only a very wide Gaussian tail reaches
+    positive gross assimilation at all. A prediction outside this reachable
+    set is not a prediction: the vascular class's outer-limit question may
+    be moot at several grid omegas because it never has an inner-viable zone
+    to have an outer edge of.
+
+# NO numeric band is registered, deliberately. Q1 registered a band and 89.5% of it
+# was unreachable; Q2 registered a prediction no parameters could satisfy. The fix is
+# NOT a band drawn from the Step 5 reachability scan -- a band derived from the scan
+# contains the answer by construction and cannot fail. No independent basis for a
+# numeric band exists here, so none is invented.
+predicted_binding_limit:
+  algal: carbon # the QUALITATIVE prediction, registered; genuinely unknown
+predicted_outer_limit_au:
+  algal: null # not registered -- see the note above; the distance is REPORTED
