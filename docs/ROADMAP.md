@@ -6,11 +6,18 @@ roadmap that nobody discovers is worse than no roadmap.
 
 ## Where this stands
 
-**Loop A exists and has produced one measured number.** Scaffolded 2026-09-01; a
+**Loop A exists and has produced one measured number; Q2 is registered and run,
+but its own gate blocked it from producing a second.** Scaffolded 2026-09-01; a
 carbon-budget model (loop A, light-only, tissue temperature fixed) lives under
 `sim/`. Q1 is registered and run (`experiments/q1_crossover/RESULTS.md`): the
 vascular default-k prediction held at 13.69 AU; the algal default-k prediction
-failed at 67.26 AU against [35, 55]. Q2 (heating cost) is declared, not built.
+failed at 67.26 AU against [35, 55]. Q2 (radiative equilibrium + a held-out
+temperature-response gate, `experiments/q2_thermal/RESULTS.md`) replaced the
+earlier "heating cost" framing; it is registered and run, but Gate 2 (held-out
+response anchors) FAILED — the declared `t_opt` of 298.15 K is a mesophyte
+optimum while the gate anchors are for cold-adapted tissue. No sweep, no
+limits, and no answer to "what binds" were produced; see RESULTS.md for the
+implied `t_opt` diagnosis and what would resolve it.
 
 ## The first decision, before anything else
 
@@ -115,5 +122,14 @@ than being chosen and then justified.
       non-photosynthetic mass fraction, so it inherits the problem.
       `experiments/q1_crossover/RESULTS.md`, "The uncited assumption that sets
       the scale".
-- [ ] Q2 (declared): carbon cost of holding tissue temperature against
-      radiative loss; second crossover
+- [ ] **Q2 registered and run, but NOT complete — the question was asked and
+      the gate blocked the answer.** `experiments/q2_thermal/prereg.yaml`,
+      `run.py`, results in `experiments/q2_thermal/RESULTS.md`. Gate 1
+      (thermal physics at 1 AU) passed at 278.31 K. Gate 2 (held-out rate
+      anchors for cold-adapted tissue at 5 °C and 0 °C) FAILED both anchors
+      (0.3939 vs [0.60, 0.70]; 0.2424 vs [0.30, 0.40]) against the declared
+      mesophyte `t_opt` of 298.15 K — no sweep ran, so no limits table and no
+      "what binds" answer exist. RESULTS.md computes the `t_opt` band the
+      anchors imply ([285.15, 286.82] K) as a diagnosis only, explicitly not
+      adopted. Next step: source `t_opt` for cold-adapted tissue from the
+      literature and re-register; do not tune the frozen prereg to pass.

@@ -180,3 +180,20 @@ def test_partial_gate_response_failure_still_exits_2(tmp_path):
         "expected the thermal gate and the widened anchor to pass"
     )
     assert not (out / "limits.csv").exists()
+
+
+def test_committed_q2_csvs_regenerate_exactly(tmp_path):
+    """The committed record must be what the committed code produces."""
+    src = REPO / "experiments" / "q2_thermal"
+    if not (src / "gates.csv").exists():
+        pytest.skip("Q2 has not been run into the repo directory yet")
+    out = tmp_path / "regen"
+    run.main(["--prereg", str(PREREG), "--out", str(out)])
+    for name in ("gates.csv", "sweep.csv", "limits.csv"):
+        if not (src / name).exists():
+            continue
+        committed = [x for x in (src / name).read_text().splitlines()
+                     if not x.startswith("# git_sha=") and not x.startswith("# written=")]
+        fresh = [x for x in (out / name).read_text().splitlines()
+                 if not x.startswith("# git_sha=") and not x.startswith("# written=")]
+        assert committed == fresh, f"{name} does not regenerate"

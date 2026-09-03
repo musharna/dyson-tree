@@ -1,0 +1,13 @@
+# git_sha=821df11b06ef4c40918b48697fc71751d79feda1
+# thermal_md5=95b021360a70a5b4b0e16e643fa98500
+# organism_md5=153da4cac9084fee3514e33e153b42f4
+# physiology_md5=adacb668ea4f79b428ca0155381da220
+# prereg_md5=f68949559939193a48a092546c638726
+# python=3.13.2
+# numpy=2.3.5
+# scipy=1.16.3
+# written=2026-09-02T20:12:34-04:00
+gate,detail,observed,lo,hi,passed
+thermal,T_eq at 1.0 AU,278.3112,275.0,282.0,True
+response,f(T=278.15 K),0.3939,0.6,0.7,False
+response,f(T=273.15 K),0.2424,0.3,0.4,False
