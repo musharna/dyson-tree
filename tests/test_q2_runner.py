@@ -18,7 +18,23 @@ def _rows(path):
     return lines
 
 
-def test_gate_thermal_failure_exits_2_and_clears_stale_limits(tmp_path, monkeypatch):
+def _header(path):
+    return [x for x in path.read_text().splitlines() if x.startswith("#")]
+
+
+PROVENANCE_KEYS = (
+    "# git_sha=",
+    "# thermal_md5=",
+    "# organism_md5=",
+    "# prereg_md5=",
+    "# python=",
+    "# numpy=",
+    "# scipy=",
+    "# written=",
+)
+
+
+def test_gate_thermal_failure_exits_2_and_clears_stale_limits(tmp_path):
     out = tmp_path / "out"
     out.mkdir()
     # Pre-seed a stale PASSING limits.csv: not-writing is not enough.
@@ -93,4 +109,74 @@ def test_response_gate_rejects_a_wrong_functional_form(tmp_path, monkeypatch):
     assert run.main(["--prereg", str(PREREG), "--out", str(out)]) == 2
     rows = _rows(out / "gates.csv")
     assert any("False" in r for r in rows), "gate 2 accepted a flat 0.99 response"
+    assert not (out / "limits.csv").exists()
+
+
+def test_synthetic_all_pass_prereg_exercises_the_rc0_path(tmp_path):
+    """Against the real, frozen prereg, gate 2 always fails (mesophyte t_opt vs
+    cold-adapted anchors), so `rc == 0` never happens in
+    test_real_prereg_writes_all_three_csvs_with_provenance and sweep.csv/limits.csv
+    get zero automated coverage from it. Widen ONLY gate_response's anchor windows
+    on an in-memory copy -- never prereg.yaml itself, which stays frozen and its
+    registered verdict stays exactly what it is -- so both gates pass here, and
+    assert what that dead branch was meant to assert."""
+    good = yaml.safe_load(PREREG.read_text())
+    for anchor in good["gate_response"]["anchors"]:
+        anchor["lo"], anchor["hi"] = 0.0, 1.0
+    p = tmp_path / "allpass.yaml"
+    p.write_text(yaml.safe_dump(good))
+    out = tmp_path / "allpass_out"
+
+    rc = run.main(["--prereg", str(p), "--out", str(out)])
+    assert rc == 0
+
+    for name in ("gates.csv", "sweep.csv", "limits.csv"):
+        header = _header(out / name)
+        for key in PROVENANCE_KEYS:
+            assert any(h.startswith(key) for h in header), f"{name} missing {key}"
+
+    prereg = yaml.safe_load(PREREG.read_text())
+    n = int(prereg["sweep"]["n_grid"])
+    presets = prereg["presets"].values()
+
+    sweep_rows = _rows(out / "sweep.csv")
+    expected_sweep = 1 + sum(len(pr["t_min_grid"]) * n for pr in presets)
+    assert len(sweep_rows) == expected_sweep, (
+        f"sweep.csv has {len(sweep_rows)} lines, prereg implies {expected_sweep} "
+        f"(n_grid={n})"
+    )
+
+    limits_rows = _rows(out / "limits.csv")
+    assert limits_rows[0] == (
+        "class,t_min,thermal_au,carbon_fixed_t_au,carbon_equilibrium_au,binding"
+    )
+    expected_limits = 1 + sum(len(pr["t_min_grid"]) for pr in presets)
+    assert len(limits_rows) == expected_limits, (
+        f"limits.csv has {len(limits_rows)} lines, prereg implies {expected_limits} "
+        "(one row per class,t_min pair, plus header)"
+    )
+
+
+def test_partial_gate_response_failure_still_exits_2(tmp_path):
+    """Exactly one response anchor passes and the other fails. Both anchors failing
+    identically (the flat-0.99 test above) cannot distinguish correct `ok &= passed`
+    accumulation from a last-wins bug that only remembers the final anchor; this can."""
+    mixed = yaml.safe_load(PREREG.read_text())
+    anchors = mixed["gate_response"]["anchors"]
+    # anchors[0] (5 C) is left narrow -> fails against the real ~0.394 response.
+    # anchors[1] (0 C) is widened -> passes against the real ~0.242 response.
+    anchors[1]["lo"], anchors[1]["hi"] = 0.0, 1.0
+    p = tmp_path / "mixed.yaml"
+    p.write_text(yaml.safe_dump(mixed))
+    out = tmp_path / "mixed_out"
+
+    assert run.main(["--prereg", str(p), "--out", str(out)]) == 2
+    rows = _rows(out / "gates.csv")[1:]  # drop the CSV header row
+    assert len(rows) == 3, (
+        f"expected 3 gate rows (thermal + 2 anchors), got {len(rows)}"
+    )
+    assert sum("False" in r for r in rows) == 1, "expected exactly one failing gate row"
+    assert sum("True" in r for r in rows) == 2, (
+        "expected the thermal gate and the widened anchor to pass"
+    )
     assert not (out / "limits.csv").exists()
