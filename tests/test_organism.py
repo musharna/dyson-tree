@@ -383,3 +383,45 @@ def test_net_carbon_adapted_actually_uses_omega():
     assert v20 - v10 > 1.0
     assert v20 == pytest.approx(6.482859544582752, rel=1e-9)
     assert v10 == pytest.approx(1.8170335849919963, rel=1e-9)
+
+
+def test_net_carbon_adapted_leaf_mass_ratio_divides_respiration_not_gross():
+    """Guards against a surviving mutant: swapping
+    `gross - respiration(...) / self.leaf_mass_ratio` for
+    `gross * self.leaf_mass_ratio - respiration(...)` passes every test above,
+    because every one of them uses leaf_mass_ratio=1.0 (where the divisor is a
+    no-op) except test_net_carbon_adapted_uses_leaf_mass_ratio, which only
+    asserts `half < whole` -- a comparison the mutant also satisfies. The
+    divisor is the whole-organism claim: non-photosynthetic mass respires but
+    does not assimilate, so dividing respiration (not multiplying gross) is
+    what scales a leaf-level rate up to a whole-organism one.
+
+    Expected value built from primitives at leaf_mass_ratio=0.5, r_au != r_home_au
+    so gross, f, and respiration are all non-trivial and not equal to each other."""
+    r_au, r_home_au = 1.10, 1.0
+    o = Organism(
+        "algal",
+        a_max=10.0,
+        k=20.0,
+        r_d=0.24,
+        leaf_mass_ratio=0.5,
+        area_ratio=4.0,
+        t_min=254.65,
+        omega=20.0,
+    )
+    t = equilibrium_temperature(r_au, o.area_ratio, o.emissivity, o.albedo)
+    t_opt = adapted_optimum(r_home_au, o.area_ratio, o.emissivity, o.albedo)
+    f = temperature_response_gaussian(t, t_opt, o.omega)
+    gross = gross_assimilation(irradiance(r_au), o.a_max, o.k) * f
+    resp = respiration(o.r_d, t)
+    expected = gross - resp / o.leaf_mass_ratio
+    # The mutant's value, quoted so a future reader can see the two are
+    # genuinely different results, not a tolerance artifact.
+    mutant_value = gross * o.leaf_mass_ratio - resp
+    assert expected != pytest.approx(mutant_value, rel=1e-6)
+    assert o.net_carbon_adapted(r_au, r_home_au=r_home_au) == pytest.approx(
+        expected, rel=1e-9
+    )
+    assert o.net_carbon_adapted(r_au, r_home_au=r_home_au) == pytest.approx(
+        6.447529593545817, rel=1e-9
+    )
