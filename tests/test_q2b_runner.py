@@ -1,7 +1,9 @@
+import math
 import subprocess
 import sys
 from pathlib import Path
 
+import numpy as np
 import pytest
 import yaml
 
@@ -11,6 +13,7 @@ RUN = REPO / "experiments" / "q2b_adapted" / "run.py"
 PREREG = REPO / "experiments" / "q2b_adapted" / "prereg.yaml"
 
 from experiments.q2b_adapted import run  # noqa: E402
+from sim.organism import Organism  # noqa: E402
 from sim.thermal import equilibrium_temperature  # noqa: E402
 
 PROVENANCE_KEYS = (
@@ -179,3 +182,105 @@ def test_committed_q2b_csvs_regenerate_exactly(tmp_path):
             if not x.startswith("# git_sha=") and not x.startswith("# written=")
         ]
         assert committed == fresh, f"{name} does not regenerate"
+
+
+# --- outer_carbon_crossover / classify_limit: unguarded branches -----------
+#
+# All three of outer_carbon_crossover's disclosed branches survive the suite
+# above unchanged: nan->0.0, the shape guard->False, and dropping
+# "none_in_window" all still pass 117 tests, because the real prereg never
+# exercises them -- vascular is excluded at Gate B and algal always produces
+# exactly two roots. These tests use synthetic net_fn closures (not routed
+# through a real class/omega) so the three disclosed, non-real-data shapes
+# are each actually reached.
+
+
+def test_outer_carbon_crossover_all_negative_returns_nan():
+    """A curve that never crosses zero: the registered "no crossover exists"
+    outcome (prereg.yaml curve_shape, vascular at omega in {10,15,20}).
+    Mutant this guards: `return float("nan")` -> `return 0.0`."""
+    always_negative = lambda r: -1.0 - 0.01 * r  # noqa: E731
+    result = run.outer_carbon_crossover(always_negative, 0.5, 100.0, 50)
+    assert math.isnan(result)
+
+
+def test_outer_carbon_crossover_three_root_curve_raises_not_swallowed():
+    """A shape Task 3 never measured (three sign changes, not the registered
+    [] or [(-1,1),(1,-1)]) must raise UnexpectedSignStructure rather than
+    silently picking a root or returning NaN. Mutant this guards: the shape
+    guard `if transitions != [(-1, 1), (1, -1)]:` -> `if False:`, which would
+    let this net_fn fall through to `idx[-1]` and return a number instead of
+    raising."""
+
+    def three_root(r):
+        if r < 2.0:
+            return -1.0
+        if r < 5.0:
+            return 1.0
+        if r < 20.0:
+            return -1.0
+        return 1.0
+
+    with pytest.raises(run.UnexpectedSignStructure, match="unexpected sign structure"):
+        run.outer_carbon_crossover(three_root, 0.5, 100.0, 60)
+
+
+def test_outer_carbon_crossover_two_root_shape_still_returns_the_outer_root():
+    """Positive control for the two tests above: the registered two-root
+    shape must still work, so a guard that rejects everything is not what is
+    passing the negative cases."""
+
+    def two_root(r):
+        return -1.0 if (r < 1.0 or r > 10.0) else 1.0
+
+    result = run.outer_carbon_crossover(two_root, 0.5, 100.0, 60)
+    assert 9.0 < result < 11.0
+
+
+def _degenerate_organism() -> Organism:
+    """An organism whose respiration swamps assimilation everywhere on the
+    registered sweep window, so BOTH net_carbon (light) and net_carbon_adapted
+    (carbon) are negative at every grid point -- verified directly: the
+    maximum of net_carbon_adapted over the sweep grid is ~-1e-6, never
+    positive. r_d=100 against a_max=10 (leaf_mass_ratio=1) makes
+    organism_respiration alone exceed a_max, the ceiling gross_assimilation
+    can ever reach."""
+    return Organism(
+        "degenerate",
+        a_max=10.0,
+        k=20.0,
+        r_d=100.0,
+        leaf_mass_ratio=1.0,
+        area_ratio=4.0,
+        t_min=254.65,
+        omega=20.0,
+    )
+
+
+def test_classify_limit_all_nonfinite_candidates_reports_none_in_window():
+    """The three-way selection must degrade to "none_in_window" when nothing
+    is finite, rather than raising (e.g. min() on an empty dict). Mutant this
+    guards: `min(finite, key=finite.get) if finite else "none_in_window"` ->
+    `min(finite, key=finite.get)` (dropping the empty-dict fallback), which
+    raises ValueError instead of returning the disclosed sentinel.
+
+    thermal_au is a closed-form (r_home_au * (T_eq/t_min)**2) that cannot go
+    non-finite for any valid Organism, so equilibrium_temperature -- the one
+    function classify_limit calls to build it -- is monkeypatched to return
+    NaN for the duration of this test only, and restored in a finally block.
+    light_au and carbon_au go NaN on their own via the degenerate organism
+    above (no monkeypatching needed for those two)."""
+    org = _degenerate_organism()
+    original = run.equilibrium_temperature
+    run.equilibrium_temperature = lambda *a, **k: float("nan")
+    try:
+        result = run.classify_limit(org, 1.0, 0.5, 100.0, 50)
+    finally:
+        run.equilibrium_temperature = original
+    assert run.equilibrium_temperature is original, (
+        "equilibrium_temperature not restored"
+    )
+    assert not np.isfinite(result["temperature"])
+    assert not np.isfinite(result["light"])
+    assert not np.isfinite(result["carbon"])
+    assert result["binding"] == "none_in_window"
