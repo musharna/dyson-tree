@@ -323,6 +323,12 @@ and the test passes again.
 
 ## 12. Suite and lint
 
-`python3 -m pytest -q`: **117 passed**. `ruff check .`: **10 errors**, all
-pre-existing `E741` (ambiguous variable name `l`) in `tests/test_runner.py` —
-no new errors introduced by this task.
+`python3 -m pytest -q`: **117 passed** at the run recorded above (§1). A
+subsequent fix wave (findings A–H, this document's §3/§4/§6/§7 corrections,
+`plot.R`'s relabeling, and new tests pinning `net_carbon_adapted`'s
+`leaf_mass_ratio` divisor and `outer_carbon_crossover`'s/`classify_limit`'s
+three previously-unguarded branches) added 5 tests with no change to any
+committed CSV, prereg, or the numbers in §1's stdout: **122 passed**.
+`ruff check .`: **10 errors**, all pre-existing `E741` (ambiguous variable
+name `l`) in `tests/test_runner.py` — no new errors introduced by this task
+or the fix wave.
