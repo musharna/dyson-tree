@@ -131,7 +131,13 @@ than being chosen and then justified.
       compensation-point source AND left LMR free needing its own citation.
       Binding on the NEXT registration — Q1's prereg stays frozen.
       See `docs/bio_grounding_2026-09-02.md` §3.
-- [ ] **The algal gate needs a LOWER bound on I_c — and once the organism is
+- [ ] **CONDITIONAL on the pressure-vessel question above — this constrains a
+      carbon crossover computed at a FIXED tissue temperature, which the vapour-
+      pressure finding shows requires containment. The methodological half is live
+      regardless and is the part to carry forward: REGISTER THE BAND IN THE
+      QUANTITY THE GATE CAN CHECK.**
+
+      **The algal gate needs a LOWER bound on I_c — and once the organism is
       unicellular that floor is SUFFICIENT.** For lmr = 1.0, r\* = sqrt(C/I_c)
       exactly (C = 2798.4852), verified at 9 (a_max, k) pairs: r\* becomes a
       pure function of the quantity the gate measures, so the gate stops being
@@ -160,7 +166,15 @@ than being chosen and then justified.
       non-photosynthetic mass fraction, so it inherits the problem.
       `experiments/q1_crossover/RESULTS.md`, "The uncited assumption that sets
       the scale".
-- [ ] **`t_opt` GROUNDED 2026-09-02, and it moved the diagnosis — see
+- [x] **`t_opt` grounding CLOSED — finding retained, action superseded. The
+      literature result below stands on its own and is worth keeping; the "next
+      step" it proposed (a concave response + per-class `t_opt`) was BUILT as Q2b,
+      whose gate is now retired. The remaining gap it names — no `T_opt` for
+      cold-adapted VASCULAR tissue — is moot for gating purposes: gating a
+      vacuum-radiative model against terrestrial optima is a category error at any
+      level of grounding. See `docs/thermal_premise_retired_2026-09-03.md` §1.**
+
+      **`t_opt` GROUNDED 2026-09-02, and it moved the diagnosis — see
       `docs/bio_grounding_2026-09-02.md` §4d.** Cold-climate photoautotrophs have
       HIGH optima, not low: Antarctic mosses 19.0-26.3 C (ETRmax, six named
       species) and 20-30 C for net CO2 assimilation (Perera-Castro et al. 2020);
@@ -173,8 +187,15 @@ than being chosen and then justified.
       response (beta or Arrhenius-with-deactivation) and a per-class t_opt.
       Still ungrounded: T_opt for cold-adapted VASCULAR tissue - both sources
       are non-vascular.
-- [ ] **Q2 registered and run, but NOT complete — the question was asked and
-      the gate blocked the answer.** `experiments/q2_thermal/prereg.yaml`,
+- [x] **Q2 CLOSED 2026-09-03 with no answer, and it will not be reopened in its
+      registered form.** Its follow-up ("source `t_opt`, re-register") was done —
+      `t_opt` was grounded 2026-09-02 and Q2b WAS that re-registration — and Q2b's
+      own gate has since been retired as a category error
+      (`docs/thermal_premise_retired_2026-09-03.md`). Left as a record of a gate
+      that failed honestly, not as outstanding work — the question was asked and
+      the gate blocked the answer.
+
+      Record: `experiments/q2_thermal/prereg.yaml`,
       `run.py`, results in `experiments/q2_thermal/RESULTS.md`. Gate 1
       (thermal physics at 1 AU) passed at 278.31 K. Gate 2 (held-out rate
       anchors for cold-adapted tissue at 5 °C and 0 °C) FAILED both anchors
@@ -183,7 +204,8 @@ than being chosen and then justified.
       "what binds" answer exist. RESULTS.md computes the `t_opt` band the
       anchors imply ([285.15, 286.82] K) as a diagnosis only, explicitly not
       adopted. Next step: source `t_opt` for cold-adapted tissue from the
-      literature and re-register; do not tune the frozen prereg to pass.
+      literature and re-register — DONE, and superseded twice; see above. The
+      frozen prereg was never tuned to pass, and stays frozen.
 - [x] **Q2b registered and run — COMPLETE FOR ONE CLASS, not two.**
       `experiments/q2b_adapted/prereg.yaml`, `run.py`, results in
       `experiments/q2b_adapted/RESULTS.md`. `t_opt` is no longer fitted or a
