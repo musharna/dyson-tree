@@ -60,10 +60,36 @@ vascular preset) with those assumptions runs far hotter at equilibrium than a re
 leaf, which loses heat by transpiration and reflects some incident light — both of
 which this model omits by design. The 28 K overshoot is consistent with exactly
 that missing cooling, not with a refutation of the adaptation premise itself (which
-the algal class, closer to a true blackbody sphere with no transpiration to omit,
-passed cleanly). **These assumptions are not adjusted here to make vascular pass** —
-`emissivity`, `albedo`, and the absence of a transpiration term are frozen in
-`prereg.yaml`.
+the algal class passed cleanly at the registered `area_ratio=4.0` — not, as an
+earlier draft of this section claimed, because algal life is straightforwardly
+"closer to a true blackbody sphere": see the geometry caveat immediately below,
+which withdraws that claim). **These assumptions are not adjusted here to make
+vascular pass** — `emissivity`, `albedo`, and the absence of a transpiration term
+are frozen in `prereg.yaml`.
+
+**The one passing gate rests on an undisclosed sensitivity to `area_ratio`, with
+more leverage than the parameters this section already disclosed.** Gate B is
+parameter-free in `t_opt` — the model predicts it rather than fitting it — but
+`t_opt = T_eq(1 AU, area_ratio)` is _totally_ determined by `area_ratio` once
+`r_home_au`, `emissivity`, and `albedo` are fixed. Recomputed directly against
+`sim.thermal.equilibrium_temperature`: the algal gate window `[0.0, 12.0] °C`
+admits `area_ratio ∈ [3.630, 4.311]` and nothing outside that band —
+`area_ratio=3` predicts 25.91 °C, `area_ratio=2` predicts 57.8196 °C (the
+identical formula at the identical `area_ratio` as the vascular class, hence the
+identical number), and `area_ratio=1` predicts 120.44 °C. The registered
+`area_ratio=4.0` sits inside a band only 0.681 wide. Worse, the measured side of
+this gate — Colesie et al. (2014) — is **lichen-dominated Antarctic biological
+soil crusts**: flat mats growing on the ground, whose radiative geometry sits
+close to a lamina (`area_ratio` 1–2), not a sphere (4). Modelled at
+`area_ratio=2`, the geometry its own measurement is closest to, the algal class
+predicts 57.8196 °C — 45.82 K above the window's upper edge (12.0 °C) — missing
+Gate B by roughly the same margin vascular does (28 K), and for the same
+underlying reason: no transpirational cooling, no reflectance, and no hard
+temperature floor built into the assimilation term. This is a caveat on the one
+gate that passed, not a re-scoring of it: `area_ratio` stays frozen at its
+registered value of 4.0, and Gate B's window is not touched here. Ω gets a whole
+section below (§5); this deserves comparable weight, which is why it is recorded
+here rather than left as an unremarked number in a gates.csv column no one names.
 
 ## 4. The algal outer limit, per Ω, and its binding constraint
 
@@ -81,8 +107,13 @@ Two different numbers matter here and should not be conflated. `outer_au` is the
 distance at which the full coupled model (`net_carbon_adapted`, the Gaussian
 temperature response applied to the actual carbon budget) itself crosses zero —
 this is the number that moves with Ω. `binding` is a separate, three-way diagnostic
-(`classify_limit`) that also computes a pure light-only crossover (Q1's model,
-75.434 AU, constant — it doesn't depend on temperature or Ω at all) and a pure
+(`classify_limit`) that also computes a pure light-only crossover (75.434 AU,
+constant — it doesn't depend on temperature or Ω at all). **This is not Q1's
+committed algal value** (67.2623 AU, `experiments/q1_crossover/crossover.csv`):
+Q1 froze `leaf_mass_ratio=0.8`, while this prereg registers the grounded
+unicellular value `leaf_mass_ratio=1.0` (§ presets), and `crossover_distance_for`
+moves with that divisor — the two numbers differ because the input differs, not
+because either run computed the light-only crossover wrong. A pure
 thermal floor (the distance at which equilibrium temperature falls to the class's
 absolute survival floor `t_min`, **1.1945 AU, also constant across Ω**, since it
 depends only on geometry and `t_min`, never on the Gaussian response or Ω). At every
@@ -130,6 +161,36 @@ tested (the run completed and reported a verdict)**, unlike Q1's unreachable ban
 or Q2's structurally-unsatisfiable prediction. It is reported here as a failed
 prediction, not softened, and `prereg.yaml` is not edited to match the outcome.
 
+**Why `carbon` was the registered prediction, and what losing to a fixed floor
+shows.** `net_carbon_adapted` — the function this design added — carries no hard
+temperature floor of its own: unlike Q2's `temperature_response` (0 below
+`t_min`, a switch), `temperature_response_gaussian` only decays asymptotically
+toward zero as habitat temperature departs from the adapted optimum. The
+registered belief was that the mechanism this experiment actually built — an
+organism's assimilation fading out as its Gaussian response detunes from
+`t_opt` moving away from home — would be the thing that finally drove net
+carbon through zero, since nothing else in the modeled carbon budget has a
+cutoff of its own. That belief was wrong: `classify_limit`'s three-way candidate
+set also includes `temperature`, a floor with no dependence on the Gaussian
+machinery at all — `thermal_au = r_home_au * (T_eq(r_home_au)/t_min)**2`, the
+distance at which passive equilibrium temperature alone reaches the class's
+absolute survival floor `t_min` (254.65 K for algal, Pointing et al. 2015 via
+`docs/bio_grounding_2026-09-02.md` §1). That candidate sits at a fixed 1.1945 AU
+regardless of Ω because none of its three inputs — `r_home_au`, the geometry
+that sets `T_eq(r_home_au)`, and `t_min` — is a function of Ω; Ω enters the
+model only through `temperature_response_gaussian`, which does not appear
+anywhere in `thermal_au`'s formula. The carbon crossover, by contrast, is
+literally the distance at which the Gaussian-scaled assimilation term falls
+below respiration, so widening Ω (a flatter, slower-decaying response) directly
+pushes that crossing further out — exactly the 1.2120→2.5301 AU spread §5
+documents. The falsification therefore shows something about the model, not
+just about a label: the sophisticated part of this design — the adapted optimum
+and its Gaussian width — never gets the chance to be the acting constraint,
+because a much older, Ω-independent number (an absolute cold floor carried over
+from Q2's `t_min` gate) is always reached first. The adaptation machinery this
+experiment built is real and correctly computed; it is simply not the thing
+that ends up limiting range in this model.
+
 ## 7. Reachable interval, recorded before the run, versus what happened
 
 `prereg.yaml`'s `reachable.note`, computed and written **before** this run
@@ -145,6 +206,25 @@ prediction, not softened, and `prereg.yaml` is not edited to match the outcome.
 > distance itself, at which this organism's adapted parameters produce positive
 > net carbon... Only at the two widest scanned omegas (25, 30) does a root
 > reappear, at 1.0840 AU (omega=25) and 1.0705 AU (omega=30)...
+
+**The prereg's mechanism claim above is wrong, and it stays wrong because the
+file is frozen.** `T_eq(1 AU, area_ratio=2)` **is** 57.82 °C — identical to the
+vascular preset's own predicted `t_opt`, not "~5–8 °C" below it; the "~5–8 °C"
+figure belongs to the _algal_ sphere's equilibrium temperature, not vascular's.
+The Gaussian response at vascular's own home distance is therefore exactly 1.0,
+its maximum, not a small fraction of it. The real reason the lamina is
+carbon-negative at its own optimum is Q10, not a mismatched response: at
+`t_home = 330.97 K` (57.8196 °C), `Q10**((330.97−293)/10) = 13.8995`, so
+`respiration/leaf_mass_ratio = 0.65 * 13.8995 / 0.5 = 18.0694` against gross
+assimilation of `9.6550`, giving `net = 9.6550 − 18.0694 = −8.4144` — temperature-
+scaled respiration outruns a saturating assimilation term even where the
+response curve sits at its peak. The companion claim, "narrower omega pushes the
+reachable zone further out," is also backwards: a narrower Gaussian raises the
+inner (hot-side) root — pulling it inward, toward home, exactly as the note's
+own numbers show (0.8787 AU at Ω=10 down to 0.7587 AU at Ω=30) — and pulls the
+outer root inward too (§4–5: 1.2120 AU at Ω=10 versus 2.5301 AU at Ω=30).
+Narrowing Ω shrinks the reachable zone from both ends; it does not push it
+outward.
 
 That note describes the **inner** root (the first, hot-side crossing into positive
 net carbon) and vascular's viability, computed from `curve_shape` alone — it does
@@ -199,15 +279,27 @@ confirmed (not just assumed from the clean render):
   home distance, by construction) at ~9.8 µmol m⁻² s⁻¹, and widen visibly as Ω
   increases — the widest (Ω=30) curve's outer tail extends furthest right, matching
   the 2.5301 AU outer root; the narrowest (Ω=10) curve's tail is the tightest,
-  matching 1.2120 AU. The legend correctly lists only `algal`.
-- `outer_limit_vs_omega.png`: outer limit (AU) vs. Ω, five points connected by a
-  line, rising monotonically and convexly from 1.212 AU to 2.530 AU. Legend again
-  shows only `algal`.
+  matching 1.2120 AU. The legend correctly lists only `algal`. A dashed vertical
+  line at 1.1945 AU, labeled "binding thermal floor," marks the distance this run
+  actually found limiting — it sits inside every curve's positive region, near the
+  peak, well short of where any of the five curves cross back to zero. The label
+  overlaps the curves near the peak (a consequence of the log x-axis compressing
+  everything near 1 AU) but is legible and not clipped.
+- `outer_limit_vs_omega.png`: net-carbon crossover (AU) vs. Ω, five points
+  connected by a line, rising monotonically and convexly from 1.212 AU to
+  2.530 AU. Legend shows only `algal`. A dashed horizontal line at 1.1945 AU,
+  labeled "binding thermal floor (1.1945 AU)," sits below every one of the five
+  points — visually showing that the plotted quantity (the carbon crossover,
+  what moves with Ω) is not the outer limit this run reported (temperature, flat
+  at the dashed line). Retitled from "sensitivity of the outer limit to Omega"
+  to "sensitivity of the net-carbon crossover to Omega," since `outer_au` was
+  never the binding limit at any swept Ω.
 
 Both figures were copied to the Windows Downloads folder and opened once
-(`outer_limit_vs_omega.png`) to avoid multiple pop-ups; both PNGs were then read
-directly and inspected — no layer is missing, no text is clipped, no data is absent
-from either that should be present.
+(`net_carbon_adapted.png`) to avoid multiple pop-ups; both PNGs were then read
+directly and inspected — no layer is missing, no text is clipped, no data is
+absent from either that should be present, and the new reference lines drew on
+both (verified visually, not just assumed from the clean, warning-free render).
 
 ## 11. Regeneration test
 
