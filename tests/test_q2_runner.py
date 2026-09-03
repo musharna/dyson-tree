@@ -87,6 +87,45 @@ def test_outer_equilibrium_carbon_crossover_rejects_an_unexpected_sign_shape():
         )
 
 
+def test_shape_violation_propagates_instead_of_becoming_a_false_temperature_verdict(
+    tmp_path, monkeypatch
+):
+    """A violated sign-structure assumption must abort the run, not turn into NaN.
+
+    The guard in outer_equilibrium_carbon_crossover is worthless if main()
+    swallows it: a NaN carbon_equilibrium drops out of `candidates`, so
+    `binding` falls through to "temperature" -- and the run then exits 0
+    reporting a CONFIRMATION of the registered prediction, produced by an
+    assumption that did not hold. That is strictly worse than crashing.
+
+    Gate 2 fails on the real prereg, so the sweep is never reached; widen only
+    the anchors in an in-memory copy to get there, then force a Q1-shaped
+    (monotone) curve so the structure check fires.
+    """
+    prereg = yaml.safe_load(PREREG.read_text())
+    for anchor in prereg["gate_response"]["anchors"]:
+        anchor["lo"], anchor["hi"] = 0.0, 1.0
+    path = tmp_path / "allpass_shape.yaml"
+    path.write_text(yaml.safe_dump(prereg))
+
+    # Monotone decreasing: one sign change, not the assumed two.
+    monkeypatch.setattr(
+        run.Organism, "net_carbon_at_equilibrium", lambda self, r, k=None: 10.0 - r
+    )
+    out = tmp_path / "shape"
+    with pytest.raises(run.UnexpectedSignStructure, match="unexpected sign structure"):
+        run.main(["--prereg", str(path), "--out", str(out)])
+    assert not (out / "limits.csv").exists(), (
+        "a limits.csv was written despite a violated structural assumption"
+    )
+    # Positive control: the same widened prereg with the REAL curve reaches the
+    # sweep and exits 0, so the failure above is the shape, not the widening.
+    out_ok = tmp_path / "shape_ok"
+    monkeypatch.undo()
+    assert run.main(["--prereg", str(path), "--out", str(out_ok)]) == 0
+    assert (out_ok / "limits.csv").exists()
+
+
 def test_gate_thermal_failure_exits_2_and_clears_stale_limits(tmp_path):
     out = tmp_path / "out"
     out.mkdir()
@@ -223,7 +262,7 @@ def test_response_gate_rejects_a_wrong_functional_form(tmp_path, monkeypatch):
 def test_synthetic_all_pass_prereg_exercises_the_rc0_path(tmp_path):
     """Against the real, frozen prereg, gate 2 always fails (mesophyte t_opt vs
     cold-adapted anchors), so `rc == 0` never happens in
-    test_real_prereg_writes_all_three_csvs_with_provenance and sweep.csv/limits.csv
+    test_real_prereg_gate_failure_writes_only_gates_csv, and sweep.csv/limits.csv
     get zero automated coverage from it. Widen ONLY gate_response's anchor windows
     on an in-memory copy -- never prereg.yaml itself, which stays frozen and its
     registered verdict stays exactly what it is -- so both gates pass here, and

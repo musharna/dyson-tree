@@ -27,8 +27,11 @@ stays positive past 100 AU.
 > of this spec's model uses, so it omits the `temperature_response` multiplier
 > introduced below. On the model actually built, `net_carbon_at_equilibrium` has TWO
 > crossovers, not zero: it runs negative (hot inner edge, respiration explodes) →
-> positive → negative (cold outer edge) on the registered window. The vascular lamina
-> is negative at 1 AU (net = −8.41), not "still 5.8" at 10 AU. This design-time
+> positive → negative (cold outer edge) on the registered window. Matched to the class
+> the "5.8 at 10 AU" figure came from: the ALGAL preset's net carbon at 10 AU is
+> −1.6e−07, i.e. NEGATIVE, and it crosses zero at ~1.19 AU — it does not "stay positive
+> past 100 AU" (at 100 AU it is −2.5e−09). The vascular lamina is negative even at
+> 1 AU (net = −8.41). This design-time
 > calculation is left as written above for the record; do not cite it as the model's
 > actual behavior. See RESULTS.md §9 for the measured roots and the registration
 > defect this produced (the registered `predicted_binding_limit: temperature` turns

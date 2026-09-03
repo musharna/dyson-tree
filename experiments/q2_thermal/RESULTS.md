@@ -43,7 +43,7 @@ at 1 AU (area ratio 4, emissivity 1, albedo 0) is 278.3112 K, inside the registe
 both and exited before the distance sweep. The gate is the precondition for reporting
 a binding limit; it did not pass, so **no distance sweep ran, no limits table exists,
 no binding-limit classification exists, and the registered prediction (`temperature`
-for both classes) was never tested.** Any figure or number for "which limit binds
+for both classes) was never tested.** It is also, as §9 shows, unsatisfiable: the run could not have confirmed it even had the gates passed. Any figure or number for "which limit binds
 first" would be fabricated — none is reported here.
 
 ## 4. What `t_opt` the anchors imply (diagnosis, not an adopted value)

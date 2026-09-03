@@ -164,6 +164,19 @@ def run_gates(prereg: dict) -> tuple[list[dict], bool]:
     return rows, ok
 
 
+class UnexpectedSignStructure(ValueError):
+    """The equilibrium net-carbon curve did not have the shape this selector
+    assumes (negative -> positive -> negative, i.e. exactly two roots).
+
+    Distinct from the plain ValueError meaning "no sign change on the window",
+    which is a legitimate outcome recorded as NaN. This one means the
+    assumption the outer-root selection rests on does not hold, so no root may
+    be reported at all -- and it must NOT be swallowed into NaN, because a NaN
+    carbon_equilibrium lets `binding` fall through to "temperature" and
+    manufacture a confirmation of the registered prediction at exit 0.
+    """
+
+
 def outer_equilibrium_carbon_crossover(
     net_fn, r_min: float, r_max: float, n_grid: int
 ) -> float:
@@ -199,7 +212,7 @@ def outer_equilibrium_carbon_crossover(
     transitions = [(int(sign[i]), int(sign[i + 1])) for i in idx]
     expected = transitions == [(-1, 1), (1, -1)]
     if not expected:
-        raise ValueError(
+        raise UnexpectedSignStructure(
             "unexpected sign structure for net_carbon_at_equilibrium on "
             f"[{r_min}, {r_max}] AU: expected exactly one negative->positive "
             "transition (hot inner edge) followed by exactly one "
@@ -288,7 +301,14 @@ def main(argv: list[str] | None = None) -> int:
                     r_max=r_max,
                     n_grid=n_grid,
                 )
+            except UnexpectedSignStructure:
+                # Must NOT become NaN: a NaN here drops carbon_equilibrium out
+                # of `candidates`, so `binding` falls through to "temperature"
+                # and the run reports a confirmation of the registered
+                # prediction, at exit 0, from a violated assumption.
+                raise
             except ValueError:
+                # Legitimate: no sign change anywhere on the window.
                 carbon_eq = float("nan")
             candidates = {
                 "temperature": thermal_au,
