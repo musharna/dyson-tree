@@ -1,0 +1,15 @@
+# git_sha=a68bf0c46e2dc34d4c504ac9954453dca91f272f
+# thermal_md5=6b0ecfc0353686a3534939ac9eff9a0e
+# organism_md5=8882eac48ee3e4932e643650e75e0732
+# physiology_md5=adacb668ea4f79b428ca0155381da220
+# prereg_md5=774bef761dc2ce02d87540a528b1d876
+# python=3.13.2
+# numpy=2.3.5
+# scipy=1.16.3
+# written=2026-09-03T00:51:36-04:00
+class,omega,outer_au,binding
+algal,10,1.2120,temperature
+algal,15,1.3795,temperature
+algal,20,1.6180,temperature
+algal,25,1.9723,temperature
+algal,30,2.5301,temperature

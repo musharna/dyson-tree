@@ -7,17 +7,37 @@ roadmap that nobody discovers is worse than no roadmap.
 ## Where this stands
 
 **Loop A exists and has produced one measured number; Q2 is registered and run,
-but its own gate blocked it from producing a second.** Scaffolded 2026-09-01; a
-carbon-budget model (loop A, light-only, tissue temperature fixed) lives under
-`sim/`. Q1 is registered and run (`experiments/q1_crossover/RESULTS.md`): the
-vascular default-k prediction held at 13.69 AU; the algal default-k prediction
-failed at 67.26 AU against [35, 55]. Q2 (radiative equilibrium + a held-out
+but its own gate blocked it from producing a second; Q2b (its successor) is
+registered and run, and DID produce a limit — for one class, with its own
+registered prediction falsified.** Scaffolded 2026-09-01; a carbon-budget model
+(loop A, light-only, tissue temperature fixed) lives under `sim/`. Q1 is
+registered and run (`experiments/q1_crossover/RESULTS.md`): the vascular
+default-k prediction held at 13.69 AU; the algal default-k prediction failed at
+67.26 AU against [35, 55]. Q2 (radiative equilibrium + a held-out
 temperature-response gate, `experiments/q2_thermal/RESULTS.md`) replaced the
 earlier "heating cost" framing; it is registered and run, but Gate 2 (held-out
 response anchors) FAILED — the declared `t_opt` of 298.15 K is a mesophyte
 optimum while the gate anchors are for cold-adapted tissue. No sweep, no
 limits, and no answer to "what binds" were produced; see RESULTS.md for the
 implied `t_opt` diagnosis and what would resolve it.
+
+Q2b (`experiments/q2b_adapted/RESULTS.md`) replaced the fitted `t_opt` with one
+_predicted_ from geometry (an organism's optimum = its own equilibrium
+temperature at a 1 AU home distance), and gated that prediction per class
+against independent literature optima instead of fitting it. Gate A passed
+(278.3112 K). Gate B passed for **algal** (predicted 5.16 °C vs. measured
+5.0–7.0 °C) and **failed for vascular by 28 K** (predicted 57.82 °C vs.
+measured 29.4 °C, most likely because this model's `emissivity=1, albedo=0`,
+no-transpiration assumptions run a flat lamina far hotter than a real leaf —
+not a refutation of the adaptation premise). Vascular was excluded from the
+sweep entirely: it has no row in `sweep.csv` or `limits.csv`, only a FAIL row
+in `gates.csv`. Algal alone produced an answer: net carbon crosses zero
+1.2120–2.5301 AU out (a 2.09× range across the swept, unsourced Ω=10–30 K
+grid), and at every Ω the tightest of the three candidate limits is
+**temperature** (a fixed 1.1945 AU thermal floor, inside the carbon crossing
+at every Ω) — **not** the registered prediction of `carbon`. That prediction
+is FALSIFIED, the first registered prediction in this project that was both
+falsifiable and actually tested to a verdict.
 
 ## The first decision, before anything else
 
@@ -146,3 +166,30 @@ than being chosen and then justified.
       anchors imply ([285.15, 286.82] K) as a diagnosis only, explicitly not
       adopted. Next step: source `t_opt` for cold-adapted tissue from the
       literature and re-register; do not tune the frozen prereg to pass.
+- [x] **Q2b registered and run — COMPLETE FOR ONE CLASS, not two.**
+      `experiments/q2b_adapted/prereg.yaml`, `run.py`, results in
+      `experiments/q2b_adapted/RESULTS.md`. `t_opt` is no longer fitted or a
+      declared assumption: it is predicted from geometry (equilibrium
+      temperature at the 1 AU home distance) and gated per class against an
+      independent literature optimum. Gate A passed (278.3112 K). Gate B
+      **passed for algal** (predicted 5.16 °C vs. measured 5.0–7.0 °C,
+      Colesie et al. 2014) and **failed for vascular by 28 K** (predicted
+      57.82 °C vs. measured 29.4 °C, Scafaro et al. 2023) — most likely this
+      model's `emissivity=1, albedo=0`, no-transpiration assumptions running a
+      flat lamina too hot, not a refutation of the adaptation premise; those
+      assumptions were NOT adjusted to force a pass. Vascular was excluded
+      from the sweep: it has no row in `sweep.csv` or `limits.csv`, only its
+      Gate B FAIL row in `gates.csv`. **Algal answered the registered
+      question**: net carbon crosses zero at 1.2120–2.5301 AU across the
+      swept, unsourced Ω=10–30 K grid (a 2.09× range — low confidence in any
+      single number), and the tightest of the three candidate limits is
+      **temperature** (a fixed 1.1945 AU floor) at every Ω, not `carbon`.
+      **The registered prediction (`predicted_binding_limit.algal: carbon`)
+      is FALSIFIED** — the first registered prediction in this project both
+      falsifiable and actually tested to a verdict. Körner's rate anchors
+      were retired here (no Ω in [1, 200] °C satisfies them jointly with the
+      grounded 29.4 °C optimum), not re-used as a gate. Next step, if
+      pursued: vascular needs either a transpiration/albedo term added to the
+      thermal model (a bigger change than this registration's scope) or a
+      re-registration that accepts the 28 K miss and asks a different
+      question of that class.

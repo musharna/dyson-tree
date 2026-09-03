@@ -159,3 +159,23 @@ def test_algal_thermal_au_and_binding_are_pinned_against_the_real_prereg():
         assert result["temperature"] == pytest.approx(expected_thermal_au, rel=1e-6)
         assert result["carbon"] == pytest.approx(exp_outer, abs=5e-4)
         assert result["binding"] == "temperature"
+
+
+def test_committed_q2b_csvs_regenerate_exactly(tmp_path):
+    src = REPO / "experiments" / "q2b_adapted"
+    if not (src / "gates.csv").exists():
+        pytest.skip("Q2b has not been run into the repo directory yet")
+    out = tmp_path / "regen"
+    assert run.main(["--prereg", str(PREREG), "--out", str(out)]) == 0
+    for name in ("gates.csv", "sweep.csv", "limits.csv"):
+        committed = [
+            x
+            for x in (src / name).read_text().splitlines()
+            if not x.startswith("# git_sha=") and not x.startswith("# written=")
+        ]
+        fresh = [
+            x
+            for x in (out / name).read_text().splitlines()
+            if not x.startswith("# git_sha=") and not x.startswith("# written=")
+        ]
+        assert committed == fresh, f"{name} does not regenerate"

@@ -1,0 +1,13 @@
+# git_sha=a68bf0c46e2dc34d4c504ac9954453dca91f272f
+# thermal_md5=6b0ecfc0353686a3534939ac9eff9a0e
+# organism_md5=8882eac48ee3e4932e643650e75e0732
+# physiology_md5=adacb668ea4f79b428ca0155381da220
+# prereg_md5=774bef761dc2ce02d87540a528b1d876
+# python=3.13.2
+# numpy=2.3.5
+# scipy=1.16.3
+# written=2026-09-03T00:51:36-04:00
+gate,cls,detail,observed,lo,hi,passed
+thermal,-,T_eq at 1.0 AU,278.3112,275.0,282.0,True
+adaptation,algal,predicted t_opt (C),5.1612,0.0,12.0,True
+adaptation,vascular,predicted t_opt (C),57.8196,24.4,34.4,False
