@@ -330,3 +330,56 @@ def test_net_carbon_adapted_uses_leaf_mass_ratio():
 def test_net_carbon_adapted_does_not_disturb_the_q1_or_q2_paths():
     assert VASCULAR.net_carbon(1.0) == pytest.approx(8.3550, abs=1e-4)
     assert ALGAL.net_carbon(1.0) == pytest.approx(9.6290, abs=1e-4)
+
+
+def test_net_carbon_adapted_actually_uses_omega():
+    """The tests above all pass omega=20.0, the field's own default, so an
+    implementation that ignored self.omega and hardcoded the literal 20.0
+    inside temperature_response_gaussian(...) would pass every one of them.
+    This test discriminates on that: two organisms differing ONLY in omega,
+    evaluated where the Gaussian response is still steep enough for the width
+    to matter. r_au=1.10 (r_home_au=1.0) is deliberately NOT r_au=3.0 or
+    beyond -- by 3 AU the response has collapsed to ~0 for every omega and no
+    value of the parameter can move the result, which would make the
+    assertion true for the wrong reason."""
+    r_au, r_home_au = 1.10, 1.0
+    o20 = Organism(
+        "algal",
+        a_max=10.0,
+        k=20.0,
+        r_d=0.24,
+        leaf_mass_ratio=1.0,
+        area_ratio=4.0,
+        t_min=254.65,
+        omega=20.0,
+    )
+    o10 = Organism(
+        "algal",
+        a_max=10.0,
+        k=20.0,
+        r_d=0.24,
+        leaf_mass_ratio=1.0,
+        area_ratio=4.0,
+        t_min=254.65,
+        omega=10.0,
+    )
+    v20 = o20.net_carbon_adapted(r_au, r_home_au=r_home_au)
+    v10 = o10.net_carbon_adapted(r_au, r_home_au=r_home_au)
+
+    # Expected value for omega=20, built from primitives (not by re-calling
+    # net_carbon_adapted), so this also pins that omega=20's result is the
+    # one actually reached, not just that omega=10 differs from it.
+    t = equilibrium_temperature(r_au, o20.area_ratio, o20.emissivity, o20.albedo)
+    t_opt = adapted_optimum(r_home_au, o20.area_ratio, o20.emissivity, o20.albedo)
+    f20 = temperature_response_gaussian(t, t_opt, 20.0)
+    expected_v20 = (
+        gross_assimilation(irradiance(r_au), o20.a_max, o20.k) * f20
+        - respiration(o20.r_d, t) / o20.leaf_mass_ratio
+    )
+    assert v20 == pytest.approx(expected_v20, rel=1e-9)
+
+    # A gap of ~4.66 (6.48 vs 1.82) is far beyond any floating-point
+    # tolerance -- this cannot pass by omega being ignored.
+    assert v20 - v10 > 1.0
+    assert v20 == pytest.approx(6.482859544582752, rel=1e-9)
+    assert v10 == pytest.approx(1.8170335849919963, rel=1e-9)
