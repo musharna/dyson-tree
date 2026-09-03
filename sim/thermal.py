@@ -9,6 +9,8 @@ is the thermal domain introduced by Q2.
 
 from __future__ import annotations
 
+import math
+
 from sim.physiology import TSI_W_M2
 
 # CODATA / exact by the SI definition of the kelvin.
@@ -59,3 +61,47 @@ def temperature_response(t: float, t_min: float, t_opt: float) -> float:
     if t >= t_opt:
         return 1.0
     return float((t - t_min) / (t_opt - t_min))
+
+def temperature_response_gaussian(t: float, t_opt: float, omega: float) -> float:
+    """Normalized rate multiplier in [0, 1], Gaussian about t_opt.
+
+    The form of June, Evans & Farquhar (2004), as quoted verbatim in Scafaro et
+    al. (2023): J = J(To) * exp(-((T - To)/Omega)^2), where "Omega represents the
+    temperature difference from To at which J declines to e^-1 (0.37) of J(To)".
+
+    Unlike temperature_response (linear, Q2), this is concave and symmetric: a
+    tissue whose optimum is 25 C can still sit well above zero at 5 C, which a
+    straight line from t_min to t_opt structurally cannot do. Q2's linear form is
+    left in place untouched -- Q2's committed record must keep regenerating.
+
+    There is no t_min here: the Gaussian approaches zero asymptotically rather
+    than switching off at a floor. Any hard floor belongs to the caller.
+    """
+    if omega <= 0:
+        raise ValueError(f"omega must be > 0, got {omega}")
+    if t <= 0:
+        raise ValueError(f"t must be > 0 K, got {t}")
+    if t_opt <= 0:
+        raise ValueError(f"t_opt must be > 0 K, got {t_opt}")
+    return float(math.exp(-(((t - t_opt) / omega) ** 2)))
+
+
+def adapted_optimum(
+    r_home_au: float,
+    area_ratio: float,
+    emissivity: float = 1.0,
+    albedo: float = 0.0,
+) -> float:
+    """The adaptation premise: an organism's photosynthetic optimum equals its own
+    equilibrium temperature at its home distance.
+
+    Scafaro et al. (2023) report the optimum tracking growth temperature (29.4 C
+    cool-grown vs 32.7 C warm-grown, 49 C3 species). Taken as a mechanism rather
+    than a correlation, t_opt stops being a free parameter and becomes something
+    this model PREDICTS from geometry -- which is what makes Gate B able to fail.
+
+    Deliberately a one-liner with a name: the premise is the whole content, and a
+    named function is greppable, testable, and mockable in a way an inlined call
+    is not.
+    """
+    return equilibrium_temperature(r_home_au, area_ratio, emissivity, albedo)
