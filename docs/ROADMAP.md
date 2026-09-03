@@ -6,6 +6,13 @@ roadmap that nobody discovers is worse than no roadmap.
 
 ## Where this stands
 
+> ⚠️ **READ `docs/thermal_premise_retired_2026-09-03.md` FIRST.** Q2b's Gate B is
+> RETIRED as a category error (it compared a vacuum-radiative temperature against
+> Earth-thermodynamic optima), and the vapour-pressure argument in that note makes
+> the long-deferred PRESSURE VESSEL a precondition for the whole modelling line
+> rather than a later extension. Q2b's falsification is unaffected. Nothing is
+> retracted; the reading changes.
+
 **Loop A exists and has produced one measured number; Q2 is registered and run,
 but its own gate blocked it from producing a second; Q2b (its successor) is
 registered and run, and DID produce a limit — for one class, with its own
@@ -81,6 +88,17 @@ than being chosen and then justified.
       A's budget trusted underneath it; A is the cheapest path to a measured
       answer, and light (spine item 3) turned out to be the binding constraint,
       which A can treat as a swept input.
+- [ ] 🔴 **NEXT QUESTION — the pressure vessel, promoted from "out of scope" to
+      PRECONDITION (2026-09-03).** An organism at free radiative equilibrium in
+      vacuum cannot photosynthesise: water's saturation pressure is 882 Pa at the
+      algal sphere's 5.16 C and 18 kPa at the lamina's 57.82 C against ~0 ambient,
+      so there is no liquid phase. Q1, Q2 and Q2b all model photosynthesis at a
+      vacuum equilibrium temperature, which requires the containment Q1 deferred.
+      Open: what containment holds liquid water at distance r; what it costs in
+      carbon, mass and absorbed light; and — the one that decides whether the
+      existing thermal model survives — does a CONTAINED organism's temperature
+      still follow T_eq, or does the vessel set it?
+      See `docs/thermal_premise_retired_2026-09-03.md` section 4.
 - [ ] Ground each science-spine item with a real number and a citation, via
       `bio-grounding`; verify citations per the project's citation chain.
       **Started 2026-09-02 for the two parameters the Q1 gate cannot see —
