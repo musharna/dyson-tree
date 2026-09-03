@@ -34,6 +34,49 @@ PROVENANCE_KEYS = (
 )
 
 
+def test_outer_equilibrium_carbon_crossover_pins_the_outer_root_not_the_inner():
+    """net_carbon_at_equilibrium is NOT monotone: it runs negative (hot inner
+    edge, respiration explodes) -> positive -> negative (cold outer edge) on
+    the registered window. sim.physiology.crossover_distance -- correct for
+    Q1's monotone net_carbon -- returns the FIRST sign change, which here is
+    the wrong, too-hot INNER root. This pins the algal class's outer root at
+    its middle registered t_min (254.65 K) to the value verified independently
+    against the traced net-carbon values at r=0.5/1.0/1.2 AU (-246.06 / +5.31 /
+    -0.016): a selector that returned the inner root instead would land near
+    ~0.6-0.7 AU, not ~1.19 AU, and would fail this assertion."""
+    prereg = yaml.safe_load(PREREG.read_text())
+    a = prereg["assumptions"]
+    p = prereg["presets"]["algal"]
+    t_min = float(p["t_min_grid"][1])
+    assert t_min == pytest.approx(254.65)
+    org = run.build("algal", p, a, t_min)
+    sw = prereg["sweep"]
+    r_min, r_max, n_grid = (
+        float(sw["r_min_au"]),
+        float(sw["r_max_au"]),
+        int(sw["n_grid"]),
+    )
+    outer = run.outer_equilibrium_carbon_crossover(
+        org.net_carbon_at_equilibrium, r_min, r_max, n_grid
+    )
+    assert outer == pytest.approx(1.19377, abs=1e-4)
+    # The wrongly-selected inner root (hot edge) sits well below 1 AU -- the
+    # traced net carbon is already positive at 1.0 AU (+5.31), so a selector
+    # that grabbed the first sign change instead of the last would report
+    # something less than 1.0, not ~1.19.
+    assert outer > 1.0
+
+
+def test_outer_equilibrium_carbon_crossover_rejects_an_unexpected_sign_shape():
+    """A monotone-decreasing curve (Q1-shaped: one sign change, not the
+    negative->positive->negative shape this selector assumes) must not be
+    silently handed a root -- it must fail loud."""
+    with pytest.raises(ValueError, match="unexpected sign structure"):
+        run.outer_equilibrium_carbon_crossover(
+            lambda r: 10.0 - r, r_min=0.5, r_max=100.0, n_grid=400
+        )
+
+
 def test_gate_thermal_failure_exits_2_and_clears_stale_limits(tmp_path):
     out = tmp_path / "out"
     out.mkdir()
@@ -192,8 +235,14 @@ def test_committed_q2_csvs_regenerate_exactly(tmp_path):
     for name in ("gates.csv", "sweep.csv", "limits.csv"):
         if not (src / name).exists():
             continue
-        committed = [x for x in (src / name).read_text().splitlines()
-                     if not x.startswith("# git_sha=") and not x.startswith("# written=")]
-        fresh = [x for x in (out / name).read_text().splitlines()
-                 if not x.startswith("# git_sha=") and not x.startswith("# written=")]
+        committed = [
+            x
+            for x in (src / name).read_text().splitlines()
+            if not x.startswith("# git_sha=") and not x.startswith("# written=")
+        ]
+        fresh = [
+            x
+            for x in (out / name).read_text().splitlines()
+            if not x.startswith("# git_sha=") and not x.startswith("# written=")
+        ]
         assert committed == fresh, f"{name} does not regenerate"

@@ -19,13 +19,13 @@ from pathlib import Path
 import numpy as np
 import scipy
 import yaml
+from scipy.optimize import brentq
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(REPO_ROOT))
 
 from sim import physiology, thermal  # noqa: E402
 from sim.organism import Organism, crossover_distance_for  # noqa: E402
-from sim.physiology import crossover_distance  # noqa: E402
 from sim.thermal import equilibrium_temperature, temperature_response  # noqa: E402
 
 THERMAL_PATH = REPO_ROOT / "sim" / "thermal.py"
@@ -116,7 +116,18 @@ def run_gates(prereg: dict) -> tuple[list[dict], bool]:
     """Gate 1 = thermal physics. Gate 2 = the HELD-OUT response anchors."""
     rows, ok = [], True
     g1 = prereg["gate_thermal"]
-    obs = equilibrium_temperature(float(g1["r_au"]), float(g1["area_ratio"]))
+    a = prereg["assumptions"]
+    # Passed explicitly rather than relying on equilibrium_temperature's defaults:
+    # the prereg's declared emissivity=1.0/albedo=0.0 are numerically identical to
+    # those defaults today, so this is a no-op now, but the gate is meant to check
+    # the prereg's own declared values, not whatever the function happens to default
+    # to if that ever changes.
+    obs = equilibrium_temperature(
+        float(g1["r_au"]),
+        float(g1["area_ratio"]),
+        float(a["emissivity"]),
+        float(a["albedo"]),
+    )
     lo, hi = (float(x) for x in g1["t_eq_k"])
     passed = lo <= obs <= hi
     ok &= passed
@@ -151,6 +162,52 @@ def run_gates(prereg: dict) -> tuple[list[dict], bool]:
             }
         )
     return rows, ok
+
+
+def outer_equilibrium_carbon_crossover(
+    net_fn, r_min: float, r_max: float, n_grid: int
+) -> float:
+    """Outermost distance where net_carbon_at_equilibrium crosses zero.
+
+    Unlike sim.physiology.crossover_distance (which returns the FIRST sign
+    change scanning outward, correct for Q1's monotone-decreasing net_carbon),
+    net_carbon_at_equilibrium is NOT monotone: respiration explodes at the hot
+    inner edge, so the curve runs negative -> positive -> negative and has TWO
+    roots on the registered window. The first (inner) root is the too-hot edge
+    of the habitable annulus; the outer limit -- the one the registered
+    question asks about -- is the SECOND root. sim.physiology.crossover_distance
+    is left untouched (Q1 depends on its first-root behaviour); this is a
+    separate, Q2-only selector.
+
+    Fails loud rather than guessing if the sign structure on the grid is not
+    exactly the expected negative -> positive -> negative: any other shape
+    means the assumption this selector is built on (exactly two roots, in that
+    order) does not hold for these parameters, and picking a root anyway would
+    silently misreport which one is the outer limit.
+    """
+    if r_min <= 0 or r_max <= r_min:
+        raise ValueError(f"need 0 < r_min < r_max, got {r_min}, {r_max}")
+    grid = np.geomspace(r_min, r_max, n_grid)
+    vals = np.array([net_fn(float(r)) for r in grid])
+    sign = np.sign(vals)
+    idx = np.where(sign[:-1] * sign[1:] < 0)[0]
+    if len(idx) == 0:
+        raise ValueError(
+            f"no sign change of net_carbon_at_equilibrium on [{r_min}, {r_max}] "
+            f"AU: min={vals.min():.4g}, max={vals.max():.4g}"
+        )
+    transitions = [(int(sign[i]), int(sign[i + 1])) for i in idx]
+    expected = transitions == [(-1, 1), (1, -1)]
+    if not expected:
+        raise ValueError(
+            "unexpected sign structure for net_carbon_at_equilibrium on "
+            f"[{r_min}, {r_max}] AU: expected exactly one negative->positive "
+            "transition (hot inner edge) followed by exactly one "
+            f"positive->negative transition (outer limit); got {transitions} "
+            f"at r={[float(grid[i]) for i in idx]}"
+        )
+    i = idx[-1]
+    return float(brentq(net_fn, grid[i], grid[i + 1], xtol=1e-6))
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -225,7 +282,7 @@ def main(argv: list[str] | None = None) -> int:
             except ValueError:
                 carbon_fixed = float("nan")
             try:
-                carbon_eq = crossover_distance(
+                carbon_eq = outer_equilibrium_carbon_crossover(
                     org.net_carbon_at_equilibrium,
                     r_min=r_min,
                     r_max=r_max,
