@@ -6,8 +6,8 @@ Q1's `prereg.yaml` is frozen; nothing here edits it.
 
 ## Why Q2 is not the question that was declared
 
-Q1 declared a v2: *"carbon cost of holding tissue temperature against radiative loss to
-space, giving a second crossover."* A design-time feasibility check killed it, and the
+Q1 declared a v2: _"carbon cost of holding tissue temperature against radiative loss to
+space, giving a second crossover."_ A design-time feasibility check killed it, and the
 result is worth more than the question was.
 
 **Holding 293 K in vacuum costs 179x (flat lamina) to 358x (sphere) the organism's entire
@@ -20,6 +20,19 @@ The passive alternative has no crossover either, for the opposite reason: respir
 exponential in temperature while assimilation falls as 1/r^2, so a cooling organism's
 respiration collapses to ~1e-7 by 10 AU while gross assimilation is still 5.8. Net carbon
 stays positive past 100 AU.
+
+> **Correction, added 2026-09-02 (fix wave after the whole-branch review, RESULTS.md
+> §9):** this paragraph is wrong on the built model. It computes assimilation and
+> respiration at a fixed set-point rather than at the equilibrium temperature the rest
+> of this spec's model uses, so it omits the `temperature_response` multiplier
+> introduced below. On the model actually built, `net_carbon_at_equilibrium` has TWO
+> crossovers, not zero: it runs negative (hot inner edge, respiration explodes) →
+> positive → negative (cold outer edge) on the registered window. The vascular lamina
+> is negative at 1 AU (net = −8.41), not "still 5.8" at 10 AU. This design-time
+> calculation is left as written above for the record; do not cite it as the model's
+> actual behavior. See RESULTS.md §9 for the measured roots and the registration
+> defect this produced (the registered `predicted_binding_limit: temperature` turns
+> out to be structurally unreachable given this correction).
 
 **The real finding is what that implies for Q1.** A passive organism reaches 273 K at
 1.04 AU (sphere) to 1.47 AU (lamina). Q1's crossovers sit at 13.69 and 75.43 AU — **10 to
@@ -45,24 +58,24 @@ where, once the rate declines continuously instead of switching off.
 
 ## Grounding
 
-All quotes verbatim from Pointing et al. (2015), *Biogeography of photoautotrophs in the
-high polar biome*, Front. Plant Sci. 6:692, doi:10.3389/fpls.2015.00692 (gold OA;
+All quotes verbatim from Pointing et al. (2015), _Biogeography of photoautotrophs in the
+high polar biome_, Front. Plant Sci. 6:692, doi:10.3389/fpls.2015.00692 (gold OA;
 ghostcite 0.5.2 clean, 0 findings).
 
-**Algal / lichenised floor.** *"even the capacity of some species to gain positive net
+**Algal / lichenised floor.** _"even the capacity of some species to gain positive net
 photosynthesis at sub-0 temperatures, for example as low as -18.5°C for the Antarctic
 lichen Neuropogon acromelanus (Lange and Kappen, 2013) in the laboratory and similar
 values reported in the field for Usnea sphacelata and Umbilicaria aprina (Kappen, 1989;
-Schroeter et al., 1994)."* => T_min = 254.65 K. A lichen photobiont is a chlorophyte, so
+Schroeter et al., 1994)."_ => T_min = 254.65 K. A lichen photobiont is a chlorophyte, so
 this is the right organism for the algal class.
 
-**Vascular floor.** *"the theoretical lower thermal limit for plastid-mediated
-photosynthesis occurs where chloroplasts freeze at -5 to -8°C (Körner, 2003a)"*
+**Vascular floor.** _"the theoretical lower thermal limit for plastid-mediated
+photosynthesis occurs where chloroplasts freeze at -5 to -8°C (Körner, 2003a)"_
 => T_min in [265.15, 268.15] K.
 
-**Rate anchors (these replace Q10).** *"Cold adapted photosynthetic tissue in vascular
+**Rate anchors (these replace Q10).** _"Cold adapted photosynthetic tissue in vascular
 plants reaches 60-70% of maximum rates at 5°C and 30-40% at 0°C, when growth is 0
-(Körner, 2003b)."*
+(Körner, 2003b)."_
 
 Attributions inside those quotes (Lange & Kappen; Körner 2003a/b; Kappen 1989; Schroeter
 et al. 1994) are reported **as cited by Pointing et al.** and are NOT independently
@@ -89,9 +102,9 @@ Pure functions, no state, no time axis. New module `sim/thermal.py`.
 - **`net_carbon` is NOT modified.** Q2 adds a separate method,
   `net_carbon_at_equilibrium(r_au, ...)`, computing
   `gross_assimilation(irradiance(r), a_max, k) * temperature_response(T(r), ...) -
-   organism_respiration(T(r))`.
+ organism_respiration(T(r))`.
 
-  *Self-review caught this as a contradiction in the first draft:* making `net_carbon`
+  _Self-review caught this as a contradiction in the first draft:_ making `net_carbon`
   temperature-dependent would change Q1's committed numbers, which this same spec requires
   to be unchanged. The two requirements cannot both hold on one function. Q1's carbon-only
   path stays byte-identical; Q2 is a new entry point beside it. This also keeps the two

@@ -114,13 +114,108 @@ since the sweep did not run.
 ## 8. Provenance (verbatim from `gates.csv`)
 
 ```
-# git_sha=821df11b06ef4c40918b48697fc71751d79feda1
-# thermal_md5=95b021360a70a5b4b0e16e643fa98500
-# organism_md5=153da4cac9084fee3514e33e153b42f4
+# git_sha=e2301116935d84f649ef3ae7107eef2f3d7dd0d6
+# thermal_md5=e69a7c818f4499e12fd17b6e91b34b96
+# organism_md5=df699a13442e8794d226cf58c8408345
 # physiology_md5=adacb668ea4f79b428ca0155381da220
 # prereg_md5=f68949559939193a48a092546c638726
 # python=3.13.2
 # numpy=2.3.5
 # scipy=1.16.3
-# written=2026-09-02T20:12:34-04:00
+# written=2026-09-02T20:38:39-04:00
 ```
+
+## 9. A second registration defect, found by a code review (disclosed, not corrected)
+
+`prereg.yaml` is frozen; the two problems below are defects **in the registration
+itself**, not in the runner. They are reported here because they were found while
+implementing a post-review fix wave, not fixed there, because fixing them would mean
+editing a frozen file.
+
+**9.1 The registered prediction (`temperature` for both classes) could not have been
+satisfied by any parameters.** Respiration is strictly positive at `t_min`
+(`respiration(r_d, t_min) > 0` for any `r_d > 0`), so net carbon at radiative
+equilibrium goes negative _before_ the temperature response reaches zero: the outer
+root of `net_carbon_at_equilibrium` always sits strictly inside the pure thermal
+cutoff `r = (T_eq(1 AU) / t_min)^2`. This is not a coincidence of the two rows quoted
+in the fix-wave review — it holds for **all six** registered `(class, t_min)` pairs,
+recomputed here directly from `outer_equilibrium_carbon_crossover` (the corrected
+selector; see the runner's `git log`) and `reachability.thermal_cutoff_au`:
+
+| class    | t_min (K) | outer carbon root (AU) | thermal cutoff (AU) | carbon − thermal | as % of thermal |
+| -------- | --------- | ---------------------- | ------------------- | ---------------- | --------------- |
+| vascular | 265.15    | 1.54978                | 1.55809             | −0.0083 AU       | −0.5334%        |
+| vascular | 266.65    | 1.53195                | 1.54061             | −0.0087 AU       | −0.5622%        |
+| vascular | 268.15    | 1.51441                | 1.52342             | −0.0090 AU       | −0.5914%        |
+| algal    | 252.15    | 1.21763                | 1.21827             | −0.0006 AU       | −0.0524%        |
+| algal    | 254.65    | 1.19377                | 1.19447             | −0.0007 AU       | −0.0583%        |
+| algal    | 257.15    | 1.17060                | 1.17135             | −0.0008 AU       | −0.0647%        |
+
+Carbon binds before temperature in every one of the six rows the prereg registers.
+`binding = min(...)` over `{temperature, carbon_fixed_t, carbon_equilibrium}` can
+therefore never return `"temperature"` under any admissible sweep of `t_min` inside
+the registered grids — the registration predicted an outcome its own model structure
+cannot produce, for any parameters, not just the ones that happened to be swept.
+
+**9.2 `"light"` has no representative in the runner and can never be reported.** The
+registered question asks what sets the outer limit — _"light, carbon, or
+temperature"_ — but `run.py`'s `candidates` dict has exactly three keys:
+`temperature`, `carbon_fixed_t`, `carbon_equilibrium`. No candidate stands for a
+light-driven limit (irradiance falling below some floor independent of temperature or
+carbon balance), so `binding` can only ever read as `"temperature"` or one of the two
+carbon variants. A third of the registered question's answer space was never wired up.
+
+**9.3 The substantive finding these two defects point to.** Combined with §9.1's
+table, the model as built says: **for a passive organism at radiative equilibrium,
+the carbon limit and the thermal limit are effectively the same limit** — they
+coincide to within 0.04%–0.6% of the distance across every registered `(class,
+t_min)` pair, with carbon always binding first, by a margin an order of magnitude
+smaller than the separation the design doc argued would make the three-way question
+falsifiable (`docs/superpowers/specs/2026-09-02-q2-thermal-limit-design.md`: _"The
+three candidate limits are separated by an order of magnitude"_). That separation
+does not hold once carbon is evaluated at the equilibrium temperature rather than
+fixed T — respiration and assimilation both collapse in the same narrow band just
+above `t_min`, so the two limits close in on each other instead of separating. The
+registered three-way question is degenerate for this model: it was built in a way
+that makes `"carbon"` the only reachable answer, `"temperature"` an answer the model
+can approach but never actually produce, and `"light"` an answer the model cannot
+express at all.
+
+**This is disclosed here, not corrected**, because `prereg.yaml` is a frozen
+pre-registration — see hard constraint 1 of the fix wave that produced this section.
+Resolving it means a new registration with a candidate set that actually spans
+`{light, carbon, temperature}` and a design-time reachability check (as
+`reachability.py`'s own docstring argues) confirming `"temperature"` is a reachable
+outcome before the question is asked again.
+
+## 10. Re-running after a change to `sim/organism.py` or `sim/thermal.py`
+
+Both Q1 and Q2 hash `sim/organism.py` into their CSV provenance headers (Q1 also
+hashes `sim/physiology.py`; Q2 also hashes `sim/thermal.py`). A change to any of
+those files moves the corresponding `*_md5` line in every committed CSV under
+`experiments/q1_crossover/` and `experiments/q2_thermal/`, which fails
+`test_committed_csvs_regenerate_exactly` (Q1) and
+`test_committed_q2_csvs_regenerate_exactly` (Q2) until the CSVs are regenerated —
+this is expected, not a bug, and the two tests going red together is exactly the
+tripwire they exist for.
+
+The procedure, in order (used for the `ALGAL` geometry fix and the `thermal.py`
+docstring completion in this fix wave):
+
+1. **Commit the source change on its own** — no CSV files in the same commit. Both
+   regeneration tests will be RED at this commit; that is expected and should be
+   noted in the commit message so a `git bisect` doesn't mistake it for a break.
+2. **Re-run both experiments**: `python3 experiments/q1_crossover/run.py` (must exit 0) and `python3 experiments/q2_thermal/run.py` (must exit 2 — Gate 2 fails on the
+   frozen prereg and is expected to keep failing; a change that makes it exit 0
+   without an intentional, disclosed prereg change is itself a bug — see hard
+   constraint 2 above it).
+3. **Verify the CSV bodies, not just that the commands ran.** For Q1, diff each
+   committed CSV against `master` with comment lines stripped (the exact command is
+   in this repo's fix-wave instructions and in `test_runner.py`); the three bodies
+   must be byte-identical. For Q2, diff `gates.csv`'s body (comment lines stripped)
+   against the pre-regeneration commit; it must be unchanged. If any body line moved,
+   **stop** — a source change that alters `net_carbon()`'s registered numbers (Q1) or
+   the gate verdicts (Q2) is a different, much bigger change than a provenance-header
+   refresh, and needs its own review, not a silent CSV update.
+4. **Commit the header-only CSV updates as a separate commit**, once step 3 confirms
+   only provenance lines (`git_sha`, `*_md5`, `written`) changed.
