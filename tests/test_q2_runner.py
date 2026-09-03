@@ -161,17 +161,28 @@ def test_real_prereg_writes_all_three_csvs_with_provenance(tmp_path):
 
 
 def test_cli_exits_nonzero_when_a_gate_fails(tmp_path):
+    """`proc.returncode != 0` is also satisfied by exit 1 from an unhandled
+    traceback -- e.g. a RuntimeError raised right after load_prereg -- which
+    is a completely broken runner, not the documented gate-failure contract
+    (the module docstring: 0 = both gates passed, 2 = a gate failed). Assert
+    the exact documented code and that gates.csv actually got written, which
+    an unhandled exception before run_gates() would not produce."""
     bad = yaml.safe_load(PREREG.read_text())
     bad["gate_thermal"]["t_eq_k"] = [1000.0, 2000.0]
     p = tmp_path / "bad2.yaml"
     p.write_text(yaml.safe_dump(bad))
+    out = tmp_path / "o2"
     proc = subprocess.run(
-        [sys.executable, str(RUN), "--prereg", str(p), "--out", str(tmp_path / "o2")],
+        [sys.executable, str(RUN), "--prereg", str(p), "--out", str(out)],
         capture_output=True,
         text=True,
     )
-    assert proc.returncode != 0
-    assert not (tmp_path / "o2" / "limits.csv").exists()
+    assert proc.returncode == 2, (
+        f"expected the documented gate-failure code 2, got {proc.returncode}\n"
+        f"stderr: {proc.stderr}"
+    )
+    assert (out / "gates.csv").exists()
+    assert not (out / "limits.csv").exists()
 
 
 def test_response_gate_rejects_a_wrong_functional_form(tmp_path, monkeypatch):
