@@ -219,7 +219,26 @@ than being chosen and then justified.
       flat lamina too hot, not a refutation of the adaptation premise; those
       assumptions were NOT adjusted to force a pass. Vascular was excluded
       from the sweep: it has no row in `sweep.csv` or `limits.csv`, only its
-      Gate B FAIL row in `gates.csv`. **Algal answered the registered
+      Gate B FAIL row in `gates.csv`.
+
+      **The algal pass is NOT robust, and this line stated it unqualified
+      until 2026-09-03 — `experiments/q2b_adapted/RESULTS.md` §3 disclosed it
+      all along.** Gate B is parameter-free in `t_opt`, but
+      `t_opt = T_eq(1 AU, area_ratio)` is _totally_ determined by
+      `area_ratio` once `r_home_au`, `emissivity` and `albedo` are fixed: the
+      algal window [0.0, 12.0] °C admits only `area_ratio` in [3.630, 4.311]
+      — a band 0.681 wide around the registered 4.0. And Colesie's measured
+      organisms are lichen-dominated Antarctic soil crusts: flat mats, whose
+      radiative geometry is a lamina (`area_ratio` 1-2), not a sphere. At
+      `area_ratio=2` — the geometry its own citation is closest to — algal
+      predicts 57.82 °C and misses the window's upper edge by 45.82 K,
+      against vascular's 23.42 K past its own edge, about 1.8x further out.
+      (The "28 K" above is the gap to the measured optimum, a different
+      quantity.) So the pass holds only at the registered geometry, and the
+      class that passed is the one whose registered geometry LEAST matches
+      its own citation. `area_ratio` stays frozen at 4.0 and the window is
+      untouched — this is a caveat on the gate that passed, not a re-scoring
+      of it. **Algal answered the registered
       question**: net carbon crosses zero at 1.2120–2.5301 AU across the
       swept, unsourced Ω=10–30 K grid (a 2.09× range — low confidence in any
       single number), and the tightest of the three candidate limits is
