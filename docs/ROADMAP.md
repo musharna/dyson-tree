@@ -75,7 +75,7 @@ each needs a number and a source before it becomes a mechanic:
    (`docs/bio_grounding_2026-09-02.md` §7): wood tension-parallel data are genuinely
    sparse, so the canonical reference's own conservative substitute — modulus of
    rupture, 45-139 MPa across 111 species-rows, median 80 — is what the sizing uses.
-   That replaces a *compressive* 300 MPa proxy and makes the wall 3.75x thicker
+   That replaces a _compressive_ 300 MPa proxy and makes the wall 3.75x thicker
    (0.6250 m vs 0.17 m at p=10 kPa, r=10 km).
 3. **Light compensation point under 1/r² insolation** — where photosynthesis
    stops paying for the respiration that sustains it, as a function of distance
@@ -104,6 +104,23 @@ than being chosen and then justified.
       existing thermal model survives — does a CONTAINED organism's temperature
       still follow T_eq, or does the vessel set it?
       See `docs/thermal_premise_retired_2026-09-03.md` section 4.
+      **SPEC DRAFTED 2026-09-04 —
+      `docs/superpowers/specs/2026-09-04-q3-pressure-vessel-design.md`.** The third
+      sub-question is ANSWERED analytically and needed no simulation: the vessel sets
+      it. For an SW-transparent, IR-opaque wall, `T_interior = (N+1)^0.25 * T_eq`, so
+      one shell takes the algal sphere 5.16 C -> 57.82 C and the distance restoring
+      the optimum is `sqrt(N+1)`, i.e. 1.0 -> 1.41421 AU. That answer exposed a
+      DEGENERACY in the three shipped questions: adding one IR-opaque shell and
+      halving `area_ratio` are the SAME operation (identical to 5.7e-14 K), yet
+      `sim/thermal.py:28` defines `area_ratio` as pure geometry — so every registered
+      4.0 also silently asserted UNCONTAINED, and Q2b's algal band [3.630, 4.311] is
+      not a statement about shape alone. Nothing is invalidated; what changes is what
+      those questions MEASURED. Q1/Q2/Q2b stay frozen. The spec reframes the
+      remaining two sub-questions into one: `R_max = 2*sigma*|ln tau_min|/(k*p)`, the
+      radius past which no wall is both strong enough to hold liquid water and clear
+      enough to pass light. **BLOCKED: `k`, the wall's PAR attenuation, is not
+      grounded — and the variance decomposition CANNOT be registered until it is,
+      because I choose the answer by choosing the band width.**
 - [ ] Ground each science-spine item with a real number and a citation, via
       `bio-grounding`; verify citations per the project's citation chain.
       **2026-09-03 pass: 1 of 2 targets closed.** Spine item 2's tensile input is
@@ -179,6 +196,7 @@ than being chosen and then justified.
       non-photosynthetic mass fraction, so it inherits the problem.
       `experiments/q1_crossover/RESULTS.md`, "The uncited assumption that sets
       the scale".
+
 - [x] **`t_opt` grounding CLOSED — finding retained, action superseded. The
       literature result below stands on its own and is worth keeping; the "next
       step" it proposed (a concave response + per-class `t_opt`) was BUILT as Q2b,
@@ -200,6 +218,7 @@ than being chosen and then justified.
       response (beta or Arrhenius-with-deactivation) and a per-class t_opt.
       Still ungrounded: T_opt for cold-adapted VASCULAR tissue - both sources
       are non-vascular.
+
 - [x] **Q2 CLOSED 2026-09-03 with no answer, and it will not be reopened in its
       registered form.** Its follow-up ("source `t_opt`, re-register") was done —
       `t_opt` was grounded 2026-09-02 and Q2b WAS that re-registration — and Q2b's
@@ -219,6 +238,7 @@ than being chosen and then justified.
       adopted. Next step: source `t_opt` for cold-adapted tissue from the
       literature and re-register — DONE, and superseded twice; see above. The
       frozen prereg was never tuned to pass, and stays frozen.
+
 - [x] **Q2b registered and run — COMPLETE FOR ONE CLASS, not two.**
       `experiments/q2b_adapted/prereg.yaml`, `run.py`, results in
       `experiments/q2b_adapted/RESULTS.md`. `t_opt` is no longer fitted or a
