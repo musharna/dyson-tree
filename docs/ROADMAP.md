@@ -152,6 +152,26 @@ than being chosen and then justified.
       grounded; a PAIR of grounded inputs must be shown to describe the SAME OBJECT before
       they may be combined. Every check in §9 tested one input at a time, and the error
       lived only in the pairing.**
+      **PAIRING SWEEP RUN 2026-09-04 — `bio_grounding` §11. Four findings, three of them new
+      classes.** ⚠️ **S1: THE REGISTERED PRESSURE BRACKET IS SELF-INCONSISTENT.** `p ∈ [882 Pa,
+      10 kPa]` takes its floor from the saturation pressure at the UNCONTAINED temperature —
+      but this spec's own settled result is that containment is MANDATORY and the vessel SETS
+      the temperature, which raises it. One shell needs **18.02 kPa, 1.8x above the bracket
+      top**; two need 78.9 kPa. At the self-consistent 18 kPa, framing A's red-band `R_max` is
+      **0.93-4.10 km against an assumed 10 km — it binds decisively.** ⚠️ **S2, and it reaches
+      the SHIPPED questions:** `sim/physiology.py` feeds a flat full-spectrum PAR scalar to an
+      `a_max` grounded on full-spectrum measurements, but a contained organism sits behind a
+      BLUE-PASS wall — Q1/Q2/Q2b model a light field the wall they now require would not
+      deliver. Unlike the `area_ratio` degeneracy this would change the NUMBERS. Recorded, NOT
+      resolved, and the frozen experiments stay frozen. ⚠️ S3: §9's diffusive-slab caveat
+      divides PURE bubble-free ice absorption by DUST-LADEN glacial ice scattering. ✅ S4
+      CLOSED: Q2b's adaptation premise had no ledger row and no DOI anywhere in the repo;
+      Scafaro 2023 and June 2004 are now verified (29.4/32.7 °C, 49 species and the Ω
+      definition all quoted verbatim from the gold-OA text, matching `sim/thermal.py` exactly)
+      — the residual is the ORGANISM: a soybean-derived Gaussian and a 49-vascular-C3-species
+      result supply the premise applied to a UNICELLULAR alga. **The sweep's own lesson: THE
+      UNIT OF VALIDATION IS THE EXPRESSION, NOT THE INPUT — citation checks, the honesty ledger
+      and ghostcite all answer YES for both halves of every defect found.**
 - [ ] Ground each science-spine item with a real number and a citation, via
       `bio-grounding`; verify citations per the project's citation chain.
       **2026-09-03 pass: 1 of 2 targets closed.** Spine item 2's tensile input is

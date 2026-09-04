@@ -357,6 +357,11 @@ without the circularity Gate 2 exists to prevent.
 | §9's R_max values (sigma = 80 MPa) | **WRONG BY ~53x** — 80 MPa is §7's clear-wood MOR; the k it divides is pure ice. No material has both (§10) |
 | Strength and transparency do not collide at any modelled radius | **RETRACTED** — at 10 kPa a consistent ice wall collides at 1.2–7.4 km, below the assumed 10 km, across the whole grounded sigma range (§10) |
 | Framing A's answer is decided by k | **FALSE** — k was the input that got grounded, but p and sigma are what flip the answer inside the registered bracket (§10) |
+| Registered pressure bracket p ∈ [882 Pa, 10 kPa] | **SELF-INCONSISTENT** — its floor is p_sat at the UNCONTAINED temperature, but containment is mandatory and raises T; N=1 needs 18.02 kPa, 1.8x ABOVE the bracket top (§11 S1) |
+| Flat PAR scalar combined with full-spectrum `a_max`, for a CONTAINED organism | **OPEN MISMATCH, and it reaches Q1/Q2/Q2b** — the wall is a blue-pass filter, so the light field and the photosynthetic parameters describe different spectra (§11 S2) |
+| L_d combining Warren & Brandt with Ackermann | **MATERIAL MISMATCH** — pure bubble-free ice absorption against dust-laden glacial ice scattering; the ledger flagged the formula, not its two objects (§11 S3) |
+| Scafaro 2023 / June 2004 numbers used by `sim/thermal.py` | **real-data-backed** — 29.4/32.7 °C, 49 species and the Ω definition all verified VERBATIM against the gold-OA primary text; the code docstrings match exactly (§11 S4) |
+| Adaptation premise applied to the ALGAL preset | **organism mismatch** — a whole-leaf Rubisco-deactivation result from 49 vascular C3 land plants, its Gaussian form derived on SOYBEAN LEAVES, supplying the thermal premise for a unicellular alga (§11 S4) |
 | A comet organism's wall is ice | **convenient fiction** — §9 grounds ice, not the identification |
 | Antarctic dust loading bounds an organism's wall impurities | **convenient fiction** — no connection whatsoever; used only to show scattering CAN dominate (§9) |
 
@@ -641,6 +646,119 @@ by putting them in one equation, and it survived because both halves had citatio
 check in §9 was a check on one input at a time, and the error lived only in the pairing** —
 which is why none of them could see it.
 
+## 11. The pairing sweep — applying §10's rule to the whole project
+
+**Trigger.** §10 produced a rule; a rule's first job is to be applied to everything the author
+already wrote. §10 found one mismatched pair by accident and its own first draft cleared a
+sentence that had the same defect (see §10's correction). This is the deliberate sweep.
+
+**Method.** Inventory every sourced number in `sim/`, the three `prereg.yaml` files and §§1–10,
+recording for each **the object it describes** — not just its value and citation. Then take
+every expression that combines two or more of them and ask whether those objects are the same
+material, the same organism, the same spectrum, the same condition.
+
+### Findings
+
+**S1 (NEW, and it is the sharpest thing in this document). The registered pressure bracket is
+computed from a temperature that the project's own settled result says cannot occur.**
+
+Q3's spec registers `p ∈ [882 Pa, 10 kPa]`. The floor is the saturation pressure at 5.16 °C —
+the algal sphere's **uncontained** equilibrium temperature. But §37 of that same spec settles
+that containment is mandatory and that **the vessel sets the temperature**,
+`T_interior = (N+1)^0.25 · T_eq`. Containment therefore *raises* the temperature, and
+saturation pressure is superexponential in it:
+
+| N shells | T_interior | p_sat required | inside the registered bracket? |
+| --- | --- | --- | --- |
+| 0 (uncontained — cannot photosynthesise) | 5.16 °C | 882 Pa | yes, and it is the floor |
+| **1** | **57.82 °C** | **18.02 kPa** | **NO — 1.8x above the top** |
+| 2 | 93.13 °C | 78.90 kPa | no — 7.9x above |
+| 3 | 120.44 °C | 200.7 kPa | no — 20x above |
+
+Positive control: both endpoints reproduce the roadmap's own published figures (5.16 °C → 882 Pa;
+57.82 °C → 18 kPa) from the live `sim.thermal` code and the Buck equation, before anything moves.
+
+**The bracket cannot contain its own premise.** Every pressure in it describes an organism that
+is not contained, and an organism that is not contained has no liquid water — which is the
+finding that promoted Q3 to a precondition in the first place. This is not a mismatch between
+two *sources*; it is a mismatch between a registered input and a result the project derived
+after registering it. **Same class, new mechanism: the pair here is a number and a conclusion,
+not two citations.**
+
+Consequence for framing A, at the self-consistent pressure (red band, grounded ice sigma):
+
+| p | R_max, 680 nm | binds at R = 10 km? |
+| --- | --- | --- |
+| 882 Pa — bracket floor, uncontained T | 18.9 – 83.8 km | no |
+| 10 kPa — bracket top | 1.67 – 7.39 km | yes |
+| **18.0 kPa — self-consistent, N = 1** | **0.93 – 4.10 km** | **yes, decisively** |
+
+**S2 (NEW, and it reaches the three SHIPPED questions, not just Q3). Full-spectrum
+photosynthetic parameters are combined with what §9/§10 show is a spectrally filtered light
+field.** `sim/physiology.py:29` computes PAR as one flat scalar, `TSI × 0.45 × 4.57` — all three
+factors describing the **unfiltered solar spectrum** — and feeds it to `gross_assimilation`
+alongside `a_max`, grounded in §4 from 530 species measured under **full-spectrum light**. For an
+uncontained organism the pair is consistent. For a contained one it is not: a consistent ice wall
+is a blue-pass filter that removes chlorophyll a's red Q band entirely (§10, corrected). Q1, Q2
+and Q2b all model photosynthesis at a light field the wall they now require would not deliver.
+
+Unlike the `area_ratio` degeneracy — which changed what those questions *measured* while leaving
+every number standing — this one would change the numbers. **NOT resolved here, and NOT a reason
+to touch the frozen experiments.** Recorded as the largest known open pairing.
+
+**S3 (NEW). Pure ice absorption is divided by dusty ice scattering.** §9's diffusive-slab caveat
+combines Warren & Brandt's **pure, bubble-free** ice absorption with Ackermann's **dust-laden
+deep South Pole glacial** ice transport length. Both are ice; they are not the same ice — the
+Ackermann paper's own point is that below 1450 m the bubbles are gone and the residual scattering
+*is* the dust. The ledger already flags the formula as applied-by-me-and-unvalidated; it did not
+flag that its two inputs describe different materials.
+
+**S4 (NEW, now CLOSED by this sweep). Q2b's adaptation premise had no ledger row and no DOI
+anywhere in the repository.** `sim/thermal.py` attributes the Gaussian form and the acclimation
+result to "June, Evans & Farquhar (2004), as quoted verbatim in Scafaro et al. (2023)", and
+`experiments/q2b_adapted/prereg.yaml:40` uses `measured_c: [29.4]` as Gate B's anchor — but
+neither §5's honesty ledger nor this document's reference list mentioned either paper, and no DOI
+for either appeared anywhere in the project. The sweep resolved and verified both from the gold-OA
+primary text:
+
+> "the Topt of Ac was 29.4 °C for cool and 32.7 °C for warm grown plants" `[Q]`
+> "temperature response curves of 49 species previously published" `[Q]`
+> "Ω is the difference in temperature from To at which J declines to e−1 (0.37) J(To)" `[Q]`
+
+All three match `sim/thermal.py`'s docstrings, including the Ω definition word for word — the
+code was right and the ledger simply never covered it. **The remaining mismatch is the organism:**
+a whole-leaf, Rubisco-deactivation result from 49 vascular C3 land plants supplies the thermal
+premise that `adapted_optimum` applies to the **unicellular** algal preset (§3 decided that class
+is a single cell). Same class as §4's `a_max` borrow, and now ledgered as such.
+
+### Pairs checked and CLEARED
+
+- `TSI × PAR_FRACTION × PHOTONS_PER_J` — all three describe the solar spectrum at top of
+  atmosphere; mutually consistent. (All three are *declared*, and S2 is about what happens to
+  them behind a wall — but as a pair, they agree.)
+- `equilibrium_temperature` — one grounded input (TSI) against exact constants and declared
+  emissivity/albedo. No two-source pair exists to mismatch.
+- `respiration(r_d, t)` — `r_d` is labelled a calibration knob in all three preregs, not a
+  sourced value, so no pairing arises. `Q10 = 2.0` and `T_REF_K = 293` are declared.
+- `a_max` vascular→algal, algal `leaf_mass_ratio`, `t_opt` from bryophyte/lichen sources —
+  already recorded in §§3, 4, 4b and 4d. Re-confirmed, not re-litigated.
+
+### What the sweep says about the rule that generated it
+
+Three of the four findings are pairings the project's existing checks could not have caught,
+because **every one of those checks validates a single input.** Citation verification asks "is
+this source real"; the honesty ledger asks "what layer does this claim sit on"; ghostcite asks
+"is this byline right". All three answer yes for both halves of every defect found here.
+
+**The unit of validation has to be the EXPRESSION, not the input.** A number is not true or
+false on its own — it is true *of an object*, and combining two numbers silently asserts their
+objects are the same one. That assertion is never written down, so nothing checks it.
+
+S1 sharpens this further: its two halves are a registered input and a later derived conclusion.
+So the rule generalises past citations — **anything a model combines carries an unstated claim
+that the things combined describe the same world, including a project's own past and present
+selves.**
+
 ## References (all ghostcite-clean, 0 findings)
 
 - **Kopp G (2011).** A new, lower value of total solar irradiance: Evidence and climate significance. *Geophysical Research Letters.* [10.1029/2010GL045777](https://doi.org/10.1029/2010GL045777)
@@ -658,4 +776,6 @@ which is why none of them could see it.
 - **Warren S G (2008).** Optical constants of ice from the ultraviolet to the microwave: A revised compilation. *Journal of Geophysical Research: Atmospheres* 113:D14220. [10.1029/2007JD009744](https://doi.org/10.1029/2007JD009744) — closed access; the PRIMARY DATA TABLE is public at `atmos.uw.edu/ice_optical_constants/IOP_2008_ASCIItable.dat` and is what §9 uses. Byline confirmed via OpenAlex: first author Stephen G. Warren, 2008, 1285 citations.
 - **Ackermann M (2006).** Optical properties of deep glacial ice at the South Pole. *Journal of Geophysical Research: Atmospheres* 111:D13203. [10.1029/2005JD006687](https://doi.org/10.1029/2005JD006687) — bronze OA; IceCube collaboration, 117 authors. Byline confirmed via OpenAlex: first author M. Ackermann, 2006, 539 citations. Used in §9 for the scattering caveat.
 - **Petrovic J J (2003).** Review: Mechanical properties of ice and snow. *Journal of Materials Science* 38:1–6. [10.1023/A:1021134128038](https://doi.org/10.1023/A:1021134128038) — closed access; NOT read directly. Byline and pagination confirmed independently via CrossRef and OpenAlex (619 citations). Its tensile-strength range reaches §10 quoted verbatim through Hirata et al. 2022.
+- **Scafaro A P (2023).** Rubisco deactivation and chloroplast electron transport rates co-limit photosynthesis above optimal leaf temperature in terrestrial plants. *Nature Communications* 14. [10.1038/s41467-023-38496-4](https://doi.org/10.1038/s41467-023-38496-4) — gold OA, full text read this pass. Supplies Q2b's 29.4/32.7 °C anchors, the 49-species count and the Ω definition, all quoted verbatim in §11 S4. Byline verified via OpenAlex (129 citations); co-authors Evans and Farquhar match `sim/thermal.py`'s attribution.
+- **June T (2004).** A simple new equation for the reversible temperature dependence of photosynthetic electron transport: a study on soybean leaf. *Functional Plant Biology* 31:275–283. [10.1071/fp03250](https://doi.org/10.1071/fp03250) — closed access, NOT read directly; reaches this project through Scafaro 2023's verbatim quotation, at one remove. Byline verified via OpenAlex (June, Evans, Farquhar; 212 citations). **Derived on soybean leaves** — noted because §11 S4 turns on the organism.
 - **Hirata N (2022).** Disruption of Saturn's ring particles by thermal stress. *Icarus* 114919. [10.1016/j.icarus.2022.114919](https://doi.org/10.1016/j.icarus.2022.114919) — green OA (Kobe University repository); full text read. Supplies §10's verbatim quotation of Petrovic's 0.7–3.1 MPa, and its reference entry for Petrovic matches CrossRef exactly.

@@ -30,6 +30,18 @@
 > title names a collision that DOES occur — the question is which pressure the organism
 > must hold.** Point (1), the spectral-filter defect, is unaffected and still fatal to
 > `max_vessel_radius(..., k_per_m, ...)` as specced: `k` must become a band, not a scalar.
+>
+> **⚠️⚠️ THIRD CORRECTION, 2026-09-04 — `bio_grounding` §11 S1 ANSWERS "which pressure".**
+> The question the correction above left open is settled by this spec's own contained-temperature
+> result. **The registered bracket `p ∈ [882 Pa, 10 kPa]` is self-inconsistent:** its floor is the
+> saturation pressure at the UNCONTAINED 5.16 °C, but §37 below settles that containment is
+> mandatory and sets the temperature. One IR-opaque shell puts the interior at 57.82 °C, whose
+> saturation pressure is **18.02 kPa — 1.8x above this bracket's own ceiling**; two shells need
+> 78.9 kPa. **Every pressure in the registered bracket describes an organism with no liquid
+> water, which is the condition that promoted this question to a precondition.** At the
+> self-consistent 18 kPa the red-band `R_max` is **0.93–4.10 km against the 10 km radius assumed
+> here** — so the collision this spec is named for does not merely occur, it binds decisively.
+> **A re-registered Q3 must derive `p` from `T_interior`, not declare it.**
 
 ## Why this is a precondition and not an extension
 
