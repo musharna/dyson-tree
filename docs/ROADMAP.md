@@ -135,6 +135,23 @@ than being chosen and then justified.
       no longer moot) or as this falsification with the spectral-filter result as the
       finding. Had the variance decomposition been registered on my band, this would
       have been a retraction instead of a correction.
+      **THAT FALSIFICATION IS ITSELF PARTLY WITHDRAWN, 2026-09-04 — `bio_grounding` §10.**
+      §9 computed `R_max` from §7's WOOD tensile strength (80 MPa) divided by §9's ICE
+      absorption coefficient. No material in the project's grounding has both properties,
+      so the quotient describes neither, and it is wrong by ~53x in the direction that
+      flattered the conclusion. Ice tensile strength is now grounded at 0.7-3.1 MPa
+      (Petrovic 2003 via Hirata 2022, green OA, at one remove). Recomputed consistently,
+      **framing A is UNRESOLVED, not falsified: its answer flips inside the registered
+      pressure bracket.** At 10 kPa the red band collides at 1.2-7.4 km, BELOW the assumed
+      10 km, across the whole grounded sigma range; at the 882 Pa saturation floor it does
+      not collide, but the margin is 1.4x, not the "14x to 5 orders of magnitude" §9
+      claimed. What decides framing A is `p` and `sigma` — NOT `k`, the input the spec
+      blocked on and the only one that got grounded. The spectral-filter result, the 135x
+      band error, the `area_ratio` degeneracy and the contained-temperature result all
+      stand unaffected. **New rule (§10): a grounded input is not safe merely because it is
+      grounded; a PAIR of grounded inputs must be shown to describe the SAME OBJECT before
+      they may be combined. Every check in §9 tested one input at a time, and the error
+      lived only in the pairing.**
 - [ ] Ground each science-spine item with a real number and a citation, via
       `bio-grounding`; verify citations per the project's citation chain.
       **2026-09-03 pass: 1 of 2 targets closed.** Spine item 2's tensile input is

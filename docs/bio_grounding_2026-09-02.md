@@ -352,7 +352,11 @@ without the circularity Gate 2 exists to prevent.
 | My declared band k ∈ [0.1, 5.0] /m | **WRONG — 2 orders too high at the blue end.** Had the variance decomposition been registered on it, the grounded data would have falsified it (§9) |
 | Scattering, not absorption, sets attenuation in real ice | **real-data-backed** — transport length 10–100 m vs absorption 100–400 m at 400 nm (§9) |
 | Diffusion length L_d = sqrt(l_abs·l_tr/3) | **derived, standard radiative transfer** — the formula is textbook; its application to this geometry is mine and unvalidated (§9) |
-| Wall transparency limits organism radius | **FALSIFIED** — R_max is 1.3e3–9.9e4 km against an assumed 10 km; the constraint does not bind (§9) |
+| Wall transparency limits organism radius | **WITHDRAWN by §10** — §9's R_max paired WOOD's sigma with ICE's k. Recomputed consistently the status is **UNRESOLVED**: it binds at 10 kPa (1.2–7.4 km), not at 882 Pa (§10) |
+| Ice tensile strength 0.7–3.1 MPa | **real-data-backed, AT ONE REMOVE** — verbatim from Hirata et al. 2022 (green OA) quoting Petrovic 2003 (closed); Petrovic's byline verified via CrossRef + OpenAlex, but the paper was not read (§10) |
+| §9's R_max values (sigma = 80 MPa) | **WRONG BY ~53x** — 80 MPa is §7's clear-wood MOR; the k it divides is pure ice. No material has both (§10) |
+| Strength and transparency do not collide at any modelled radius | **RETRACTED** — at 10 kPa a consistent ice wall collides at 1.2–7.4 km, below the assumed 10 km, across the whole grounded sigma range (§10) |
+| Framing A's answer is decided by k | **FALSE** — k was the input that got grounded, but p and sigma are what flip the answer inside the registered bracket (§10) |
 | A comet organism's wall is ice | **convenient fiction** — §9 grounds ice, not the identification |
 | Antarctic dust loading bounds an organism's wall impurities | **convenient fiction** — no connection whatsoever; used only to show scattering CAN dominate (§9) |
 
@@ -448,6 +452,13 @@ grounding. Do not cite it until the constant is quoted from a real source.
 
 ## 9. Wall PAR attenuation `k` — GROUNDED, and it FALSIFIES the constraint it was meant to set
 
+> **⚠️ PARTIALLY WITHDRAWN 2026-09-04 by §10, same day.** The `R_max` numbers below pair
+> §7's WOOD tensile strength (80 MPa) with this section's ICE absorption coefficient. No
+> material in this project's grounding has both properties. With an internally consistent
+> ice wall the constraint DOES bind at the top of the registered pressure bracket. **Read §10
+> before citing anything in the "constraint does not bind" paragraph.** Everything else in
+> §9 — the x701 spectral spread, the 135x band error, the scattering caveat — is unaffected.
+
 This was the blocker the Q3 spec named: `k` could not be declared by me, because a
 one-at-a-time sweep made `k` dominate `R_max` by x50 and I had chosen its band. Grounding it
 changed the answer, which is the point of having refused to register it.
@@ -487,7 +498,9 @@ floor.** Registering the variance decomposition on my band would have produced a
 data falsifies. The refusal to register was correct, and it is the only reason this is a
 grounding rather than a retraction.
 
-**The constraint does not bind.** With grounded `k` at sigma = 80 MPa and tau_min = 0.01:
+**The constraint does not bind.** `[WITHDRAWN 2026-09-04 — §10: this sigma is WOOD's and
+this k is ICE's. With a consistent ice wall the constraint DOES bind at 10 kPa.]` With
+grounded `k` at sigma = 80 MPa and tau_min = 0.01:
 
 | p | blue end | red end |
 | --- | --- | --- |
@@ -522,6 +535,87 @@ constraint does not set. Q3 must either be re-registered against the constraint 
 longer moot), or be registered as the falsification above with the spectral-filtering result as
 its finding. That decision belongs to the next pass, not to this grounding.
 
+## 10. The sigma that produced §9's falsification is WOOD's and the k is ICE's — no wall is both
+
+**Trigger.** Re-reading §9 while scoping Q3's re-registration, to check which constraint
+framing B would be inheriting as already-settled.
+
+**The defect.** §9 computes `R_max` "*with grounded `k` at sigma = 80 MPa*". 80 MPa is §7's
+median clear-wood modulus of rupture, extracted from 111 species-rows of the Wood Handbook.
+`k` is Warren & Brandt's absorption coefficient for pure bubble-free ice. So
+
+```
+R_max = 2*sigma*|ln tau_min| / (k*p)
+```
+
+was evaluated for a material simultaneously as strong as clear oak and as transparent as
+bubble-free ice. **Nothing in this project's grounding supplies such a material.** The two
+inputs describe two different substances and the quotient is a property of neither. This is
+not a rounding concern: it is a factor of ~53 on the load-bearing quantity, in the direction
+that flatters the conclusion §9 drew.
+
+**Grounding sigma for the material `k` actually describes.** Petrovic (2003) is the canonical
+review and is closed access. Its value is quoted verbatim by a peer-reviewed, green-OA paper:
+
+> "The tensile strength of non-porous pure water ice varies from 0.7 to 3.1 MPa, depending on
+> the temperature, strain rate, and minor components (Petrovic, 2003)." `[Q]`
+> — Hirata et al. (2022), *Icarus*, 10.1016/j.icarus.2022.114919
+
+Petrovic's byline was verified independently via CrossRef and OpenAlex (J. J. Petrovic,
+*J. Mater. Sci.* **38**:1–6, 2003, 619 citations), and Hirata et al.'s reference entry matches
+that metadata exactly. **The value is grounded AT ONE REMOVE**: quoted from a public paper
+that cites the closed original. Petrovic was not read directly. Recorded at that layer, not
+higher.
+
+The materials now agree: Warren & Brandt's `k` is pure bubble-free ice, Petrovic's range is
+non-porous pure water ice. Same substance, for the first time in this calculation.
+
+**Recomputed.** Positive control first — the closed form reproduces §9's own published
+numbers (141.5 km against its 141 at 10 kPa/700 nm; 1.129e6 against its 1.12e6 at
+882 Pa/400 nm), so sigma is the only thing that changes below. `tau_min` = 0.01 throughout.
+
+| p | band | §9's value (sigma = 80 MPa, WOOD) | grounded ice (sigma = 0.7–3.1 MPa) | binds at R = 10 km? |
+| --- | --- | --- | --- | --- |
+| 882 Pa | 400 nm | 1.13e6 km | 9878 – 43750 km | no |
+| 882 Pa | 550 nm | 1.60e4 km | 140 – 619 km | no |
+| 882 Pa | 680 nm (chl-a red peak) | 2163 km | 18.9 – 83.8 km | no — margin 1.9x |
+| 882 Pa | 700 nm | 1605 km | 14.0 – 62.2 km | no — **margin 1.4x** |
+| 10 kPa | 400 nm | 9.96e4 km | 871 – 3858 km | no |
+| 10 kPa | 550 nm | 1409 km | 12.3 – 54.6 km | no — margin 1.2x |
+| 10 kPa | 680 nm (chl-a red peak) | 191 km | 1.67 – 7.39 km | **YES** |
+| 10 kPa | 700 nm | 141 km | 1.24 – 5.48 km | **YES** |
+
+**Framing A is not falsified. Its answer flips inside the project's own declared input
+bracket.** The Q3 spec registers `p` as bracketed 882 Pa – 10 kPa (saturation floor to Paul
+2004's demonstrated-viable hypobaric pressure). At the top of that bracket, an internally
+consistent ice wall collides with transparency in the red band at **1.2–7.4 km — below the
+10 km radius the project assumes** — across the entire grounded ice-strength range. At the
+bottom of the bracket it does not collide, but the margin at the weak end is **1.4x, not the
+"14x to 5 orders of magnitude" §9 claims.**
+
+So the honest status of framing A is **UNRESOLVED, not falsified**, and what decides it is
+`p` and `sigma` — not `k`, the input the spec blocked on and the one that was actually
+grounded first.
+
+**What §10 does not touch.** The spectral-filter result stands unchanged: `k` spans a factor
+of 701 across PAR and no sigma enters that computation. The 135x band error stands. The
+`area_ratio` degeneracy stands. The contained-temperature result (`T_interior =
+(N+1)^0.25 * T_eq`) stands. What is withdrawn is one sentence: that strength and transparency
+do not collide at any radius worth modelling.
+
+**Root class, and the rule this buys.** §9 and the Q3 spec each caught *a parameter that
+cannot represent what it is trusted for* — the scalar `k`, and `area_ratio` carrying two jobs.
+§10 is the same class one level up: two parameters that each faithfully represent a real
+material, combined into a quotient that represents none. The rule:
+
+> **A grounded input is not safe merely because it is grounded. A pair of grounded inputs
+> must be shown to describe the same object before they may be combined.**
+
+Grounding `sigma` (§7) and grounding `k` (§9) were each correct work. The defect was created
+by putting them in one equation, and it survived because both halves had citations. **Every
+check in §9 was a check on one input at a time, and the error lived only in the pairing** —
+which is why none of them could see it.
+
 ## References (all ghostcite-clean, 0 findings)
 
 - **Kopp G (2011).** A new, lower value of total solar irradiance: Evidence and climate significance. *Geophysical Research Letters.* [10.1029/2010GL045777](https://doi.org/10.1029/2010GL045777)
@@ -538,3 +632,5 @@ its finding. That decision belongs to the next pass, not to this grounding.
 - **Yang X (2020).** Quantifying photosynthetic performance of phytoplankton based on photosynthesis–irradiance response models. *Environmental Sciences Europe.* [10.1186/s12302-020-00306-9](https://doi.org/10.1186/s12302-020-00306-9) — CC-BY gold OA; cited in §8 as a NEGATIVE result (correct paper, full text unreachable). Byline confirmed via OpenAlex: first author Xiaolong Yang, 2020.
 - **Warren S G (2008).** Optical constants of ice from the ultraviolet to the microwave: A revised compilation. *Journal of Geophysical Research: Atmospheres* 113:D14220. [10.1029/2007JD009744](https://doi.org/10.1029/2007JD009744) — closed access; the PRIMARY DATA TABLE is public at `atmos.uw.edu/ice_optical_constants/IOP_2008_ASCIItable.dat` and is what §9 uses. Byline confirmed via OpenAlex: first author Stephen G. Warren, 2008, 1285 citations.
 - **Ackermann M (2006).** Optical properties of deep glacial ice at the South Pole. *Journal of Geophysical Research: Atmospheres* 111:D13203. [10.1029/2005JD006687](https://doi.org/10.1029/2005JD006687) — bronze OA; IceCube collaboration, 117 authors. Byline confirmed via OpenAlex: first author M. Ackermann, 2006, 539 citations. Used in §9 for the scattering caveat.
+- **Petrovic J J (2003).** Review: Mechanical properties of ice and snow. *Journal of Materials Science* 38:1–6. [10.1023/A:1021134128038](https://doi.org/10.1023/A:1021134128038) — closed access; NOT read directly. Byline and pagination confirmed independently via CrossRef and OpenAlex (619 citations). Its tensile-strength range reaches §10 quoted verbatim through Hirata et al. 2022.
+- **Hirata N (2022).** Disruption of Saturn's ring particles by thermal stress. *Icarus* 114919. [10.1016/j.icarus.2022.114919](https://doi.org/10.1016/j.icarus.2022.114919) — green OA (Kobe University repository); full text read. Supplies §10's verbatim quotation of Petrovic's 0.7–3.1 MPa, and its reference entry for Petrovic matches CrossRef exactly.

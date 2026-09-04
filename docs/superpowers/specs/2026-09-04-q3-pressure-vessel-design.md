@@ -19,6 +19,17 @@
 > forced clear-wall architecture, and the refusal to register a prediction on an
 > author-chosen band — that refusal is the only reason this is a correction and not a
 > retraction. Q3 must be re-registered; §9 states the two candidate framings.
+>
+> **⚠️⚠️ CORRECTION TO THE CORRECTION, 2026-09-04 (same day) — read `bio_grounding` §10.**
+> Point (2) above is WITHDRAWN and the title is REINSTATED. §9 divided §7's WOOD tensile
+> strength (80 MPa) by §9's ICE absorption coefficient; no material in this project's
+> grounding has both properties, so that `R_max` is wrong by ~53x. With ice strength
+> grounded (0.7–3.1 MPa, Petrovic 2003 via Hirata 2022) the collision is real at the top of
+> this spec's own registered pressure bracket: **1.2–7.4 km in the red band at 10 kPa,
+> BELOW the 10 km radius assumed here**, and 14–62 km at the 882 Pa floor. **This spec's
+> title names a collision that DOES occur — the question is which pressure the organism
+> must hold.** Point (1), the spectral-filter defect, is unaffected and still fatal to
+> `max_vessel_radius(..., k_per_m, ...)` as specced: `k` must become a band, not a scalar.
 
 ## Why this is a precondition and not an extension
 
