@@ -71,7 +71,12 @@ each needs a number and a source before it becomes a mechanic:
    (`docs/prior_art_2026-09-01.md` §3). Element scarcity is NOT a free
    constraint; not modelled in Q1.
 2. **Biological pressure vessel** — tensile strength vs wall thickness at ~1 atm.
-   A materials problem with a right answer.
+   A materials problem with a right answer. **Tensile input GROUNDED 2026-09-03**
+   (`docs/bio_grounding_2026-09-02.md` §7): wood tension-parallel data are genuinely
+   sparse, so the canonical reference's own conservative substitute — modulus of
+   rupture, 45-139 MPa across 111 species-rows, median 80 — is what the sizing uses.
+   That replaces a *compressive* 300 MPa proxy and makes the wall 3.75x thicker
+   (0.6250 m vs 0.17 m at p=10 kPa, r=10 km).
 3. **Light compensation point under 1/r² insolation** — where photosynthesis
    stops paying for the respiration that sustains it, as a function of distance
    from the sun.
@@ -101,6 +106,14 @@ than being chosen and then justified.
       See `docs/thermal_premise_retired_2026-09-03.md` section 4.
 - [ ] Ground each science-spine item with a real number and a citation, via
       `bio-grounding`; verify citations per the project's citation chain.
+      **2026-09-03 pass: 1 of 2 targets closed.** Spine item 2's tensile input is
+      GROUNDED (§7, above). Spine item 3's `I_c` floor is STILL NOT GROUNDED — the
+      right paper was identified (Yang 2020, CC-BY gold OA, reports `I_c` for seven
+      species) but its tables proved unreachable: Springer redirects to an auth wall,
+      the DA MCP finds no fetchable full text, and it is not in EuropePMC. Recorded
+      as a failed attempt with the routes tried in
+      `docs/bio_grounding_2026-09-02.md` §8, so the next attempt starts elsewhere —
+      an interlibrary/PDF copy of that one paper is the shortest path.
       **Started 2026-09-02 for the two parameters the Q1 gate cannot see —
       `docs/bio_grounding_2026-09-02.md`.** `leaf_mass_ratio` is now BOUNDED
       (LMF 0.20-0.80 excluding adult trees, Poorter & Sack 2012), which puts

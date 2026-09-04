@@ -340,6 +340,13 @@ without the circularity Gate 2 exists to prevent.
 | 89.5% of the algal band unreachable at lmr=1.0 | **derived** — exact, supersedes the 60.1% measured at lmr=0.8 (§4b) |
 | Microalgal I_c floor VALUE | **unresolved** — 14C data structurally cannot supply it (§4c) |
 | r\* values in §2 and §3 | computed live this session against `sim/`, positive-control checked |
+| Tensile data for wood are sparse in the literature | **real-mechanism-backed** — the canonical reference states it in its own property definition (§7) |
+| MOR is the accepted conservative substitute for tensile strength | **real-mechanism-backed** — verbatim, and the error direction is stated (§7) |
+| Clear-wood MOR 45–139 MPa, median 80 | **real-data-backed** — extracted from 111 species-rows of the metric strength tables (§7) |
+| Wall thickness 0.36–1.11 m, median 0.625 m | **derived** — the doc's own thin-wall relation at the MOR range (§7) |
+| A comet organism's tissue is wood-like | **convenient fiction** — nothing grounds this; §7 grounds the number, not the analogy |
+| Microalgal I_c floor VALUE (2nd attempt) | **STILL unresolved** — the right paper was found and is CC-BY, but publisher-blocked (§8) |
+| I_c = R_d/alpha with a hard ceiling on alpha | **plausible, MY OWN derivation, source NOT verified** — a lead for the next pass, not a grounding (§8) |
 
 ## 6. What this changes for Q2
 
@@ -357,6 +364,80 @@ without the circularity Gate 2 exists to prevent.
   gate cannot reach is not a prediction — §2 shows the grounded parameter range and the
   registered band only partly overlap.
 
+## 7. Wood tensile strength — GROUNDED, and it makes the wall 3.75x thicker
+
+**Trigger.** `docs/prior_art_2026-09-01.md` §4 flags "**unknown:** a quotable bulk *tensile*
+strength for wood", and its derived sizing leans on Gibson's *compressive* 300 MPa (densest
+palm) as an order-of-magnitude proxy. Q3 cannot report a wall thickness that rests on a
+compressive number.
+
+**The gap is real, not a search failure.** The canonical engineering reference says so in
+its own definition of the property: "Relatively few data are available on the tensile
+strength of various species". Its species tables (5-3a/5-4a/5-5a) carry modulus of rupture,
+compression parallel and perpendicular, shear parallel, and tension **perpendicular** — and
+no tension-**parallel** column at all. So §4's `unknown` was correctly flagged.
+
+**What the reference supplies instead is a RULE, and the rule is what to port:**
+
+> "In the absence of sufficient tension test data, modulus of rupture values are sometimes
+> substituted for tensile strength of small, clear, straight-grained pieces of wood."
+
+> "The modulus of rupture is considered to be a low or conservative estimate of tensile
+> strength for clear specimens (this is not true for lumber)."
+
+The direction of the error is stated, and it is the safe direction for a pressure vessel:
+MOR **under**-estimates tensile strength, so a wall sized from MOR is too thick, never too
+thin. That is what makes it usable as a substitute rather than merely a related number.
+
+**Values.** MOR at 12% moisture content, extracted from the metric strength tables,
+n = 111 species-rows. Wall thickness from the doc's own thin-wall relation, sigma*t = p*r/2
+= 5e7 N/m at p = 10 kPa, r = 10 km:
+
+| statistic | MOR (MPa) | wall thickness t |
+| --- | --- | --- |
+| min | 45 | 1.1111 m |
+| 10th pct | 59 | 0.8475 m |
+| **median** | **80** | **0.6250 m** |
+| 90th pct | 117 | 0.4274 m |
+| max | 139 | 0.3597 m |
+| *(current doc proxy: Gibson compressive)* | *300* | *0.1667 m* |
+
+**Consequence: the registered sizing is optimistic by 3.75x at the median.** 0.17 m of "the
+strongest tissue" becomes 0.625 m of median clear wood, and 1.11 m at the weakest species in
+the table. The qualitative claim in §4 — that this is metres of parenchyma-grade material,
+not a thin skin — survives and strengthens.
+
+**Where this stops.** MOR is measured on clear, straight-grained, defect-free Earth-grown
+specimens at 12% MC. Nothing here establishes that a comet organism's tissue is wood, and a
+vessel wall is loaded very differently from a bending test-piece. This grounds the NUMBER the
+sizing needs; it does not license the analogy that the organism is made of oak.
+
+## 8. Microalgal I_c floor — NOT GROUNDED this pass. Recorded as a failed attempt.
+
+The second target of this pass was the floor on `I_c` that §4b/§4c show is exactly a ceiling
+on r\*. **It was not obtained.** What was tried, so the next attempt does not repeat it:
+
+- **Yang X (2020)**, "Quantifying photosynthetic performance of phytoplankton based on
+  photosynthesis-irradiance response models" (10.1186/s12302-020-00306-9) is the right paper:
+  seven phytoplankton species, four P-I models, and it reports the light compensation point
+  `I_c` explicitly. It is CC-BY gold OA. **The values are in the tables, and the tables were
+  not reachable**: springeropen redirects to a Springer IdP auth wall, the DA MCP reports no
+  fetchable open-access full text, and the record is not in EuropePMC. The abstract gives
+  only the ordering (*Platymonas subcordiformis* < *Dunaliella salina* / *Isochrysis
+  galbana*), not the numbers.
+- Abstract-scoped searches for numeric compensation irradiances returned nothing usable;
+  these values live in tables, which OpenAlex does not index.
+
+**A better structural route, flagged as UNVERIFIED reasoning, not a result.** On the linear
+low-light limb, P_net = alpha*I - R_d, so `I_c = R_d / alpha` by definition. alpha has a hard
+physical ceiling — the Z-scheme needs a minimum number of photons per O2 — so a floor on
+`I_c` follows from a floor on maintenance respiration, which cannot be zero for a living
+cell. If that holds, the registerable quantity is a respiration floor plus a physical
+constant, neither of which is a fitted parameter. **This is my own derivation. The photon
+requirement was NOT verified against a source this pass** (the OA copies of the two reviews
+that state it were also publisher-blocked), so it is recorded here as a lead, not a
+grounding. Do not cite it until the constant is quoted from a real source.
+
 ## References (all ghostcite-clean, 0 findings)
 
 - **Kopp G (2011).** A new, lower value of total solar irradiance: Evidence and climate significance. *Geophysical Research Letters.* [10.1029/2010GL045777](https://doi.org/10.1029/2010GL045777)
@@ -369,3 +450,5 @@ without the circularity Gate 2 exists to prevent.
 - **Colesie C (2014).** Habitat stress initiates changes in composition, CO2 gas exchange and C-allocation as life traits in biological soil crusts. *The ISME Journal.* [10.1038/ismej.2014.47](https://doi.org/10.1038/ismej.2014.47) — green OA (PMC4184013); ghostcite clean.
 - **Amirian M (2026).** A Compilation of Marine Photosynthesis–Irradiance Data from 14C Incubation Experiments. Zenodo. [10.5281/zenodo.21908199](https://doi.org/10.5281/zenodo.21908199) — CC-BY-4.0 dataset; used as a NEGATIVE result (§4c).
 - **Westerband A C (2022).** Australia-wide photosynthetic trait dataset. Dryad. [10.5061/dryad.j9kd51cgr](https://doi.org/10.5061/dryad.j9kd51cgr) — CC-0 dataset. ghostcite returns tier U (not in CrossRef); Dryad DOIs are registered with DataCite, and DataCite confirms first creator Westerband, publicationYear 2022, publisher Dryad.
+- **Forest Products Laboratory (2010).** Wood Handbook — Wood as an Engineering Material. Centennial Edition. General Technical Report FPL-GTR-190. Madison, WI: U.S. Department of Agriculture, Forest Service, Forest Products Laboratory. 508 p. — public domain (U.S. government work); no DOI, so not ghostcite-checkable. Identity verified from the PDF's own embedded metadata (title, author "USDA Forest Service", and a full self-citation in the subject field). Used in §7.
+- **Yang X (2020).** Quantifying photosynthetic performance of phytoplankton based on photosynthesis–irradiance response models. *Environmental Sciences Europe.* [10.1186/s12302-020-00306-9](https://doi.org/10.1186/s12302-020-00306-9) — CC-BY gold OA; cited in §8 as a NEGATIVE result (correct paper, full text unreachable). Byline confirmed via OpenAlex: first author Xiaolong Yang, 2020.
