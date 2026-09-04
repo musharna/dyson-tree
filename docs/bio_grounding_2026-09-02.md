@@ -597,8 +597,33 @@ So the honest status of framing A is **UNRESOLVED, not falsified**, and what dec
 `p` and `sigma` — not `k`, the input the spec blocked on and the one that was actually
 grounded first.
 
-**What §10 does not touch.** The spectral-filter result stands unchanged: `k` spans a factor
-of 701 across PAR and no sigma enters that computation. The 135x band error stands. The
+**What §10 does not touch — CORRECTED, same pass.** The ×701 *spread* stands: it is a property
+of `k` across wavelength and no sigma enters it. But this section's first draft claimed the
+spectral-filter result stood "unchanged", and **that overclaimed.** §9's PER-THICKNESS
+transmission figures — *"at the committed 0.625 m thickness the wall passes 0.9995 at 400 nm and
+0.7223 at 700 nm"* — take their thickness from WOOD (0.625 m at 80 MPa) and their `k` from ICE.
+Same defect, same section, one sentence I had just declared safe. Recomputed at 10 kPa / 10 km
+with a consistent ice wall (positive control: the closed form returns the committed 0.6250 m at
+80 MPa before anything changes):
+
+| sigma | wall t | 400 nm | 550 nm | 680 nm | 700 nm |
+| --- | --- | --- | --- | --- | --- |
+| wood 80 MPa (§9's) | 0.625 m | 0.9995 | 0.9678 | 0.7855 | 0.7223 |
+| ice 3.1 MPa | 16.1 m | 0.9881 | 0.4302 | 1.97e-3 | 2.26e-4 |
+| ice 1.5 MPa | 33.3 m | 0.9756 | 0.1749 | 2.56e-6 | 2.91e-8 |
+| ice 0.7 MPa | 71.4 m | 0.9485 | 2.39e-2 | 1.04e-12 | 7.08e-17 |
+
+**The conclusion survives and gets far stronger; every number supporting it changes.** A
+consistent ice wall is not a mild reddening filter — it is a **blue-pass filter that is opaque
+in the red**, blue/red contrast 3.4e7 at ice-mid against §9's quoted 25.8. Chlorophyll a's Q
+band is not attenuated, it is *gone*; only the Soret band survives. The rest of §10 — the
+`R_max` correction, the 135x band error, the `area_ratio` degeneracy, the contained-temperature
+result — is unaffected.
+
+**This was found by applying §10's own rule to the rest of the document, and it is the third
+instance of the class in one section.** Recorded because the rule caught a case its own author
+had explicitly cleared one paragraph earlier: **naming a defect class does not exempt the
+sentence that names it.** The 135x band error stands. The
 `area_ratio` degeneracy stands. The contained-temperature result (`T_interior =
 (N+1)^0.25 * T_eq`) stands. What is withdrawn is one sentence: that strength and transparency
 do not collide at any radius worth modelling.
