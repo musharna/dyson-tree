@@ -347,6 +347,14 @@ without the circularity Gate 2 exists to prevent.
 | A comet organism's tissue is wood-like | **convenient fiction** — nothing grounds this; §7 grounds the number, not the analogy |
 | Microalgal I_c floor VALUE (2nd attempt) | **STILL unresolved** — the right paper was found and is CC-BY, but publisher-blocked (§8) |
 | I_c = R_d/alpha with a hard ceiling on alpha | **plausible, MY OWN derivation, source NOT verified** — a lead for the next pass, not a grounding (§8) |
+| Ice PAR absorption coefficient 0.00074–0.52061 /m | **real-data-backed** — computed from Warren & Brandt's own published table, 31 rows in 400–700 nm (§9) |
+| A single scalar `k` describes the wall | **FALSE, and the spec assumed it** — k spans a factor of 701 across PAR; the wall is a spectral filter, not an attenuator (§9) |
+| My declared band k ∈ [0.1, 5.0] /m | **WRONG — 2 orders too high at the blue end.** Had the variance decomposition been registered on it, the grounded data would have falsified it (§9) |
+| Scattering, not absorption, sets attenuation in real ice | **real-data-backed** — transport length 10–100 m vs absorption 100–400 m at 400 nm (§9) |
+| Diffusion length L_d = sqrt(l_abs·l_tr/3) | **derived, standard radiative transfer** — the formula is textbook; its application to this geometry is mine and unvalidated (§9) |
+| Wall transparency limits organism radius | **FALSIFIED** — R_max is 1.3e3–9.9e4 km against an assumed 10 km; the constraint does not bind (§9) |
+| A comet organism's wall is ice | **convenient fiction** — §9 grounds ice, not the identification |
+| Antarctic dust loading bounds an organism's wall impurities | **convenient fiction** — no connection whatsoever; used only to show scattering CAN dominate (§9) |
 
 ## 6. What this changes for Q2
 
@@ -438,6 +446,82 @@ requirement was NOT verified against a source this pass** (the OA copies of the 
 that state it were also publisher-blocked), so it is recorded here as a lead, not a
 grounding. Do not cite it until the constant is quoted from a real source.
 
+## 9. Wall PAR attenuation `k` — GROUNDED, and it FALSIFIES the constraint it was meant to set
+
+This was the blocker the Q3 spec named: `k` could not be declared by me, because a
+one-at-a-time sweep made `k` dominate `R_max` by x50 and I had chosen its band. Grounding it
+changed the answer, which is the point of having refused to register it.
+
+**Source and route.** Warren & Brandt (2008), 10.1029/2007JD009744, is the standard
+compilation of ice optical constants; it is closed access, but its abstract states *"Tables of
+the revised optical constants are available on a website"* `[Q]`, and that site
+(`atmos.uw.edu/ice_optical_constants/`) serves the primary table as
+`IOP_2008_ASCIItable.dat` under HTTP 200 to plain curl. **The paywall was routed around by
+taking the data, not the paper** — the same move that closed §7 via the public-domain Wood
+Handbook. Column meanings were read off the host page rather than assumed: *"column 1:
+wavelength (microns) column 2: m re column 3: m im"* `[Q]`. 486 of 487 lines parsed; 31 rows
+lie in PAR. The parse count is asserted in the extraction script, because §8's lesson was
+that a parser reporting a confident partial result is the failure mode here.
+
+**The number.** Absorption coefficient `k_abs = 4*pi*m_im/lambda`:
+
+| lambda | m_im | k_abs (1/m) | absorption length |
+| --- | --- | --- | --- |
+| 400 nm | 2.365e-11 | 0.00074 | 1345.9 m |
+| 550 nm | 2.289e-09 | 0.05230 | 19.1 m |
+| 680 nm (chl-a red peak) | 2.090e-08 | 0.38623 | 2.6 m |
+| 700 nm | 2.900e-08 | 0.52061 | 1.9 m |
+
+**`k` is not a scalar, and the spec was wrong to treat it as one.** Across PAR it spans a
+factor of **701**. A single `k` cannot represent this wall: it is a spectral filter. At the
+committed 0.625 m thickness the wall passes 0.9995 at 400 nm and 0.7223 at 700 nm; by 6.25 m
+(R = 100 km) that is 0.9954 against 0.0386, a blue/red ratio of 25.8. **A thick clear wall
+does not dim the interior so much as redden-strip it** — it removes the red band chlorophyll a
+uses most and leaves the blue Soret band. That is a real, grounded architectural consequence,
+and the scalar-`k` model in the spec cannot express it. Same root class as the `area_ratio`
+degeneracy the spec itself caught: a parameter that cannot represent what it is trusted for.
+
+**My declared band was wrong, in the direction that flattered the question.** The spec
+declared `k` in [0.1, 5.0] /m. The grounded blue end is **0.00074 /m — 135x smaller than my
+floor.** Registering the variance decomposition on my band would have produced a result the
+data falsifies. The refusal to register was correct, and it is the only reason this is a
+grounding rather than a retraction.
+
+**The constraint does not bind.** With grounded `k` at sigma = 80 MPa and tau_min = 0.01:
+
+| p | blue end | red end |
+| --- | --- | --- |
+| 882 Pa (saturation) | 1.12e6 km | 1605 km |
+| 10 kPa (Paul 2004) | 9.92e4 km | 141 km |
+
+Against an assumed organism radius of 10 km, the transparency ceiling is **14x to 5 orders of
+magnitude too high to matter.** PAR-integrated transmission (flat weighting, DECLARED
+assumption) does not fall to 0.5 until R = 213.6 km at 10 kPa. **Framing A's hypothesis — that
+strength and transparency collide at a finite, interesting radius — is FALSIFIED for pure
+ice.** The collision exists, but it sits far outside any radius the project has reason to model.
+
+**What actually binds is scattering, and it is not groundable for this organism.** The above
+is absorption in pure bubble-free ice — a best case. Ackermann et al. (2006),
+10.1029/2005JD006687, measured deep South Pole ice in situ: at 400 nm the effective (transport)
+scattering length is 10–100 m against an absorption length of 100–400 m, with strong forward
+scattering, and below 1450 m *there are no bubbles* — the residual scattering is dust. Treating
+the wall as a diffusive slab (`L_d = sqrt(l_abs*l_tr/3)`, standard, but applied here by me and
+not validated against a measurement) gives a diffusion length of 18–116 m, i.e. **real ice
+attenuates roughly 24x more strongly than pure-ice absorption alone**, dropping `R_max` at
+400 nm to 1345–4146 km. Still far above 10 km.
+
+So the honest state is: **the wall's transparency is set by its impurity content, not by ice
+physics, and nothing grounds the impurity content of a hypothetical organism's wall.**
+Antarctic dust loading is used above only to show that scattering CAN dominate absorption; it
+says nothing about biology. This is a real residual gap, and unlike §8's it cannot be closed by
+finding a better PDF — no measurement of this quantity exists, because the object does not.
+
+**Consequence for Q3.** The registered question as specced asks for a radius the transparency
+constraint does not set. Q3 must either be re-registered against the constraint that does bind
+(mass and carbon cost — framing B, previously deferred as moot pending this answer, and no
+longer moot), or be registered as the falsification above with the spectral-filtering result as
+its finding. That decision belongs to the next pass, not to this grounding.
+
 ## References (all ghostcite-clean, 0 findings)
 
 - **Kopp G (2011).** A new, lower value of total solar irradiance: Evidence and climate significance. *Geophysical Research Letters.* [10.1029/2010GL045777](https://doi.org/10.1029/2010GL045777)
@@ -452,3 +536,5 @@ grounding. Do not cite it until the constant is quoted from a real source.
 - **Westerband A C (2022).** Australia-wide photosynthetic trait dataset. Dryad. [10.5061/dryad.j9kd51cgr](https://doi.org/10.5061/dryad.j9kd51cgr) — CC-0 dataset. ghostcite returns tier U (not in CrossRef); Dryad DOIs are registered with DataCite, and DataCite confirms first creator Westerband, publicationYear 2022, publisher Dryad.
 - **Forest Products Laboratory (2010).** Wood Handbook — Wood as an Engineering Material. Centennial Edition. General Technical Report FPL-GTR-190. Madison, WI: U.S. Department of Agriculture, Forest Service, Forest Products Laboratory. 508 p. — public domain (U.S. government work); no DOI, so not ghostcite-checkable. Identity verified from the PDF's own embedded metadata (title, author "USDA Forest Service", and a full self-citation in the subject field). Used in §7.
 - **Yang X (2020).** Quantifying photosynthetic performance of phytoplankton based on photosynthesis–irradiance response models. *Environmental Sciences Europe.* [10.1186/s12302-020-00306-9](https://doi.org/10.1186/s12302-020-00306-9) — CC-BY gold OA; cited in §8 as a NEGATIVE result (correct paper, full text unreachable). Byline confirmed via OpenAlex: first author Xiaolong Yang, 2020.
+- **Warren S G (2008).** Optical constants of ice from the ultraviolet to the microwave: A revised compilation. *Journal of Geophysical Research: Atmospheres* 113:D14220. [10.1029/2007JD009744](https://doi.org/10.1029/2007JD009744) — closed access; the PRIMARY DATA TABLE is public at `atmos.uw.edu/ice_optical_constants/IOP_2008_ASCIItable.dat` and is what §9 uses. Byline confirmed via OpenAlex: first author Stephen G. Warren, 2008, 1285 citations.
+- **Ackermann M (2006).** Optical properties of deep glacial ice at the South Pole. *Journal of Geophysical Research: Atmospheres* 111:D13203. [10.1029/2005JD006687](https://doi.org/10.1029/2005JD006687) — bronze OA; IceCube collaboration, 117 authors. Byline confirmed via OpenAlex: first author M. Ackermann, 2006, 539 citations. Used in §9 for the scattering caveat.

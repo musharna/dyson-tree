@@ -118,9 +118,23 @@ than being chosen and then justified.
       those questions MEASURED. Q1/Q2/Q2b stay frozen. The spec reframes the
       remaining two sub-questions into one: `R_max = 2*sigma*|ln tau_min|/(k*p)`, the
       radius past which no wall is both strong enough to hold liquid water and clear
-      enough to pass light. **BLOCKED: `k`, the wall's PAR attenuation, is not
-      grounded — and the variance decomposition CANNOT be registered until it is,
-      because I choose the answer by choosing the band width.**
+      enough to pass light. **BLOCKER CLEARED SAME DAY, AND IT FALSIFIED THAT
+      QUESTION — `bio_grounding` §9.** `k` is grounded from Warren & Brandt 2008's
+      primary data table (public at atmos.uw.edu even though the paper is paywalled;
+      the data was taken, not the paper). Two results: (1) `k` is NOT A SCALAR — it
+      spans x701 across PAR, 0.00074 /m at 400 nm to 0.52061 /m at 700 nm, so the
+      wall is a SPECTRAL FILTER that strips the red band chlorophyll a uses and
+      leaves the blue; a scalar `k` cannot express that, the same root class as the
+      `area_ratio` degeneracy above. (2) My declared band [0.1, 5.0] /m was 135x too
+      high at the blue end, so `R_max` is 1.3e3-9.9e4 km against an assumed 10 km —
+      **strength and transparency DO NOT COLLIDE at any radius worth modelling.**
+      Real ice attenuates ~24x harder via dust SCATTERING (Ackermann 2006), still
+      leaving R_max >= 1345 km. What binds is wall impurity content, which is not
+      groundable for a hypothetical organism and cannot be fixed by finding a better
+      PDF. **Q3 needs RE-REGISTERING**: either against mass/carbon cost (framing B,
+      no longer moot) or as this falsification with the spectral-filter result as the
+      finding. Had the variance decomposition been registered on my band, this would
+      have been a retraction instead of a correction.
 - [ ] Ground each science-spine item with a real number and a citation, via
       `bio-grounding`; verify citations per the project's citation chain.
       **2026-09-03 pass: 1 of 2 targets closed.** Spine item 2's tensile input is

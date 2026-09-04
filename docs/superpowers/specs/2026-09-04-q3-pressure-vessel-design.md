@@ -2,6 +2,23 @@
 
 > Approved 2026-09-04 on framing A (wall feasibility), with framing C (the `area_ratio`
 > degeneracy repair) folded into the pre-registration rather than run as a separate pass.
+>
+> **⚠️ SUPERSEDED IN PART, 2026-09-04, BY ITS OWN BLOCKER BEING CLEARED — read
+> `docs/bio_grounding_2026-09-02.md` §9 BEFORE implementing anything below.** `k` is now
+> grounded from Warren & Brandt (2008)'s primary data table, and it falsifies this spec's
+> central hypothesis. Two things in this document are now known wrong:
+> **(1)** `k` is not a scalar — it spans a factor of 701 across PAR (0.00074 to 0.52061 /m),
+> so the wall is a spectral filter and `max_vessel_radius(..., k_per_m, ...)` as specced
+> below cannot express it. **(2)** The declared band `k ∈ [0.1, 5.0] /m` was wrong, 135x too
+> high at the blue end, and the registered question's premise fails with it: `R_max` is
+> 1.3e3–9.9e4 km against an assumed 10 km radius, so **strength and transparency do not
+> collide at any radius this project has reason to model.** The title of this spec names a
+> collision that does not occur.
+>
+> What survives intact: the contained-temperature result, the `area_ratio` degeneracy, the
+> forced clear-wall architecture, and the refusal to register a prediction on an
+> author-chosen band — that refusal is the only reason this is a correction and not a
+> retraction. Q3 must be re-registered; §9 states the two candidate framings.
 
 ## Why this is a precondition and not an extension
 
@@ -45,13 +62,13 @@ operation**. A greenhoused sphere (`area_ratio` 4, N=1) and a bare lamina (`area
 N=0) are the same temperature to 5.7e-14 K — exactly equal for any shared albedo and
 emissivity, since both reduce to a factor of 2^0.25.
 
-But `sim/thermal.py:28` defines the parameter as *"radiating area divided by absorbing
-(projected) area"* — pure geometry. So **`area_ratio` has been carrying two physically
+But `sim/thermal.py:28` defines the parameter as _"radiating area divided by absorbing
+(projected) area"_ — pure geometry. So **`area_ratio` has been carrying two physically
 distinct claims under one name**, and every registered value of 4.0 silently also asserted
-*uncontained*. Consequences that must be stated, not buried:
+_uncontained_. Consequences that must be stated, not buried:
 
 - Q2b's algal `area_ratio` band [3.630, 4.311] is not a statement about shape alone.
-- No result in Q1, Q2 or Q2b is invalidated by this. What changes is what they *measured*:
+- No result in Q1, Q2 or Q2b is invalidated by this. What changes is what they _measured_:
   a combined geometry-and-containment factor, not a geometric one.
 - **Q3's model MUST separate the two**, or its own gate inherits the same degeneracy and
   cannot discriminate the thing it exists to test. This is the project's recurring root
@@ -103,22 +120,22 @@ must keep regenerating unchanged:
 
 ## Inputs, and how well each is grounded
 
-| Input | Symbol | Value / band | Status |
-|---|---|---|---|
-| Wall tensile strength | sigma | 45 / 80 / 139 MPa | **GROUNDED** — clear-wood MOR, 111 species-rows, FPL 2010; `bio_grounding` §7 |
-| Internal pressure | p | 882 Pa – 10 kPa | **BRACKETED** — floor is saturation pressure at 5.16 °C (physics); upper is Paul 2004's demonstrated-viable 10 kPa |
-| Wall PAR attenuation | k | — | **NOT GROUNDED — blocks the registered prediction, see below** |
-| Minimum transmission | tau_min | — | **NOT GROUNDED** — it is `I_c` / incident PAR, and `I_c` failed to ground on 2026-09-03 (`bio_grounding` §8) |
+| Input                 | Symbol  | Value / band                  | Status                                                                                                                                                                          |
+| --------------------- | ------- | ----------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Wall tensile strength | sigma   | 45 / 80 / 139 MPa             | **GROUNDED** — clear-wood MOR, 111 species-rows, FPL 2010; `bio_grounding` §7                                                                                                   |
+| Internal pressure     | p       | 882 Pa – 10 kPa               | **BRACKETED** — floor is saturation pressure at 5.16 °C (physics); upper is Paul 2004's demonstrated-viable 10 kPa                                                              |
+| Wall PAR attenuation  | k       | 0.00074–0.52061 /m across PAR | **GROUNDED 2026-09-04** — Warren & Brandt 2008 primary table, 31 PAR rows (`bio_grounding` §9). NOT a scalar: factor-701 spread. Falsifies this spec's premise; see the banner. |
+| Minimum transmission  | tau_min | —                             | **NOT GROUNDED** — it is `I_c` / incident PAR, and `I_c` failed to ground on 2026-09-03 (`bio_grounding` §8)                                                                    |
 
 The pressured-wall requirement also forces an architectural conclusion worth stating: at
-0.625 m, *pigmented* tissue transmits `e^-3952` — indistinguishable from zero, calibrated
+0.625 m, _pigmented_ tissue transmits `e^-3952` — indistinguishable from zero, calibrated
 against a 0.3 mm leaf passing ~15% of PAR. **The wall cannot be pigmented.** The organism is
 forced into a clear vessel with photosynthetic tissue strictly inside it.
 
 ## The prediction, and the reason it is not registered yet
 
-The obvious registered prediction is a variance decomposition: *which input dominates the
-spread in `R_max`?* A one-at-a-time sweep over the bands above puts `k` first by a wide
+The obvious registered prediction is a variance decomposition: _which input dominates the
+spread in `R_max`?_ A one-at-a-time sweep over the bands above puts `k` first by a wide
 margin (x50 across 0.1–5.0 /m, against x11 for p, x3 for sigma, x2 for tau_min).
 
 **That result must not be registered, because I chose it.** `k`'s band is declared by me,
@@ -140,13 +157,22 @@ So the pre-registration is **gated on grounding `k` first**:
 
 **Q3 cannot be registered until `k` is grounded.** That is a real blocker, stated as one.
 
+**CLEARED 2026-09-04, same day — and it cost this spec its central hypothesis.** `k` is
+grounded in `bio_grounding` §9. The sweep that put `k` first by x50 was run on a band I
+declared, and the grounded values sit 135x below my floor at the blue end, so the ordering it
+produced was an artifact of my choice. Registering it would have shipped a falsified result
+with a pre-registration stamp on it. **This is the strongest argument in the project so far
+for the rule that produced it: the refusal to register a prediction whose answer the author
+picked is what turned a retraction into a correction.** `tau_min` remains open and still
+depends on `I_c`, unchanged from §8.
+
 ## Gates
 
 Each must be able to fail against something outside the model.
 
 - **Gate A — thermal physics.** Retained from Q2 and Q2b unchanged: at 1 AU, sphere, eps=1,
   albedo=0, `T_eq` in [275.0, 282.0] K. Fails if the retained radiative core drifts.
-- **Gate B — optics.** Beer-Lambert with the grounded `k` must reproduce a *measured*
+- **Gate B — optics.** Beer-Lambert with the grounded `k` must reproduce a _measured_
   transmission through a stated thickness of the cited material, within a tolerance
   registered in advance. Fails if the extracted `k` does not describe the material it came
   from.
