@@ -373,6 +373,11 @@ without the circularity Gate 2 exists to prevent.
 | Framing A (strength vs transparency collide at R = 10 km) | **SPLIT BY ICE STRENGTH** — at the self-consistent pressure R_max is 21.4 km (3.1 MPa), 11.9 km (1.5), 6.40 km (0.7). Binds only at the weak end (§13 S7) |
 | §12's use of G173's 1366.1 normalisation with the project's 1360.8 TSI | **CHECKED, TRANSFERABLE** — the PAR fraction is dimensionless, a property of spectral SHAPE not scale; residual <= 0.39%, 41x smaller than S5. Stated rather than waved through (§13) |
 | "One IR-opaque shell == halving `area_ratio`, identical to 5.7e-14 K" | **TRUE ONLY AT tau = 1** — with a measured wall the two differ by **31-36 K**. The 5.7e-14 K agreement compared two expressions computing the SAME ASSUMPTION (§14) |
+| S5 and S6 as INDEPENDENT deferred defects | **NOT INDEPENDENT** — each alone leaves all six Q1 verdicts standing; TOGETHER (S5 + S6 reading B) vascular k=100 falls to r*=11.51, OUTSIDE the registered [12, 22]. The effects compose multiplicatively (§16) |
+| Q1's "the vascular default-k prediction HELD" | **CONDITIONAL ON THE S6 DECISION** — survives S5 + reading A (12.7058, inside); fails S5 + reading B (11.5100, misses the floor by 4.1%). The registration choice decides the published verdict (§16) |
+| S5's reach into Q2 | **NONE** — Q2 exits 2 at a purely thermal gate before any PAR-dependent code runs; unchanged in every digit. Q2b's `gates.csv` is byte-identical and its binding limit stays `temperature` at every omega (§16) |
+| `a_max`'s three anchors, sized | **52.66 K SPREAD** — 293.00 K (Q1), 298.15 K (Q2), 278.31 K (Q2b algal), 330.97 K (Q2b vascular). Re-anchored to a common 293 K the paths need `a_max` 10.0 to 367.53; the 36.75x extreme is inside the vascular class Gate B already FAILED, so the live factor is algal's 1.71x (§16) |
+| Q2b's preset source vs `sim/organism.py` | **UNGUARDED, AND THEY DIFFER** — Q1 runs `assert_presets_match`; Q2b has no equivalent. `leaf_mass_ratio` is 0.8 in `organism.py` and 1.0 in Q2b's prereg. The difference is deliberate and commented, but the name `algal` denotes two organisms and only one experiment would notice (§16) |
 | The `area_ratio` degeneracy | **REAL BUT RESCALED, ~2.7x smaller** — T depends on `area_ratio/(1+tau)`, so a contained sphere presents at effective 2.98-3.17, not 2.0 (§14) |
 | "Q2b's algal band is not a statement about shape alone" | **REPLACED** — the band [3.630, 4.311] is a statement about shape CONDITIONAL on containment: a contained sphere presents BELOW its floor, and landing inside it would need a true `area_ratio` of 4.58-5.79, more extreme than a sphere (§14) |
 | "Two shells need 78.9 kPa" | **WITHDRAWN** — from `3^0.25*T_eq` = 93.13 C; at measured tau the interior is 25.67-32.80 C. Same falsified transparency premise that took S1's 18.02 kPa (§14) |
@@ -1278,6 +1283,115 @@ control B, which asserted `not (near_lo and near_hi)`, genuinely could not fire 
 single-value change — but **the evidence for that conclusion was invalid, and being right by
 luck is not being right.** Assert that the mutant differs from the original, not merely that
 the run said something.
+
+## 16. S5 and S6 priced — neither moves a verdict alone, and together they move Q1's
+
+**Trigger.** S5 (`PAR_FRACTION` overstated 1.160×) and S6 (`a_max` anchored at three
+different temperatures) are both defects in SHIPPED, pre-registered questions, and both were
+deferred as registration decisions. A registration decision made without knowing what it costs
+is not a decision. This measures the cost. **Nothing registered was modified**: every run below
+executes the real runners against a `git archive HEAD` copy in a scratch tree.
+
+### The harness reproduces before it is trusted
+
+The pristine copy re-runs all three experiments and returns **all six committed CSVs
+byte-identical on their data lines** (`calibration`, `crossover`, `sweep` for Q1;
+`gates`, `limits`, `sweep` for Q2b), with published stdout reproduced verbatim. A one-digit
+mutation (`5.1612 → 5.1613`) makes the comparator report DIFFERS, so it is a comparator and
+not a rubber stamp.
+
+### S5 alone: every number moves, no verdict moves
+
+`r*` scales as **exactly `sqrt(par_fraction)`** — measured ratio 0.928440 against
+`sqrt(0.3879/0.45)`, agreeing to **3e-06** across all six cases (a 1% perturbation of one value
+trips that check). Q1's calibration gate is **untouched**: `I_c = k·r_d/(a_max − r_d)` contains
+no light term.
+
+| case           | `r*` at 0.45 | at 0.3879 | band     | verdict     |
+| -------------- | ------------ | --------- | -------- | ----------- |
+| vascular k=50  | 19.3537      | 17.9688   | [12, 22] | inside      |
+| vascular k=100 | 13.6851      | 12.7058   | [12, 22] | inside      |
+| vascular k=200 | 9.6769       | 8.9844    | [12, 22] | OUTSIDE     |
+| algal k=10     | 95.1233      | 88.3162   | [35, 55] | OUTSIDE     |
+| algal k=20     | 67.2623      | 62.4490   | [35, 55] | OUTSIDE     |
+| algal k=40     | 47.5616      | 44.1581   | [35, 55] | inside      |
+
+**All six verdicts are unchanged.** Q2 is unchanged in every digit — it exits 2 at the
+temperature-response gate, which is purely thermal, so S5 never reaches it. Q2b's `gates.csv`
+is byte-identical and its binding limit stays `temperature` at every Ω; only the fourth decimal
+of `outer_au` moves (max 2.5301 → 2.5289, **0.05%**).
+
+Solving `r*(par) = r*₀·sqrt(par/0.45)` for each band edge gives the PAR value at which each
+verdict would flip. The nearest is **vascular k=100 at par = 0.3460** — the measured 0.3879
+clears it by 12%, and the 5772 K blackbody estimate (0.3663) still clears it.
+
+### S6 alone: the anchors, measured from the live code
+
+The same registered `a_max = 10.0` is multiplied by a factor reaching 1.0 at a **different
+temperature in each path**:
+
+| path                        | experiment | anchor T   |
+| --------------------------- | ---------- | ---------- |
+| `net_carbon`                | Q1         | 293.00 K (19.85 °C) — no factor at all; the only declared temperature is `t_set` |
+| `net_carbon_at_equilibrium` | Q2         | 298.15 K (25.00 °C) — the linear ramp reaches 1 at `t_opt` |
+| `net_carbon_adapted` algal  | Q2b        | 278.31 K (5.16 °C) — the Gaussian peaks at the ADAPTED optimum |
+| `net_carbon_adapted` vasc   | Q2b        | 330.97 K (57.82 °C) |
+
+**Spread: 52.66 K.** Read as "the rate at 293 K", the paths need `a_max` from 10.0 to 367.53 —
+a factor of **36.75×**. That extreme belongs entirely to the vascular class Gate B already
+FAILED, so the live figure is the algal **1.71×**.
+
+Two readings, each self-consistent, each leaving a different experiment alone:
+
+- **Reading A — `a_max` is the rate at 293 K.** Q1 is already correct. Q2b algal needs
+  `a_max = 17.1498`; its light limit moves 75.434 → 99.291 AU (**+31.6%**), carbon limits +3.8%
+  at Ω=30. Binding stays `temperature` at every Ω.
+- **Reading B — `a_max` is the peak rate at `t_opt`.** Q2b is already correct (its Gaussian
+  peaks at 1). Q1 needs `a_max = 10.0 × f(293) = 8.4394`; every `r*` falls 9.4% (k=100: 13.6851 → 12.3971) and
+  `I_c` rises 6.9519 → **8.3447 against a gate ceiling of 9.0** — headroom cut from 2.05 to
+  0.66, a 3× reduction. All six verdicts still hold.
+
+### Together: Q1's headline verdict flips
+
+The two corrections **compose multiplicatively** (11.5100 predicted from the single effects
+against 11.5100 measured):
+
+| | vascular k=100 `r*` | band [12, 22] |
+| --------- | -------- | ------- |
+| as registered | 13.6851 | inside |
+| S5 only | 12.7058 | inside |
+| S6 reading B only | 12.3971 | inside |
+| **both** | **11.5100** | **OUTSIDE — misses the floor by 0.49 AU (4.1%)** |
+
+Q1's `RESULTS.md` records that *"For the vascular class the default-k (k=100) prediction
+HELD."* Under S5 plus reading B it does not. Under S5 plus **reading A** it does (12.7058).
+
+> **The S6 decision determines whether Q1's headline survives S5.** These were filed as two
+> independent defects and deferred separately. They are not independent: each is individually
+> harmless to every registered verdict, and their product is not. Fixing them one at a time —
+> in either order — would have shown two clean bills of health and then a flip that appeared to
+> come from nowhere.
+
+### What this cost to learn, and two tells
+
+**A defect that changes no verdict is not thereby cheap, and a pair of them is not twice one.**
+The project's habit has been to size defects one at a time. S5 and S6 are the first pair
+measured jointly, and the joint result is the only one that moves anything.
+
+**The mutation-that-did-not-apply tell fired again, in a new disguise.** Re-anchoring the algal
+`a_max` in `sim/organism.py` changed nothing, and the run printed a full, plausible table —
+because Q2b builds its organisms from `prereg.yaml`, not from `PRESETS`. The edit had applied
+perfectly to a file the code path never reads. §15 caught this as a `sed` that matched nothing;
+here the write succeeded and the *object* was wrong. **Asserting that the edit applied is not
+enough — the assertion must be that the edit applied to the thing under test.**
+
+**A guard that exists in one experiment and not its sibling.** Q1 runs
+`assert_presets_match`, comparing `prereg.yaml`'s presets against `sim/organism.py`. **Q2b has
+no such check**, and the two sources do in fact differ: `leaf_mass_ratio` is 0.8 in
+`organism.py` and 1.0 in Q2b's prereg (documented there as *"unicellular: no non-photosynthetic
+organ"*). The divergence is deliberate and commented, so this is not a defect in the value — it
+is that the name `algal` denotes two different organisms across two experiments, and only one
+of them has a guard that would notice.
 
 ## References (all ghostcite-clean, 0 findings)
 

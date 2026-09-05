@@ -259,6 +259,41 @@ than being chosen and then justified.
       ⚠️⚠️ **A MUTATION THAT SILENTLY FAILS TO APPLY IS INDISTINGUISHABLE FROM A CONTROL THAT
       CANNOT FAIL** (a formatter had wrapped the line sed targeted; the conclusion drawn was
       right but the evidence was invalid). Tool: `tools/check_s3_scattering.py`.
+      ✅✅ **2026-09-05 — S5 AND S6 PRICED, AND THEY ARE NOT INDEPENDENT (§16).** Both were
+      deferred as separate registration decisions; measured jointly against the SHIPPED
+      experiments (real runners, `git archive HEAD` scratch copies, nothing registered
+      touched), **each alone leaves every Q1 verdict standing and their PRODUCT flips one.**
+      Harness reproduces all 6 committed CSVs byte-identically before any arm runs.
+      ⚠️ **S5 alone:** `r*` scales as EXACTLY `sqrt(par_fraction)` (0.928440, agreeing to 3e-06
+      across 6 cases); all six inside/outside verdicts UNCHANGED; **Q2 unchanged in every
+      digit** (it exits 2 at a purely thermal gate before any PAR code runs); Q2b `gates.csv`
+      byte-identical, binding stays `temperature`, `outer_au` moves 0.05%. Nearest flip would
+      need par = 0.3460 — the measured 0.3879 clears it by 12%.
+      ⚠️ **S6 alone:** the three anchors measured — **293.00 K (Q1), 298.15 K (Q2), 278.31 K
+      (Q2b algal), 330.97 K (Q2b vascular): a 52.66 K SPREAD.** Re-anchored to a common 293 K
+      the paths need `a_max` from 10.0 to 367.53 (36.75x), but that extreme is inside the
+      vascular class **Gate B already FAILED**, so the live factor is algal's **1.71x**. Two
+      self-consistent readings, each leaving a different experiment alone: **reading A** (rate
+      at 293 K) leaves Q1 alone, moves Q2b's light limit 75.434 -> 99.291 AU (+31.6%);
+      **reading B** (peak rate at `t_opt`) leaves Q2b alone, drops every Q1 `r*` 9.4% and
+      raises `I_c` to 8.3447 against a **9.0 ceiling** (headroom 2.05 -> 0.66, a 3x cut).
+      ⚠️⚠️ **TOGETHER (S5 + reading B): vascular k=100 falls 13.6851 -> 11.5100, OUTSIDE the
+      registered [12, 22] by 4.1%.** Effects compose multiplicatively. Q1's `RESULTS.md` says
+      that prediction "HELD"; under S5 + reading A it still does (12.7058), under S5 + reading
+      B it does not. **THE S6 DECISION DECIDES WHETHER Q1'S HEADLINE SURVIVES S5.**
+      ⚠️ Tells: **a defect that changes no verdict is not thereby cheap, and a pair of them is
+      not twice one** — fixing these one at a time, in either order, would have shown two clean
+      bills of health and then a flip from nowhere; ⚠️⚠️ **THE MUTATION-THAT-DID-NOT-APPLY TELL
+      FIRED AGAIN IN A NEW DISGUISE** — re-anchoring `a_max` in `sim/organism.py` changed
+      nothing while printing a full plausible table, because Q2b builds organisms from
+      `prereg.yaml`, not `PRESETS`: **asserting the edit applied is not enough, it must be
+      asserted to have applied to the thing under test**; and the harness's own first run
+      returned the baseline in all four arms because the runners exit 1 without a git repo,
+      leaving `git archive`'s committed CSVs in place — **a failed run reads exactly like a
+      change with no effect**. ⚠️ **Q2b has NO `assert_presets_match`** (Q1 does) and the two
+      preset sources DO differ (`leaf_mass_ratio` 0.8 in `organism.py` vs 1.0 in Q2b's prereg,
+      deliberate and commented): the name `algal` denotes two organisms, one guarded.
+      Tools: `tools/price_amax_anchor.py`, `tools/price_registered_corrections.py`.
 - [ ] Ground each science-spine item with a real number and a citation, via
       `bio-grounding`; verify citations per the project's citation chain.
       **2026-09-03 pass: 1 of 2 targets closed.** Spine item 2's tensile input is
