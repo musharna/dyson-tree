@@ -376,6 +376,9 @@ without the circularity Gate 2 exists to prevent.
 | The `area_ratio` degeneracy | **REAL BUT RESCALED, ~2.7x smaller** — T depends on `area_ratio/(1+tau)`, so a contained sphere presents at effective 2.98-3.17, not 2.0 (§14) |
 | "Q2b's algal band is not a statement about shape alone" | **REPLACED** — the band [3.630, 4.311] is a statement about shape CONDITIONAL on containment: a contained sphere presents BELOW its floor, and landing inside it would need a true `area_ratio` of 4.58-5.79, more extreme than a sphere (§14) |
 | "Two shells need 78.9 kPa" | **WITHDRAWN** — from `3^0.25*T_eq` = 93.13 C; at measured tau the interior is 25.67-32.80 C. Same falsified transparency premise that took S1's 18.02 kPa (§14) |
+| §11 S3 ("pure ice absorption divided by dusty ice scattering") | **WITHDRAWN — S3 IS FALSE.** §9's `L_d` uses Ackermann's OWN absorption AND scattering; 18.3-115.5 m reproduces exactly from them, S3's attribution gives 67.0-211.8 m (§15) |
+| §10's "the scattering caveat is unaffected" | **FALSE** — `R_max` is linear in sigma there too. With ice sigma: 11.8-330 km, not 1345-8508 km. Conclusion survives, margin collapses 134x -> 1.2x (§15) |
+| Dust's effect on section 13's tau | **DIRECTION PINNED, magnitude still ungrounded** — a DECLARED dust floor from Ackermann's diffusion lengths gives tau 0.216-0.282 and p 2.21-2.81 kPa, always INSIDE the bracket and always DOWNWARD. S3 cannot overturn S7, only deepen it (§15) |
 | A comet organism's wall is ice | **convenient fiction** — §9 grounds ice, not the identification |
 | Antarctic dust loading bounds an organism's wall impurities | **convenient fiction** — no connection whatsoever; used only to show scattering CAN dominate (§9) |
 
@@ -477,6 +480,11 @@ grounding. Do not cite it until the constant is quoted from a real source.
 > ice wall the constraint DOES bind at the top of the registered pressure bracket. **Read §10
 > before citing anything in the "constraint does not bind" paragraph.** Everything else in
 > §9 — the x701 spectral spread, the 135x band error, the scattering caveat — is unaffected.
+>
+> ⚠️⚠️ **CORRECTED 2026-09-05 by §15: 'the scattering caveat' IS affected.** `R_max` is LINEAR
+> in sigma there too. With ice sigma its `R_max` is 11.8–330 km, not 1345–8508 km — the
+> conclusion survives but the margin collapses from 134x to 1.2x. Second wrong item in this
+> one banner.
 
 This was the blocker the Q3 spec named: `k` could not be declared by me, because a
 one-at-a-time sweep made `k` dominate `R_max` by x50 and I had chosen its band. Grounding it
@@ -728,7 +736,14 @@ Unlike the `area_ratio` degeneracy — which changed what those questions *measu
 every number standing — this one would change the numbers. **NOT resolved here, and NOT a reason
 to touch the frozen experiments.** Recorded as the largest known open pairing.
 
-**S3 (NEW). Pure ice absorption is divided by dusty ice scattering.** §9's diffusive-slab caveat
+**S3 (NEW). Pure ice absorption is divided by dusty ice scattering.**
+
+> ⚠️⚠️ **WITHDRAWN 2026-09-05 by §15 — S3 IS FALSE.** §9's `L_d` is object-matched: BOTH lengths
+> are Ackermann's. 18.3–115.5 m reproduces exactly from his own 100–400 m x 10–100 m, while
+> S3's attribution would give 67.0–211.8 m. The sweep inferred the pairing from the prose
+> around the formula instead of the arithmetic that produced the number. The paragraph DOES
+> contain a defect, but a different one — its `R_max` figures are wood's sigma (§15).
+ §9's diffusive-slab caveat
 combines Warren & Brandt's **pure, bubble-free** ice absorption with Ackermann's **dust-laden
 deep South Pole glacial** ice transport length. Both are ice; they are not the same ice — the
 Ackermann paper's own point is that below 1450 m the bubbles are gone and the residual scattering
@@ -1168,6 +1183,101 @@ This is the project's oldest root class — _a test that cannot fail_ — reappe
 _verification_ that cannot fail. §11 already named the pattern for inputs and §13 for models;
 here it is for identities. The 5.7e-14 K is now this document's positive control **precisely
 because** it never could have been anything else.
+
+## 15. S3 closed — by disproving it
+
+**Trigger.** S3 was the last unresolved finding of the §11 sweep, and §13/§14 made it
+load-bearing: τ drives every number in §§12–14, and S3 was the reason τ was only an upper
+bound. Closing it meant either finding a matched-object pair or stating the bound honestly.
+
+**It needed neither, because S3 is false.**
+
+### The attribution S3 asserted is checkable by arithmetic, and it fails
+
+S3 claims §9's diffusive-slab caveat _"combines Warren & Brandt's pure, bubble-free ice
+absorption with Ackermann's dust-laden deep South Pole glacial ice transport length."_ But §9
+quotes **both** lengths from Ackermann — _"the effective (transport) scattering length is
+10–100 m against an absorption length of 100–400 m"_ — so the claim is testable against the
+published number. `L_d = sqrt(l_abs·l_tr/3)`:
+
+| hypothesis                      | inputs                  | `L_d`              | matches §9's published 18–116 m? |
+| ------------------------------- | ----------------------- | ------------------ | -------------------------------- |
+| **Ackermann's own two lengths** | 100–400 m × 10–100 m    | **18.3 – 115.5 m** | **yes, exactly**                 |
+| S3's attribution                | W&B 1345.9 m × 10–100 m | 67.0 – 211.8 m     | no — 3.7× off at the low end     |
+
+**§9's `L_d` is object-matched.** Both lengths are Ackermann's, measured on the same ice in the
+same experiment, and the number §9 published could only have come from that pair. S3 misread
+the attribution — §9's _neighbouring sentence_ compares the result against pure-ice absorption,
+and the sweep took that comparison for the formula's input.
+
+**S3 is withdrawn.** Recorded rather than quietly deleted, because a sweep that produces a
+false positive is telling you something about the sweep: **§11 read the paragraph and inferred
+the pairing from the prose around the formula rather than from the arithmetic that produced the
+number.** It was label-reading — the very failure §12 later named — committed one section
+earlier than §12 found it, and against a formula rather than a constant.
+
+### But the paragraph is not clean, and §10 cleared it by name
+
+`R_max = 2σ·|ln τ_min|·L_d/p` is **linear in σ**, and §9 evaluated it at **80 MPa — the wood
+figure**. §10's withdrawal banner reads:
+
+> Everything else in §9 — the ×701 spectral spread, the 135× band error, **the scattering
+> caveat** — is unaffected.
+
+Two of those three are genuinely σ-independent. The scattering caveat is not:
+
+| σ                     | `R_max` at `L_d` = 18.3 m | at `L_d` = 115.5 m |
+| --------------------- | ------------------------- | ------------------ |
+| 80 MPa (wood — §9's)  | 1345.3 km                 | 8508.1 km          |
+| 3.1 MPa (ice, strong) | 52.1 km                   | 329.7 km           |
+| 1.5 MPa (ice, mid)    | 25.2 km                   | 159.5 km           |
+| 0.7 MPa (ice, weak)   | **11.8 km**               | 74.4 km            |
+
+The conclusion — _"still far above 10 km"_ — survives, but the **margin collapses from 134× to
+1.2×**. (The 1345.3 km reproduces §9's published 1345 km at σ = 80 MPa, p = 10 kPa,
+`L_d` = 18.3 m, which confirms the wood σ is what generated those figures.)
+
+**This is the third sentence §10 cleared that was not clean**, and the second in that one
+banner — after _"the spectral-filter result stands unchanged"_, corrected in the same pass that
+wrote it. §10's rule was right and §10's own application of it kept failing in the same
+direction: **the clearing sentence is written last, when the author is most confident and least
+willing to re-derive.**
+
+### What dust actually does to τ — S3's real consequence
+
+The reason S3 mattered was never the attribution; it was that §§12–14's τ is pure-ice
+absorption and therefore an upper bound. So: model dust as a wavelength-independent attenuation
+floor set by Ackermann's own diffusion lengths — **a DECLARED model, not a measurement**,
+defensible only because ice's own absorption swamps dust everywhere except the blue window,
+which is exactly where the floor bites. Re-solving §13's fixed point at σ = 1.5 MPa:
+
+| dust floor                    | τ (solar) | `T_interior` | self-consistent `p` |
+| ----------------------------- | --------- | ------------ | ------------------- |
+| none (§13's pure ice)         | 0.3013    | 24.10 °C     | 3.002 kPa           |
+| 1/115.5 m = 0.0087 /m (weak)  | 0.2820    | 22.99 °C     | 2.809 kPa           |
+| 1/18.3 m = 0.0548 /m (strong) | 0.2156    | 19.08 °C     | **2.209 kPa**       |
+
+**Every dust level keeps `p` inside the registered [882 Pa, 10 kPa] and pushes it downward** —
+the direction §13 predicted from the structure alone. **S3 cannot overturn S7; it can only
+deepen it.** That is the honest closure: the residual gap §9 called ungroundable is still
+ungroundable _in magnitude_, but its **direction is now pinned**, and the conclusion that
+depends on it is monotone in the unknown. A bound whose sign is known does not need its value.
+
+### Tells
+
+**A false positive in a sweep is a finding about the sweep.** S3 cost nothing to disprove and
+would have cost a great deal to act on — the "matched pair" it demanded already existed in the
+cited paper. Before hunting for a missing input, check whether the number you are questioning
+already reproduces from inputs you have.
+
+**A mutation that silently fails to apply is indistinguishable from a control that cannot
+fail.** The first attempt to mutate control B printed nothing, which reads exactly like a
+non-discriminating control. The `sed` had matched nothing: the formatter had wrapped the target
+assignment across two lines. The conclusion drawn from it happened to be correct — the original
+control B, which asserted `not (near_lo and near_hi)`, genuinely could not fire under any
+single-value change — but **the evidence for that conclusion was invalid, and being right by
+luck is not being right.** Assert that the mutant differs from the original, not merely that
+the run said something.
 
 ## References (all ghostcite-clean, 0 findings)
 

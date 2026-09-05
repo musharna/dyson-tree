@@ -240,6 +240,25 @@ than being chosen and then justified.
       oldest root class (a test that cannot fail) reappearing as a VERIFICATION that cannot
       fail. It is now §14's positive control precisely because it never could have been anything
       else. Tool: `tools/check_area_ratio_degeneracy.py`.
+      **S3 CLOSED 2026-09-05 — BY DISPROVING IT, `bio_grounding` §15.** ⚠️ **S3 IS FALSE.**
+      §9's diffusive-slab `L_d` is OBJECT-MATCHED: both lengths are Ackermann's own, and the
+      published 18-116 m reproduces EXACTLY from his 100-400 m x 10-100 m, while S3's claimed
+      attribution (Warren & Brandt's pure-ice 1345.9 m) would give 67.0-211.8 m. **The sweep
+      inferred the pairing from the PROSE around the formula instead of the ARITHMETIC that
+      produced the number** — label-reading, one section before §12 named it. ⚠️ **The paragraph
+      does contain a defect, a different one: its `R_max` is LINEAR IN SIGMA and §9 used WOOD's
+      80 MPa. §10's banner cleared "the scattering caveat" BY NAME and was wrong** — second
+      wrong item in that one banner. With ice sigma `R_max` is 11.8-330 km, not 1345-8508 km:
+      conclusion survives, **margin collapses 134x -> 1.2x**. ✅ **S3's real consequence, which
+      was never the attribution:** a DECLARED dust floor from Ackermann's diffusion lengths puts
+      tau at 0.216-0.282, T_int 19.1-23.0 C and p at **2.21-2.81 kPa — always INSIDE the
+      bracket, always DOWNWARD**. **S3 CANNOT OVERTURN S7, ONLY DEEPEN IT: the magnitude stays
+      ungrounded but the DIRECTION IS PINNED, and a bound whose sign is known does not need its
+      value.** ⚠️ Tells: **a FALSE POSITIVE in a sweep is a finding about the sweep** — before
+      hunting a missing input, check the number reproduces from inputs already in hand; and
+      ⚠️⚠️ **A MUTATION THAT SILENTLY FAILS TO APPLY IS INDISTINGUISHABLE FROM A CONTROL THAT
+      CANNOT FAIL** (a formatter had wrapped the line sed targeted; the conclusion drawn was
+      right but the evidence was invalid). Tool: `tools/check_s3_scattering.py`.
 - [ ] Ground each science-spine item with a real number and a citation, via
       `bio-grounding`; verify citations per the project's citation chain.
       **2026-09-03 pass: 1 of 2 targets closed.** Spine item 2's tensile input is
