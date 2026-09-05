@@ -43,6 +43,21 @@
 > here** — so the collision this spec is named for does not merely occur, it binds decisively.
 > **A re-registered Q3 must derive `p` from `T_interior`, not declare it.**
 
+> **⚠️⚠️ FOURTH CORRECTION, 2026-09-04 — `bio_grounding` §13 S7 WITHDRAWS THE CORRECTION ABOVE,
+> AND SOLVES THE FIXED POINT IT DEMANDED.** The third correction's 18.02 kPa assumes
+> `T_interior = 2^0.25 · T_eq`, which holds only for an **SW-transparent** wall. This project's
+> own ice optics falsify that premise: NIR carries **53% of TSI**, ice absorbs it hard, and a
+> pressure-bearing ice wall transmits only **16–23% of solar energy**. The wall is an absorber,
+> not a greenhouse pane. The correct form is **`T_interior = (1 + tau)^0.25 · T_eq`** — the
+> published formula is its `tau = 1` case. Solving `p → t → tau → T → p_sat` to convergence
+> (which IS "derive `p` from `T_interior`"), the self-consistent pressure is **2.6–3.5 kPa,
+> INSIDE the registered bracket** — 5.2–6.9x below the third correction's figure. **The
+> registered bracket is NOT self-inconsistent.** Its floor is still `p_sat` at the uncontained
+> temperature, so that *mechanism* stands; the magnitude and the verdict do not. Framing A is
+> now **split by ice strength**: `R_max` = 21.4 km (σ = 3.1 MPa), 11.9 km (1.5), 6.40 km (0.7) —
+> **it binds only at the weak end of the grounded range.** Any real wall impurity pushes `tau`
+> down and `p` further inside the bracket, so the direction is robust.
+
 ## Why this is a precondition and not an extension
 
 Q1 listed the pressure vessel under "Out of scope (v1)" and Q2 and Q2b inherited that

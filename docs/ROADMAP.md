@@ -197,6 +197,30 @@ than being chosen and then justified.
       chlorophyll-weighted figure needs an in vivo action spectrum the project has not
       grounded, and inventing one would manufacture the defect being measured.
       Tool: `tools/size_par_filter.py`, four positive controls.
+      **§11's SURVIVING CLEARANCES RE-CHECKED BY MEASUREMENT 2026-09-04 — `bio_grounding` §13.
+      THREE OF FOUR DID NOT SURVIVE.** ⚠️⚠️ **S7: THE CONTAINED-TEMPERATURE RESULT
+      `T_interior = (N+1)^0.25 * T_eq` ASSUMES AN SW-TRANSPARENT WALL, AND THIS PROJECT'S OWN
+      ICE OPTICS FALSIFY THAT.** NIR (700-4000 nm) carries **53% of TSI** and ice absorbs it
+      hard, so a pressure-bearing ice wall transmits only **16-23% of SOLAR ENERGY** — it is an
+      absorber, not a greenhouse pane. Correct form is **`T_interior = (1+tau)^0.25 * T_eq`**;
+      the published formula is the tau=1 special case (positive control: at tau=1 it returns
+      57.82 C exactly). tau depends on thickness, thickness on p, p on T, T on tau — a FIXED
+      POINT, which is exactly what S1 said a re-registered Q3 must solve. Converged, the
+      self-consistent pressure is **2.6-3.5 kPa — INSIDE the registered [882 Pa, 10 kPa]**,
+      5.2-6.9x BELOW S1's 18.02 kPa. ⚠️⚠️ **S1'S VERDICT IS THEREFORE WITHDRAWN: THE BRACKET IS
+      NOT SELF-INCONSISTENT.** S1's MECHANISM stands (its floor is still p_sat at the
+      UNCONTAINED T); its magnitude and verdict do not. Direction is robust — tau is pure-ice
+      absorption, so any impurity pushes tau, T and p FURTHER INSIDE the bracket. **Framing A is
+      now SPLIT BY ICE STRENGTH**: R_max 21.4 km (3.1 MPa), 11.9 km (1.5), 6.40 km (0.7) — binds
+      only at the weak end. ⚠️ **S6: `a_max` HAS NO RECORDED TEMPERATURE.** The Westerband
+      deposit has no leaf-temperature column while standardising `Vcmax25` to 25 C in the same
+      file; Q1 uses a_max unscaled at 293 K, Q2 as the rate at/above t_opt, Q2b as the PEAK rate
+      at a geometry-derived t_opt — three anchors for one number, differing 1.27-8.65x (algal)
+      across the registered omega grid. **The rule §13 buys, and it BREAKS §11's own: A PAIRING
+      NEED NOT APPEAR IN ANY EXPRESSION.** No line of code contains both halves of S7 — it lives
+      between a docstring assumption and a data table two sections away, which is why §§9-12,
+      all of which looked at expressions, could not see it. **THE UNIT OF VALIDATION IS
+      ULTIMATELY THE OBJECT.** Tools: `check_greenhouse_transparency.py`, `check_amax_anchor.py`.
 - [ ] Ground each science-spine item with a real number and a citation, via
       `bio-grounding`; verify citations per the project's citation chain.
       **2026-09-03 pass: 1 of 2 targets closed.** Spine item 2's tensile input is

@@ -366,6 +366,12 @@ without the circularity Gate 2 exists to prevent.
 | §11's clearance of `TSI x PAR_FRACTION x PHOTONS_PER_J` | **FALSE CLEAR, WITHDRAWN** — cleared by reading three labels that all said "top of atmosphere". Measuring showed one of them is not (§12 S5) |
 | `PHOTONS_PER_J = 4.57` | **real-data-backed** — re-derived as 4.553 umol/J from the ASTM G173-03 AM0 spectrum over 400-700 nm; 0.4% agreement (§12 control C) |
 | Size of S2 behind a self-consistent ice wall | **BOUNDED BELOW, not resolved** — 18.7-34.9% of assumed PAR photons survive at the self-consistent 18.02 kPa; 3.3-6.2x total overstatement with S5. Pure-ice absorption only, so an UPPER BOUND on transmission (§12) |
+| `a_max`'s measurement temperature | **NOT RECORDED IN THE SOURCE** — the Westerband deposit has no leaf-temperature column, while standardising `Vcmax25` to 25 C in the same file. Q1/Q2/Q2b then assume THREE DIFFERENT anchors for it; the readings differ 1.27-8.65x (algal) (§13 S6) |
+| §11's clearance of `respiration(r_d, t)` | **WITHDRAWN** — cleared the respiration side; nothing asked what temperature the ASSIMILATION side's grounded `a_max` describes (§13 S6) |
+| `T_interior = (N+1)^0.25 * T_eq` | **PREMISE FALSIFIED BY THIS PROJECT'S OWN OPTICS** — it assumes an SW-TRANSPARENT wall; a pressure-bearing ice wall transmits only 16-23% of solar energy (NIR is 53% of TSI and ice absorbs it). Correct form is `(1+tau)^0.25 * T_eq`; the published formula is the tau=1 case (§13 S7) |
+| S1's "the registered pressure bracket is self-inconsistent" | **WITHDRAWN** — S1 assumed tau=1. Solved as a fixed point the self-consistent p is **2.6-3.5 kPa, INSIDE [882 Pa, 10 kPa]**, 5.2-6.9x below S1's 18.02 kPa. S1's MECHANISM stands; its magnitude and verdict do not (§13 S7) |
+| Framing A (strength vs transparency collide at R = 10 km) | **SPLIT BY ICE STRENGTH** — at the self-consistent pressure R_max is 21.4 km (3.1 MPa), 11.9 km (1.5), 6.40 km (0.7). Binds only at the weak end (§13 S7) |
+| §12's use of G173's 1366.1 normalisation with the project's 1360.8 TSI | **CHECKED, TRANSFERABLE** — the PAR fraction is dimensionless, a property of spectral SHAPE not scale; residual <= 0.39%, 41x smaller than S5. Stated rather than waved through (§13) |
 | A comet organism's wall is ice | **convenient fiction** — §9 grounds ice, not the identification |
 | Antarctic dust loading bounds an organism's wall impurities | **convenient fiction** — no connection whatsoever; used only to show scattering CAN dominate (§9) |
 
@@ -666,6 +672,14 @@ material, the same organism, the same spectrum, the same condition.
 **S1 (NEW, and it is the sharpest thing in this document). The registered pressure bracket is
 computed from a temperature that the project's own settled result says cannot occur.**
 
+> ⚠️⚠️ **VERDICT WITHDRAWN 2026-09-04 by §13 S7, same day.** Everything below assumes
+> `T_interior = 2^0.25 · T_eq`, i.e. a fully SW-TRANSPARENT wall. The project's own ice optics
+> falsify that premise: a pressure-bearing wall transmits 16–23% of solar energy. Solved as a
+> fixed point, the self-consistent pressure is **2.6–3.5 kPa — INSIDE the registered bracket**,
+> not 18.02 kPa above it. **S1's MECHANISM stands** (the floor is still `p_sat` at the
+> uncontained temperature); **its magnitude and its verdict do not.** Read §13 S7 before citing
+> any number below.
+
 Q3's spec registers `p ∈ [882 Pa, 10 kPa]`. The floor is the saturation pressure at 5.16 °C —
 the algal sphere's **uncontained** equilibrium temperature. But §37 of that same spec settles
 that containment is mandatory and that **the vessel sets the temperature**,
@@ -746,8 +760,14 @@ is a single cell). Same class as §4's `a_max` borrow, and now ledgered as such.
     name. See §12 S5.
 - `equilibrium_temperature` — one grounded input (TSI) against exact constants and declared
   emissivity/albedo. No two-source pair exists to mismatch.
+  - ⚠️ **TRUE AS STATED, AND IT MISSED §13 S7.** Narrowly correct — TSI is the only sourced
+    input. But the pair that mattered was never inside this function: it is between its
+    greenhouse premise and the ice optics two sections away, and no expression contains both.
 - `respiration(r_d, t)` — `r_d` is labelled a calibration knob in all three preregs, not a
   sourced value, so no pairing arises. `Q10 = 2.0` and `T_REF_K = 293` are declared.
+  - ⚠️⚠️ **WITHDRAWN 2026-09-04 by §13 S6.** This examined the RESPIRATION side and never asked
+    what temperature the ASSIMILATION side's grounded `a_max` describes. The source records
+    none, and Q1/Q2/Q2b each assume a different one.
 - `a_max` vascular→algal, algal `leaf_mass_ratio`, `t_opt` from bryophyte/lichen sources —
   already recorded in §§3, 4, 4b and 4d. Re-confirmed, not re-litigated.
 
@@ -896,6 +916,160 @@ mandatory. The two are not equivalent in standing: S2 depends on the vessel and 
 below, while **S5 is a defect in the shipped questions exactly as registered.** It needs no
 wall, no Q3 and no re-framing to be wrong. Whether that triggers re-registration is a decision
 for the next pass, not for this grounding.
+## 13. Re-checking §11's surviving clearances by measurement — and the greenhouse premise fails
+
+**Trigger.** §12 withdrew one of the four entries in §11's _"Pairs checked and CLEARED"_ list
+after measuring it. Three were still standing, cleared the same way — by reading labels. This
+pass measures them, and audits §12's own pairings by the rule §12 itself introduced.
+
+### S6 (NEW). `a_max` has no recorded temperature, and the three questions assume three different ones.
+
+§4 grounded `a_max` from Westerband et al. (2022)'s `Asat` column and was careful about the
+unit question — _"Asat is net; this model's `a_max` is gross"_ — but never asked **what
+temperature that rate describes.** The deposit does not say. It has no leaf-temperature column
+at all, while carrying **`Vcmax25_micromol.m2.s`** — explicitly standardised to 25 °C — in the
+same 35-column file. The authors standardised where they meant to; `Asat` is an as-measured
+field quantity whose leaf temperature was not deposited. (The 675 Asat rows carry site climate
+only: MAT median 18.5 °C, max-temp median 24.6 °C.)
+
+So the anchor is unrecoverable from the source — and each shipped question supplies a different
+one implicitly:
+
+| question                       | how `a_max` is consumed                                                           | anchor it implies             |
+| ------------------------------ | --------------------------------------------------------------------------------- | ----------------------------- |
+| Q1 `net_carbon`                | `gross_assimilation(...)`, **no temperature factor**, tissue at `t_set = T_REF_K` | the rate at **293.0 K**       |
+| Q2 `net_carbon_at_equilibrium` | `× temperature_response(...)`, which is 1.0 **at and above** `t_opt`              | the rate at `t_opt` or hotter |
+| Q2b `net_carbon_adapted`       | `× temperature_response_gaussian(...)`, exactly 1.0 **at** `t_opt`                | the **peak** rate, at `t_opt` |
+
+The same registered `a_max = 10.0` cannot be all three unless `t_opt = 293 K`, and it is not —
+Q2b _derives_ `t_opt` from geometry via `adapted_optimum`. Sized with the project's **own**
+Gaussian, so no new object is imported to measure the gap:
+
+| preset   | `t_opt`  | ΔT from 293 K | Ω=10   | Ω=15   | Ω=20   | Ω=25   | Ω=30   |
+| -------- | -------- | ------------- | ------ | ------ | ------ | ------ | ------ |
+| algal    | 5.16 °C  | +14.69 K      | 0.1156 | 0.3833 | 0.5831 | 0.7081 | 0.7868 |
+| vascular | 57.82 °C | −37.97 K      | 0.0000 | 0.0016 | 0.0272 | 0.0996 | 0.2015 |
+
+**The two readings of one number differ by 1.27×–8.65× (algal) and 4.96×–1.8e6× (vascular)
+across the registered Ω grid.** Neither is checkable against the source. The disagreement is
+_internal_ and provable from the code alone. `tools/check_amax_anchor.py`.
+
+§11 cleared this pair by examining the **respiration** side (_"`r_d` is a calibration knob, so
+no pairing arises"_) and never asking what temperature the **assimilation** side's grounded
+number describes. Note also that `r_d` being a calibration knob partly _masks_ the defect in
+Q1's gate — `I_c = k·r_d/(a_max − r_d)` was tuned to hit a target — while leaving `r*` exposed.
+
+### S7 (NEW, and it withdraws part of S1). The contained-temperature result assumes a wall the project's own optics say cannot exist.
+
+`T_interior = (N+1)^0.25 · T_eq` is derived for an **SW-transparent, IR-opaque** wall. §12
+measured that same wall passing 2.26e-4 in the red. The thermal model and the optical model
+describe **the same wall** and disagree about it — and the disagreement is far worse than PAR
+suggests, because **PAR is not where the energy is**:
+
+| band                 | fraction of TSI |
+| -------------------- | --------------- |
+| UV, 280–400 nm       | 0.0763          |
+| PAR, 400–700 nm      | 0.3932          |
+| **NIR, 700–4000 nm** | **0.5305**      |
+
+Ice absorbs the near-infrared hard. Solar-energy-weighted transmittance of a pure-ice wall:
+
+| wall t         | τ (solar energy) | `T_interior` if the premise is corrected |
+| -------------- | ---------------- | ---------------------------------------- |
+| 0.625 m (§9's) | 0.5086           | 35.29 °C                                 |
+| 16.1 m         | 0.2699           | 22.29 °C                                 |
+| 29.1 m         | 0.2345           | 20.21 °C                                 |
+| 128.7 m        | 0.1598           | 15.67 °C                                 |
+
+**A pressure-bearing ice wall transmits 16–23% of the solar energy. It is not a greenhouse
+pane; it is an absorber.** Redoing the shell balance without assuming transparency — same
+idealisation as the original derivation, one assumption changed:
+
+```
+core:   tau*A + sigma*Ts^4 = sigma*Tc^4
+shell:  (1-tau)*A + sigma*Tc^4 = 2*sigma*Ts^4
+add  ->  sigma*Ts^4 = A     =>     T_interior = (1 + tau)^0.25 * T_eq
+```
+
+**The project's formula is the τ = 1 special case.** Positive control: at τ = 1 the
+generalisation returns 57.82 °C exactly, the roadmap's own published number — a generalisation
+that cannot reproduce what it generalises is not one.
+
+**And τ depends on thickness, thickness on pressure, pressure on temperature, temperature on τ.
+That is a fixed point** — solving it is precisely what §11 S1 said a re-registered Q3 must do,
+derive `p` from `T_interior` rather than declare it. Converged:
+
+| σ       | wall t  | τ      | `T_interior` | self-consistent `p` | in [882 Pa, 10 kPa]? |
+| ------- | ------- | ------ | ------------ | ------------------- | -------------------- |
+| 3.1 MPa | 5.57 m  | 0.3429 | 26.45 °C     | **3.453 kPa**       | **YES — inside**     |
+| 1.5 MPa | 10.01 m | 0.3013 | 24.10 °C     | **3.002 kPa**       | **YES — inside**     |
+| 0.7 MPa | 18.62 m | 0.2609 | 21.77 °C     | **2.607 kPa**       | **YES — inside**     |
+
+**S1's conclusion is withdrawn. The registered pressure bracket is NOT self-inconsistent.** S1
+computed 18.02 kPa — 1.8× above the bracket ceiling — from `T_interior = 2^0.25 · T_eq`, i.e.
+by assuming τ = 1, the very assumption the optics falsify. The self-consistent pressure is
+**2.6–3.5 kPa, comfortably inside the registered bracket**, 5.2×–6.9× below S1's figure.
+
+What of S1 _stands_ is its mechanism: the bracket's floor is still `p_sat` at the _uncontained_
+temperature, and containment still raises it. What falls is the magnitude and therefore the
+verdict. And the direction is robust — τ above is **pure-ice absorption**, so any real
+impurity or scattering (§11 S3) pushes τ down, `T_interior` down, and `p` further _inside_ the
+bracket, never out of it.
+
+Framing A moves again, and this time it lands somewhere honest:
+
+| σ       | self-consistent p | `R_max` (red) | binds at R = 10 km? |
+| ------- | ----------------- | ------------- | ------------------- |
+| 3.1 MPa | 3.453 kPa         | 21.41 km      | no                  |
+| 1.5 MPa | 3.002 kPa         | 11.91 km      | no                  |
+| 0.7 MPa | 2.607 kPa         | 6.40 km       | **YES**             |
+
+**Framing A is split by ice strength** — it binds only at the weak end of Petrovic's range.
+Not §9's falsification, not S1's decisive binding. `tools/check_greenhouse_transparency.py`.
+
+Note in passing: the corrected `T_interior` of 21.8–26.5 °C sits very close to the 293.0 K that
+Q1 declares as its tissue set-point, and very far from the 5.16 °C `adapted_optimum` hands Q2b.
+S6 and S7 are the same wound seen from two sides.
+
+### §12's own pairings, audited by §12's rule
+
+`1360.8` appears **nowhere** in this document. §12 derived the PAR fraction against ASTM
+G173-03's 1366.1 W/m² normalisation and then applied it to Kopp & Lean's 1360.8 W/m² TSI,
+without saying why that is allowed. Checked: the fraction is **dimensionless — a property of
+spectral shape, not scale** — so it transfers, and the residual if the two normalisations
+disagreed in shape at all is ≤ **0.39%**, against S5's 16.0%. **41× smaller, real, now stated,
+and not load-bearing.** Recorded rather than waved through, because "not load-bearing" is a
+measurement too.
+
+### Clearance status after this pass
+
+| §11 clearance                                                         | status                                                                                                                                                                                                                       |
+| --------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `TSI × PAR_FRACTION × PHOTONS_PER_J`                                  | **WITHDRAWN** by §12 (S5)                                                                                                                                                                                                    |
+| `respiration(r_d, t)`                                                 | **WITHDRAWN** — cleared the respiration side; the assimilation side's anchor was never asked (S6)                                                                                                                            |
+| `equilibrium_temperature` — _"no two-source pair exists to mismatch"_ | **TRUE AS STATED, AND IT MISSED S7.** Narrowly correct: TSI is the only sourced input. But the pair that mattered was never inside that function — it is between its greenhouse premise and the ice optics two sections away |
+| `a_max` vascular→algal, algal LMR, `t_opt` provenance                 | stands — re-confirmed, and S6 is a _different_ axis of the same input (temperature, not organism)                                                                                                                            |
+
+**All four clearances have now been examined by measurement. Three did not survive.**
+
+### The rule this buys, and it breaks §11's own formulation
+
+§11 said _the unit of validation is the expression, not the input._ **S7 is not in any
+expression.** No line of code multiplies τ by the greenhouse factor; nothing imports
+`sim.thermal` and the ice table together. The contradiction lives between a **docstring
+assumption in one module and a data table in another section**, and an expression-level check —
+however rigorous — cannot see it, because the two halves never meet in one.
+
+> **A pairing need not appear in any expression. Two models can describe the same object
+> incompatibly with no single line of code containing both.** The unit of validation is
+> ultimately neither the input nor the expression but **the OBJECT**: every model that
+> describes a thing is making claims about it, and those claims must be made to agree
+> explicitly, because nothing in the code will ever bring them face to face.
+
+That is why S7 survived §9, §10, §11 and §12 — every one of which was looking at expressions.
+It was found only by asking what `equilibrium_temperature`'s _clearance_ had not looked at, and
+the clearance was **true as written**.
+
 ## References (all ghostcite-clean, 0 findings)
 
 - **Kopp G (2011).** A new, lower value of total solar irradiance: Evidence and climate significance. *Geophysical Research Letters.* [10.1029/2010GL045777](https://doi.org/10.1029/2010GL045777)
