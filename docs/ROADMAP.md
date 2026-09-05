@@ -172,6 +172,31 @@ than being chosen and then justified.
       result supply the premise applied to a UNICELLULAR alga. **The sweep's own lesson: THE
       UNIT OF VALIDATION IS THE EXPRESSION, NOT THE INPUT — citation checks, the honesty ledger
       and ghostcite all answer YES for both halves of every defect found.**
+      **S2 SIZED 2026-09-04 — `bio_grounding` §12 — AND SIZING IT BROKE ONE OF §11's OWN
+      CLEARANCES.** ⚠️⚠️ **S5: `PAR_FRACTION = 0.45` IS NOT A TOP-OF-ATMOSPHERE NUMBER.**
+      `irradiance()`'s docstring says top-of-atmosphere; the measured AM0 PAR energy fraction
+      (ASTM G173-03) is **0.3879**, and 0.45 exceeds even the AM1.5G SURFACE value of 0.4297.
+      A 5772 K blackbody independently returns 0.3663. **PAR is overstated 1.160x at every
+      distance in Q1, Q2 AND Q2b, unconditionally** — no wall, no Q3 and no re-framing needed
+      for it to be wrong; an iso-flux distance threshold moves sqrt(1.160) = 1.077x, ~7% in r.
+      All three preregs carry 0.45 as a bare `# assumption` with no source. **§11 had CLEARED
+      this exact triple** ("all three describe the solar spectrum at top of atmosphere") — that
+      clearance is now WITHDRAWN, and it was produced by reading three labels rather than
+      measuring them, which is the failure §11 exists to name. `PHOTONS_PER_J = 4.57` survived
+      the same test (re-derived 4.553, 0.4%). **New rule (§12): "THE SAME OBJECT" IS A
+      MEASUREMENT, NOT A LABEL — where the object is quantitative, check a pairing by
+      RE-DERIVING BOTH INPUTS FROM IT; anything less checks the declarations against each
+      other, which they always pass.** ✅ **S2 itself is now sized: a factor, not an order of
+      magnitude.** At the self-consistent 18.02 kPa an ice wall is 29-129 m thick and delivers
+      **18.7-34.9% of the assumed PAR photons** (50% cutoff at 470-516 nm), so S5+S2 together
+      overstate the light field **3.3x-6.2x**. Milder than §10's 2.26e-4 red-band figure
+      implies, because MOST PAR PHOTONS ARE NOT IN THE RED BAND — reading a per-wavelength
+      extreme as an integrated quantity would have overstated S2 by 4 orders of magnitude.
+      Two limits: this is PURE-ICE ABSORPTION ONLY, hence an UPPER BOUND on transmission (S3's
+      scattering gap bears directly, ~24x harder), and it is a PHOTON COUNT, not a rate — a
+      chlorophyll-weighted figure needs an in vivo action spectrum the project has not
+      grounded, and inventing one would manufacture the defect being measured.
+      Tool: `tools/size_par_filter.py`, four positive controls.
 - [ ] Ground each science-spine item with a real number and a citation, via
       `bio-grounding`; verify citations per the project's citation chain.
       **2026-09-03 pass: 1 of 2 targets closed.** Spine item 2's tensile input is

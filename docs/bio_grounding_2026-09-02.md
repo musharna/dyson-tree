@@ -362,6 +362,10 @@ without the circularity Gate 2 exists to prevent.
 | L_d combining Warren & Brandt with Ackermann | **MATERIAL MISMATCH** — pure bubble-free ice absorption against dust-laden glacial ice scattering; the ledger flagged the formula, not its two objects (§11 S3) |
 | Scafaro 2023 / June 2004 numbers used by `sim/thermal.py` | **real-data-backed** — 29.4/32.7 °C, 49 species and the Ω definition all verified VERBATIM against the gold-OA primary text; the code docstrings match exactly (§11 S4) |
 | Adaptation premise applied to the ALGAL preset | **organism mismatch** — a whole-leaf Rubisco-deactivation result from 49 vascular C3 land plants, its Gaussian form derived on SOYBEAN LEAVES, supplying the thermal premise for a unicellular alga (§11 S4) |
+| `PAR_FRACTION = 0.45` used in a top-of-atmosphere function | **WRONG OBJECT** — the measured AM0 PAR energy fraction is **0.3879**; 0.45 exceeds even the AM1.5G *surface* value (0.4297). PAR overstated 1.160x in Q1/Q2/Q2b, unconditionally (§12 S5) |
+| §11's clearance of `TSI x PAR_FRACTION x PHOTONS_PER_J` | **FALSE CLEAR, WITHDRAWN** — cleared by reading three labels that all said "top of atmosphere". Measuring showed one of them is not (§12 S5) |
+| `PHOTONS_PER_J = 4.57` | **real-data-backed** — re-derived as 4.553 umol/J from the ASTM G173-03 AM0 spectrum over 400-700 nm; 0.4% agreement (§12 control C) |
+| Size of S2 behind a self-consistent ice wall | **BOUNDED BELOW, not resolved** — 18.7-34.9% of assumed PAR photons survive at the self-consistent 18.02 kPa; 3.3-6.2x total overstatement with S5. Pure-ice absorption only, so an UPPER BOUND on transmission (§12) |
 | A comet organism's wall is ice | **convenient fiction** — §9 grounds ice, not the identification |
 | Antarctic dust loading bounds an organism's wall impurities | **convenient fiction** — no connection whatsoever; used only to show scattering CAN dominate (§9) |
 
@@ -736,6 +740,10 @@ is a single cell). Same class as §4's `a_max` borrow, and now ledgered as such.
 - `TSI × PAR_FRACTION × PHOTONS_PER_J` — all three describe the solar spectrum at top of
   atmosphere; mutually consistent. (All three are *declared*, and S2 is about what happens to
   them behind a wall — but as a pair, they agree.)
+  - ⚠️⚠️ **WITHDRAWN 2026-09-04 by §12, same day — THIS CLEARANCE WAS FALSE.** The measured
+    top-of-atmosphere PAR energy fraction is **0.3879**, not 0.45. This bullet cleared the pair
+    by reading its three labels instead of measuring them, which is the failure §11 exists to
+    name. See §12 S5.
 - `equilibrium_temperature` — one grounded input (TSI) against exact constants and declared
   emissivity/albedo. No two-source pair exists to mismatch.
 - `respiration(r_d, t)` — `r_d` is labelled a calibration knob in all three preregs, not a
@@ -759,6 +767,135 @@ So the rule generalises past citations — **anything a model combines carries a
 that the things combined describe the same world, including a project's own past and present
 selves.**
 
+## 12. S2 sized — and `PAR_FRACTION` is a surface number inside a top-of-atmosphere function
+
+**Trigger.** §11 recorded S2 — a flat full-spectrum PAR scalar feeding a full-spectrum `a_max`
+for an organism §10 shows must sit behind a blue-pass wall — as "the largest known open
+pairing", but never gave its size. This pass measures it. `tools/size_par_filter.py`.
+
+**Method, and the discipline it had to satisfy.** Sizing S2 means combining
+`sim/physiology.py`'s scalars with a solar spectrum. _That is itself a pairing_, and §10's rule
+forbids assuming the spectrum I picked is the one those scalars describe. So the script tries
+to **prove** the match before using it. Four controls run before any result:
+
+- **A.** ASTM G173-03's AM0 column integrates to 1347.9 W/m², **0.9867** of its own nominal
+  1366.1 — the residual is real UV/IR outside the table's 280–4000 nm span. The control
+  therefore asserts the _ratio_, not the total; an assert on the total would have read a
+  correct table as a parse failure.
+- **B.** Re-derive the PAR energy fraction at top of atmosphere. **This is the control that
+  failed**, and it is S5 below.
+- **C.** Re-derive µmol photons per J of PAR: **4.553** against the declared
+  `PHOTONS_PER_J = 4.57`. Passes at 0.4%.
+- **D.** Reproduce §10's committed ice transmission row (0.9881 / 0.4302 / 1.97e-3 / 2.26e-4 at
+  t = 16.1 m) from an independent log-space interpolation of the same Warren & Brandt table.
+  Passes. This pins the ice side, so a wrong answer below cannot be blamed on the optics.
+
+**Every control was then run against a mutant and seen to fail for its stated reason**, because
+a control never observed failing is not evidence — the project's own doctrine, applied to the
+instrument that produced this section. A: feed the AM1.5G surface column where AM0 belongs →
+*"band integrates to 1000.4 = 0.732"*. B: use the truncated band as denominator instead of the
+solar constant → *"measured 0.3932"* — **this is the exact bug the first draft of the script
+shipped**, and control B caught it before it reached this page. C: drop the nm→m factor →
+*"4553214347.591 umol/J"*. D: shift the ice wavelength grid 5 nm → *"at 550 nm: 0.4727 vs
+0.4302"*.
+
+**One mutant survived, and it convicted a comment rather than a number.** Replacing the
+log-space interpolation of `m_im` with linear interpolation changed nothing D could see —
+because D probes 400/550/680/700 nm, all of which sit *exactly on* the ice table's 10 nm grid,
+where both schemes return the tabulated value. **D discriminates wavelength registration, not
+interpolation scheme.** Measuring the difference directly showed why that is harmless here: the
+two schemes move the integrated result by ≤ 0.5% and differ by 0.3% at the off-grid 645 nm. But
+the code comment had *asserted* that linear interpolation "would badly misstate the middle of
+every 10 nm gap" — an unmeasured justification, and false. The number was right; the reason
+given for it was invented. Corrected in place, and recorded here because **it is S5's own
+failure mode in miniature: a label asserting a property that no one measured.**
+
+### S5 (NEW). The PAR fraction is 0.388 at the top of the atmosphere. The project declares 0.45.
+
+| quantity                                                        | value      |
+| --------------------------------------------------------------- | ---------- |
+| measured, ASTM G173-03 **AM0 (top of atmosphere)**              | **0.3879** |
+| measured, ASTM G173-03 AM1.5G (at the surface)                  | 0.4297     |
+| independent check, 5772 K blackbody                             | 0.3663     |
+| **declared** in `sim/physiology.py` and all three `prereg.yaml` | **0.4500** |
+
+`irradiance()`'s own docstring says _"top-of-atmosphere"_. The fraction it multiplies TSI by is
+not a top-of-atmosphere fraction — it exceeds even the terrestrial AM1.5G value. **PAR is
+overstated by 1.160× at every heliocentric distance, in every one of the three shipped
+questions.** Flux goes as 1/r², so an iso-flux distance threshold moves by √1.160 = **1.077×**,
+about 7% in r to first order.
+
+Where 0.45 came from is not recorded: all three preregs carry it as a bare `# assumption` with
+no source. It is close to the textbook "PAR is ~45% of solar radiation" figure, which is a
+statement about _surface_ radiation. That provenance is a guess and is recorded as one. The
+measurement is not a guess.
+
+**This is the sharpest instance of the project's own root class, because §11 cleared it.** The
+pair sits in §11's _"Pairs checked and CLEARED"_ list, cleared one commit ago with:
+
+> `TSI × PAR_FRACTION × PHOTONS_PER_J` — all three describe the solar spectrum at top of
+> atmosphere; mutually consistent.
+
+That clearance was produced by reading three declarations and observing that they all _said_
+top of atmosphere. Two of them meant it. **§11 cleared this pair using exactly the reasoning
+§11 was written to condemn: it validated the labels, one at a time.** The check that would have
+caught it is the one this pass ran — re-derive each scalar from the spectrum it claims to
+describe — which is just the check that grounds an input, applied to the pairing instead.
+
+> **The rule: "the same object" is a measurement, not a label.** Two inputs agreeing about
+> which object they describe is a claim of theirs, not evidence for it. Where the object is
+> quantitative, a pairing is checked by re-deriving both inputs _from_ it. Anything less
+> checks the declarations against each other, which they will always pass.
+
+### S2, sized
+
+Wall thickness from the spec's own thin-wall relation `t = p·R/(2σ)` at R = 10 km; transmission
+`exp(−k(λ)·t)` with §9's grounded pure-ice `k`; integrated against the AM0 **photon** spectrum
+over 400–700 nm.
+
+| p                                     | σ           | wall t      | PAR photons delivered | τ = 0.5 at |
+| ------------------------------------- | ----------- | ----------- | --------------------- | ---------- |
+| 882 Pa (bracket floor, uncontained T) | 3.1 MPa     | 1.4 m       | 85.5%                 | 696 nm     |
+| 882 Pa                                | 1.5 MPa     | 2.9 m       | 74.8%                 | 638 nm     |
+| 882 Pa                                | 0.7 MPa     | 6.3 m       | 60.6%                 | 593 nm     |
+| 10 kPa (bracket ceiling)              | 3.1 MPa     | 16.1 m      | 43.7%                 | 540 nm     |
+| 10 kPa                                | 1.5 MPa     | 33.3 m      | 33.1%                 | 511 nm     |
+| 10 kPa                                | 0.7 MPa     | 71.4 m      | 24.3%                 | 487 nm     |
+| **18.02 kPa (self-consistent, S1)**   | **3.1 MPa** | **29.1 m**  | **34.9%**             | **516 nm** |
+| **18.02 kPa**                         | **1.5 MPa** | **60.1 m**  | **26.2%**             | **492 nm** |
+| **18.02 kPa**                         | **0.7 MPa** | **128.7 m** | **18.7%**             | **470 nm** |
+
+**S2 is real, but it is a factor and not an order of magnitude: 2.9–5.3× at the self-consistent
+pressure.** Combined with S5's 1.16×, `irradiance(1.0)`'s 2798.5 µmol m⁻² s⁻¹ becomes
+**450–840 — overstated 3.3× to 6.2×.**
+
+That is far milder than §10's per-wavelength figures suggest, and the reason is worth stating
+plainly: **§10's alarming numbers are red-band transmissions, and most PAR photons are not in
+the red band.** Integrated over PAR the blue end carries the count, and the blue end is nearly
+transparent. So the _spectrum_ is mutilated — the 50% cutoff sits at 470–516 nm, putting
+everything redward of green beyond reach — while the _photon count_ falls only ~3–5×. Reading
+§10's 2.26e-4 as the size of S2 would have overstated it by four orders of magnitude. **A
+per-wavelength extreme is not an integrated quantity**, which is the same category error as
+treating `k` as a scalar (§9), one level up.
+
+**Two things this measurement does NOT license.**
+
+1. **It is an upper bound on transmission, not an estimate of it.** This is absorption in pure
+   bubble-free ice. §11 S3 — pure-ice absorption divided by dusty-ice scattering — bears
+   directly here, and §9's own scattering caveat put real ice at roughly **24× stronger**
+   attenuation. **3.3–6.2× is a floor on the error, not its size.**
+2. **It is a photon count, not a photosynthetic rate.** `a_max` was measured under full-spectrum
+   light, and the surviving band excludes chlorophyll a's Q band entirely. A
+   chlorophyll-weighted figure would be worse, possibly much worse — but producing one requires
+   an _in vivo_ action spectrum this project has not grounded, and inventing one would
+   manufacture the very defect this section is about. Bounded below; not resolved.
+
+**Consequence.** Q1, Q2 and Q2b each contain a light field overstated **1.16× unconditionally**
+(S5), and **3.3–6.2× if the organism is contained** (S5 + S2) — and §10 makes containment
+mandatory. The two are not equivalent in standing: S2 depends on the vessel and is bounded
+below, while **S5 is a defect in the shipped questions exactly as registered.** It needs no
+wall, no Q3 and no re-framing to be wrong. Whether that triggers re-registration is a decision
+for the next pass, not for this grounding.
 ## References (all ghostcite-clean, 0 findings)
 
 - **Kopp G (2011).** A new, lower value of total solar irradiance: Evidence and climate significance. *Geophysical Research Letters.* [10.1029/2010GL045777](https://doi.org/10.1029/2010GL045777)
@@ -773,6 +910,7 @@ selves.**
 - **Westerband A C (2022).** Australia-wide photosynthetic trait dataset. Dryad. [10.5061/dryad.j9kd51cgr](https://doi.org/10.5061/dryad.j9kd51cgr) — CC-0 dataset. ghostcite returns tier U (not in CrossRef); Dryad DOIs are registered with DataCite, and DataCite confirms first creator Westerband, publicationYear 2022, publisher Dryad.
 - **Forest Products Laboratory (2010).** Wood Handbook — Wood as an Engineering Material. Centennial Edition. General Technical Report FPL-GTR-190. Madison, WI: U.S. Department of Agriculture, Forest Service, Forest Products Laboratory. 508 p. — public domain (U.S. government work); no DOI, so not ghostcite-checkable. Identity verified from the PDF's own embedded metadata (title, author "USDA Forest Service", and a full self-citation in the subject field). Used in §7.
 - **Yang X (2020).** Quantifying photosynthetic performance of phytoplankton based on photosynthesis–irradiance response models. *Environmental Sciences Europe.* [10.1186/s12302-020-00306-9](https://doi.org/10.1186/s12302-020-00306-9) — CC-BY gold OA; cited in §8 as a NEGATIVE result (correct paper, full text unreachable). Byline confirmed via OpenAlex: first author Xiaolong Yang, 2020.
+- **ASTM G173-03.** Standard Tables for Reference Solar Spectral Irradiances. ASTM International. — supplies §12's AM0 (extraterrestrial) and AM1.5G (surface) columns. The standard is paywalled and `nrel.gov`, its usual public host, was unreachable this session; the tabulation was taken from the pvlib-python repository's redistributed copy (`pvlib/data/ASTMG173.csv`, BSD-3-Clause), 2002 rows, 280-4000 nm. **Verified by physics rather than by byline**, since a data table has no byline to check: the AM0 column integrates to 0.9867 of the 1366.1 W/m2 solar constant it declares (residual = the out-of-band tail), its PAR photon conversion reproduces this project's own `PHOTONS_PER_J` to 0.4%, and a 5772 K blackbody independently returns a PAR energy fraction of 0.3663 against the table's 0.3879.
 - **Warren S G (2008).** Optical constants of ice from the ultraviolet to the microwave: A revised compilation. *Journal of Geophysical Research: Atmospheres* 113:D14220. [10.1029/2007JD009744](https://doi.org/10.1029/2007JD009744) — closed access; the PRIMARY DATA TABLE is public at `atmos.uw.edu/ice_optical_constants/IOP_2008_ASCIItable.dat` and is what §9 uses. Byline confirmed via OpenAlex: first author Stephen G. Warren, 2008, 1285 citations.
 - **Ackermann M (2006).** Optical properties of deep glacial ice at the South Pole. *Journal of Geophysical Research: Atmospheres* 111:D13203. [10.1029/2005JD006687](https://doi.org/10.1029/2005JD006687) — bronze OA; IceCube collaboration, 117 authors. Byline confirmed via OpenAlex: first author M. Ackermann, 2006, 539 citations. Used in §9 for the scattering caveat.
 - **Petrovic J J (2003).** Review: Mechanical properties of ice and snow. *Journal of Materials Science* 38:1–6. [10.1023/A:1021134128038](https://doi.org/10.1023/A:1021134128038) — closed access; NOT read directly. Byline and pagination confirmed independently via CrossRef and OpenAlex (619 citations). Its tensile-strength range reaches §10 quoted verbatim through Hirata et al. 2022.
