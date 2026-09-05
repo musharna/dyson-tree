@@ -373,15 +373,20 @@ without the circularity Gate 2 exists to prevent.
 | Framing A (strength vs transparency collide at R = 10 km) | **SPLIT BY ICE STRENGTH** — at the self-consistent pressure R_max is 21.4 km (3.1 MPa), 11.9 km (1.5), 6.40 km (0.7). Binds only at the weak end (§13 S7) |
 | §12's use of G173's 1366.1 normalisation with the project's 1360.8 TSI | **CHECKED, TRANSFERABLE** — the PAR fraction is dimensionless, a property of spectral SHAPE not scale; residual <= 0.39%, 41x smaller than S5. Stated rather than waved through (§13) |
 | "One IR-opaque shell == halving `area_ratio`, identical to 5.7e-14 K" | **TRUE ONLY AT tau = 1** — with a measured wall the two differ by **31-36 K**. The 5.7e-14 K agreement compared two expressions computing the SAME ASSUMPTION (§14) |
-| S5 and S6 as INDEPENDENT deferred defects | **NOT INDEPENDENT** — each alone leaves all six Q1 verdicts standing; TOGETHER (S5 + S6 reading B) vascular k=100 falls to r*=11.51, OUTSIDE the registered [12, 22]. The effects compose multiplicatively (§16) |
+| S5 and S6 as INDEPENDENT deferred defects | **NOT INDEPENDENT** — each alone leaves all six Q1 verdicts standing; TOGETHER (S5 + S6 reading B) vascular k=100 falls to r*=11.51, OUTSIDE the registered [12, 22]. The effects compose multiplicatively (§16). ⚠️ **THAT ARM IS READING C, NOT B** — §18 S10 |
 | The ICE wall's own temperature | **S8: MOLTEN AT 1 AU** — section 13's two-body balance puts the shell at `Ts = T_eq` exactly, independent of tau: **5.16 C**, with the interior face at 24.10 C. Ice melts at 0 C, and that threshold only DROPS with pressure. No part of the wall is ice where sections 13-15 computed every number (§17) |
 | Where an ice vessel holding liquid water CAN exist | **A 0.11-0.16 AU ANNULUS, AND 1 AU IS OUTSIDE IT** — inner edge 1.0381 AU (tau-independent), outer edge 1.1446-1.2030 AU. Q2b's algal temperature limit, 1.1945 AU, sits just beyond it. Re-solving the fixed point at the inner edge takes p 3.002 -> 2.287 kPa: inside the bracket, DOWNWARD, the third effect to point that way (§17) |
 | `albedo = 0.0` paired with a wall concluded to be ICE | **S9, AND IT PARTLY REVERSES S8** — the shell reaches the melting point at 1 AU at albedo **0.0721**; at 0.10 it is -2.07 C. S8 holds in the model as written and its MAGNITUDE does not survive S9. Not internally inconsistent: Beer-Lambert models pure absorption, matching albedo=0 — consistently wrong, which is why no single-expression check could see it (§17) |
 | §11's clearance of `equilibrium_temperature` | **HAS NOW MISSED THREE THINGS** — S7, S8 and S9, while remaining literally accurate. A clearance true about the EXPRESSION says nothing about the OBJECT; the bullet cannot be made more correct, only replaced by a different question (§17) |
 | `PHOTONS_PER_J` applied behind the blue-pass wall | **CHECKED AND CLEAN** — `size_par_filter.py` computes photon- and energy-weighted transmission separately and applies the photon-weighted fraction to a photon-weighted flux. The obvious next instance of §12's failure is not present (§17) |
-| Q1's "the vascular default-k prediction HELD" | **CONDITIONAL ON THE S6 DECISION** — survives S5 + reading A (12.7058, inside); fails S5 + reading B (11.5100, misses the floor by 4.1%). The registration choice decides the published verdict (§16) |
+| Q1's "the vascular default-k prediction HELD" | **CONDITIONAL ON THE S6 DECISION** — survives S5 + reading A (12.7058, inside); fails S5 + reading B (11.5100, misses the floor by 4.1%). The registration choice decides the published verdict (§16). ⚠️ **THE CHOICE IS A-vs-C; B IS INELIGIBLE** (§18) |
 | S5's reach into Q2 | **NONE** — Q2 exits 2 at a purely thermal gate before any PAR-dependent code runs; unchanged in every digit. Q2b's `gates.csv` is byte-identical and its binding limit stays `temperature` at every omega (§16) |
 | `a_max`'s three anchors, sized | **52.66 K SPREAD** — 293.00 K (Q1), 298.15 K (Q2), 278.31 K (Q2b algal), 330.97 K (Q2b vascular). Re-anchored to a common 293 K the paths need `a_max` 10.0 to 367.53; the 36.75x extreme is inside the vascular class Gate B already FAILED, so the live factor is algal's 1.71x (§16) |
+| §16's "reading B" arm | **S10: IT IS NOT READING B** — the factor is `temperature_response(293, 265.15, 298.15)` = 0.8439, Q2's LINEAR ramp at Q2's DECLARED 25.00 °C `t_opt`. Reading B's own definition (the PEAK of Q2b's Gaussian at the ADAPTED optimum) gives 0.0272 — **31.0×** apart. Confirmed by reproducing §16's published 12.3971 exactly from `a_max = 8.4394`. Every number §16 published from the arm is right; the name is wrong (§18) |
+| True reading B applied to Q1 | **S11: INELIGIBLE — IT REMOVES THE RESULT, NOT THE VERDICT** — at Ω ∈ {10, 15, 20} the vascular organism has **no compensation point at any irradiance**; at Ω ∈ {25, 30} `I_c` is 187.92 and 47.61 against a gate ceiling of **9.0**. `net_carbon()` reads neither Ω, `area_ratio` nor `t_opt`, so applying B imports three objects Q1 does not have (§18) |
+| The criterion that eliminates reading B | **WHERE THE CORRECTION LANDS, NOT HOW BIG IT IS** — Ω is registered only in `q2b_adapted/prereg.yaml:67`, zero occurrences in Q1's and Q2's. A reading that makes a registered result depend on an unregistered parameter is a **re-registration**, not a reading. Size alone would have picked the same answer for the wrong reason (§18) |
+| §16's one-number-per-reading Q2b corrections | **EACH IS A FUNCTION OF Ω** — reading A algal spans 86.5049 (Ω=10) to 12.7091 (Ω=30), a **6.8×** spread; reading C algal spans **33.1×**. §16's published 17.1498 is reproduced exactly, and is the Ω=20 cell of that row (§18) |
+| `a_max`'s measurement temperature, after §18 | **STILL NOT GROUNDED** — §18 narrows which internally consistent reading may be adopted; it does not recover the anchor. §13's "not recorded in the source" stands. Open route: the deposit's `Vcmax25` was derived from `Asat` by the one-point method, which passes through a leaf-temperature term, so the anchor may be recoverable by inversion. **NOT ATTEMPTED** — Dryad file downloads now 401 without a bearer token and the public routes return a WAF challenge; no workaround attempted (§18) |
 | Q2b's preset source vs `sim/organism.py` | **UNGUARDED, AND THEY DIFFER** — Q1 runs `assert_presets_match`; Q2b has no equivalent. `leaf_mass_ratio` is 0.8 in `organism.py` and 1.0 in Q2b's prereg. The difference is deliberate and commented, but the name `algal` denotes two organisms and only one experiment would notice (§16) |
 | The `area_ratio` degeneracy | **REAL BUT RESCALED, ~2.7x smaller** — T depends on `area_ratio/(1+tau)`, so a contained sphere presents at effective 2.98-3.17, not 2.0 (§14) |
 | "Q2b's algal band is not a statement about shape alone" | **REPLACED** — the band [3.630, 4.311] is a statement about shape CONDITIONAL on containment: a contained sphere presents BELOW its floor, and landing inside it would need a true `area_ratio` of 4.58-5.79, more extreme than a sphere (§14) |
@@ -1362,6 +1367,13 @@ Two readings, each self-consistent, each leaving a different experiment alone:
   peaks at 1). Q1 needs `a_max = 10.0 × f(293) = 8.4394`; every `r*` falls 9.4% (k=100: 13.6851 → 12.3971) and
   `I_c` rises 6.9519 → **8.3447 against a gate ceiling of 9.0** — headroom cut from 2.05 to
   0.66, a 3× reduction. All six verdicts still hold.
+  - ⚠️⚠️ **THIS ARM IS NOT READING B — §18 S10.** The factor `f(293)` used here is
+    `temperature_response(293, 265.15, 298.15)` (`tools/price_registered_corrections.py:122`),
+    Q2's LINEAR ramp at Q2's DECLARED `t_opt` = 25.00 °C. Reading B as defined one line above —
+    the PEAK of Q2b's GAUSSIAN at the ADAPTED optimum — gives 0.0272, not 0.8439, a **31.0×**
+    difference. Every number in this bullet is correct; they price a **third** reading (C).
+    True reading B removes Q1's compensation point entirely at Ω ∈ {10, 15, 20} and is
+    **ineligible** (§18 S11). The A-vs-B framing below should be read as **A-vs-C**.
 
 ### Together: Q1's headline verdict flips
 
@@ -1523,6 +1535,165 @@ explained, because the finding does not need it.
 > temptation is to report it as a fourth finding. Every control in this section exists to make
 > that distinction, and the one quantity with no control attached was the one that looked most
 > like a discovery.
+
+## 18. S6 resolved — there are three readings, and §16 priced the wrong one under reading B's name
+
+**Trigger.** S6 was deferred as a registration decision between two readings of `a_max`, and
+§16 priced both so the decision could be made knowing its cost. A choice between two options
+is not a choice if one is ineligible, and is not a choice at all if the two priced arms were
+the same option. This pass re-derives the readings from the live code before the decision is
+taken. `tools/check_amax_reading.py`, six controls, three of them positive.
+
+### S10 (NEW). §16's "reading B" arm computes a third reading, not reading B.
+
+§16 defines reading B as _"`a_max` is the peak rate at `t_opt`"_ — the temperature at which
+Q2b's **Gaussian** equals 1, which is the **adapted** optimum that `adapted_optimum()` derives
+from geometry. It then implements the arm as `a_max = 10.0 × f(293) = 8.4394`, where
+`tools/price_registered_corrections.py:122` records the factor as
+`temperature_response(293, 265.15, 298.15)`.
+
+That is Q2's **linear ramp** evaluated at Q2's **declared** `t_opt` — the 25.00 °C anchor,
+which §13's own table lists as a *separate row* from Q2b's. Measured against the live code:
+
+|                                            reading | anchor T | `f(293 K)` | Q1 `a_max` |
+| -------------------------------------------------- | -------- | ---------- | ---------- |
+| **A** — the rate at 293 K (Q1's own `t_set`)        | 19.85 °C | 1.0000     | 10.0000    |
+| **C** — the rate at `t_opt` = 298.15 K (Q2, linear) | 25.00 °C | 0.8439     | **8.4394** |
+| **B** — the PEAK rate at the adapted `t_opt` (Q2b, Gaussian) | 57.82 °C | 0.0272 | **0.2721** |
+
+**The two candidate factors for Q1 differ by 31.0×.** The identification is not an allegation:
+feeding `a_max = 8.4394` to the live `crossover_distance_for` returns **12.3971 AU**,
+reproducing §16's published "reading B" figure exactly (control 2). §16 priced reading **C**.
+
+This matters because §16's headline rests on that arm: *"the S6 decision determines whether
+Q1's headline survives S5."* The statement stands — 11.5100 AU is still outside [12, 22] — but
+what it is conditional on is the **A-versus-C** decision. Reading B was never priced.
+
+### S11 (NEW). True reading B is not well-defined for Q1, and where it is defined it removes Q1's result rather than moving it.
+
+`net_carbon()` — Q1's path — reads **neither `omega`, `area_ratio`, nor `t_opt`**
+(`sim/organism.py:80–86`, and the preset comment at `sim/organism.py:158` says so outright:
+_"area_ratio and t_min are Q2-only fields (net_carbon(), which Q1 uses, reads neither)"_).
+Applying reading B to Q1 therefore requires importing the Gaussian, the adapted optimum, and
+Ω — three objects Q1 does not have. Carried through anyway:
+
+| preset   | Ω  | `f(293 K)` | eff. `a_max` | respiration | `I_c`                 | `r*`       |
+| -------- | -- | ---------- | ------------ | ----------- | --------------------- | ---------- |
+| vascular | 10 | 0.0000     | 0.0000       | 1.3000      | NO COMPENSATION POINT | — |
+| vascular | 15 | 0.0016     | 0.0165       | 1.3000      | NO COMPENSATION POINT | — |
+| vascular | 20 | 0.0272     | 0.2721       | 1.3000      | NO COMPENSATION POINT | — |
+| vascular | 25 | 0.0996     | 0.9959       | 1.3000      | 187.9236              | no root |
+| vascular | 30 | 0.2015     | 2.0152       | 1.3000      | 47.6131               | 3.9237 AU |
+| algal    | 20 | 0.5831     | 5.8310       | 0.3000      | 0.8585                | 50.7909 AU |
+
+**At three of the five registered Ω the vascular organism has no compensation point at all** —
+gross assimilation cannot reach whole-organism respiration at *any* irradiance, so `r*` does not
+exist to be inside or outside a band. At the two widest Ω it exists but `I_c` is 47.6 and 187.9
+against a **gate ceiling of 9.0**. Under reading B Q1's vascular result is not flipped; it is
+annihilated, at every Ω the project registered.
+
+Positive control on that failure (control 5): the no-compensation-point outcome **fires** for
+true reading B at Ω = 20 and **does not fire** for the registered `a_max`. A predicate that
+could only ever return "broken" would not be evidence of anything.
+
+Note what reading B does to the *algal* class, which is the class Gate B did not fail: `r*` at
+k = 20 moves 67.2623 → **50.7909 AU**, from outside the registered [35, 55] to inside it. The
+reading that destroys the vascular question repairs the algal verdict. Neither effect is a
+reason to adopt or reject it; both are recorded because a reading that only ever looked bad
+would be suspiciously easy to dismiss.
+
+### The correction §16 quoted as one number is a function of Ω
+
+Q2b's `a_max` correction under readings A and C, across the registered
+`omega_grid_k: [10, 15, 20, 25, 30]` (`experiments/q2b_adapted/prereg.yaml:67`):
+
+| reading   | preset   | Ω=10        | Ω=15      | Ω=20     | Ω=25     | Ω=30    | spread     |
+| --------- | -------- | ----------- | --------- | -------- | -------- | ------- | ---------- |
+| A (293 K) | algal    | 86.5049     | 26.0893   | 17.1498  | 14.1230  | 12.7091 | 6.8×       |
+| A (293 K) | vascular | 1.82e7      | 6063.90   | 367.5343 | 100.4132 | 49.6236 | 3.7e5×     |
+| C (25 °C) | algal    | 512.0259    | 57.5023   | 26.7500  | 18.7710  | 15.4854 | 33.1×      |
+| C (25 °C) | vascular | 4.76e5      | 1199.69   | 147.7328 | 56.0358  | 33.0954 | 1.4e4×     |
+
+§16 published the single value **17.1498** for reading A — reproduced here exactly (control 6),
+and visible now as the Ω = 20 cell of a row spanning 6.8×. One number per reading understated
+what each reading commits the project to.
+
+### The asymmetry that decides S6
+
+Ω is registered **only** in Q2b (`omega_grid_k`); it occurs zero times in
+`q1_crossover/prereg.yaml` and `q2_thermal/prereg.yaml`, and `sim/organism.py:40` flags it as a
+_"DECLARED ASSUMPTION, not grounded"_.
+
+- **Readings A and C** put the Ω-dependent correction on **Q2b**, the experiment that registered
+  and swept Ω. Its answer already varies with Ω by design.
+- **Reading B** puts it on **Q1**, which did not. Q1's published headline would become a
+  function of a knob Q1 never registered, ranging from *"no compensation point exists"* to
+  3.9237 AU.
+
+> **A reading of a grounded input that makes a registered result depend on an unregistered
+> parameter is not a reading of that input — it is a re-registration of the experiment.** This
+> is the criterion that eliminates B, and it is a property of where each correction *lands*,
+> not of how large it is. Size alone would have picked the same answer here for the wrong
+> reason; the algal column, where B is neither largest nor worst, is what separates the two.
+
+**So S6 is a choice between A and C, and B is ineligible.** Between the survivors:
+
+| | Q1 | Q2 | Q2b | Q1 headline under S5 |
+| --- | --- | --- | --- | --- |
+| **A** — rate at 293 K | unchanged | needs correction | needs correction, 6.8× Ω-spread (algal) | **12.7058, inside [12, 22] — HOLDS** |
+| **C** — rate at 25 °C | 10.0 → 8.4394 | unchanged | needs correction, 33.1× Ω-spread (algal) | **11.5100, outside — FAILS by 4.1%** |
+
+**Recommendation: reading A.** Three measured reasons, none of them that it is the verdict-
+preserving option. (1) Its Q2b Ω-spread is 6.8× against C's 33.1× — the smaller commitment to an
+ungrounded parameter. (2) Its anchor, 293 K, is the only one of the three that the code
+*declares* rather than infers: `t_set = T_REF_K` is written into `sim/organism.py:34` as Q1's
+tissue set-point, whereas C's 298.15 K is carried by a field the same file labels *"declared
+assumption, not grounded"*. (3) It requires changing no shipped number in the experiment whose
+result is being defended, which keeps the correction and the verdict from being decided by the
+same edit.
+
+That third reason is also the honest weakness of the recommendation, and it is recorded rather
+than argued away: **reading A is the option under which Q1's headline survives, and I am
+recommending it.** The first two reasons stand on their own — they were measured before the
+verdict table was assembled, and reason (1) is visible in the algal column where the verdict
+does not appear at all — but the coincidence is real and a reader should weigh it.
+
+### What is still NOT measured: the anchor itself
+
+None of this recovers what temperature Westerband et al.'s `Asat` was actually measured at. It
+narrows which *internally consistent* reading the project may adopt; it does not make the
+anchor grounded. §13's verdict — **not recorded in the source** — stands unchanged.
+
+One route to grounding it does now look open, and it was not visible to §13. The deposit's
+methods state that _"Vcmax was estimated via the one-point method when it was not provided from
+A-ci curves"_, and the deposit carries **`Vcmax25`** alongside `Asat` and `Ci:Ca`. The one-point
+method converts an as-measured rate to a 25 °C standard **through a leaf-temperature term**, so
+the measurement temperature is implicitly encoded in the relationship between the two deposited
+columns and may be recoverable by inversion. That would replace the whole A-versus-C choice with
+a measurement.
+
+**Not attempted this pass:** Dryad's file endpoints now require a bearer token
+(`/api/v2/files/*/download` → 401) and the public routes return an AWS WAF challenge (403). The
+deposit metadata is public and was read; the data file was not obtained, and no attempt was made
+to work around the bot protection. Recorded as the open route, not as a result.
+
+### A tell
+
+§16 named two readings, defined them correctly in prose, and then implemented one of them as the
+other. The arm was not sloppy — it was *labelled*, and the label was checked against the prose
+rather than against the factor. Every number §16 published from that arm is correct; what was
+wrong was which question they answer.
+
+> **A correctly computed arm under the wrong name is invisible to every check that compares
+> results to results.** §16's arm reproduced its baseline, composed multiplicatively with S5
+> exactly as predicted, and passed a mutation check. All of that is true of the reading it
+> actually computed. Nothing in the section compared the *factor* to the *definition* — and the
+> definition was three lines above it.
+
+This is the same shape as §15's "a mutation that silently fails to apply is indistinguishable
+from a control that cannot fail" and §16's own "the assertion must be that the edit applied to
+the thing under test", one level up: here the edit applied to the right file, the arithmetic was
+right, and the **name** was the thing that did not describe the object.
 
 ## References (all ghostcite-clean, 0 findings)
 

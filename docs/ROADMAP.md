@@ -293,6 +293,39 @@ than being chosen and then justified.
       change with no effect**. ⚠️ **Q2b has NO `assert_presets_match`** (Q1 does) and the two
       preset sources DO differ (`leaf_mass_ratio` 0.8 in `organism.py` vs 1.0 in Q2b's prereg,
       deliberate and commented): the name `algal` denotes two organisms, one guarded.
+
+      ✅✅ **2026-09-05 — S6 RESOLVED: THERE ARE THREE READINGS, AND §16 PRICED THE WRONG ONE
+      UNDER READING B'S NAME (§18).** ⚠️⚠️ **S10: §16's "reading B" arm IS READING C.** Its
+      factor is `temperature_response(293, 265.15, 298.15)` = 0.8439 —
+      Q2's LINEAR ramp at Q2's DECLARED `t_opt` = 25.00 °C. Reading B as §16 itself defines it
+      (the PEAK of Q2b's GAUSSIAN at the ADAPTED optimum) gives **0.0272**, a **31.0×**
+      difference. Identified by REPRODUCING §16's published 12.3971 AU exactly from
+      `a_max = 8.4394`. Every number §16 published from that arm is correct; the name is not.
+      ⚠️⚠️ **S11: TRUE READING B IS INELIGIBLE — IT REMOVES Q1'S RESULT RATHER THAN MOVING IT.**
+      At Ω ∈ {10, 15, 20} the vascular organism has **NO COMPENSATION POINT AT ANY IRRADIANCE**;
+      at Ω ∈ {25, 30} `I_c` = 187.92 / 47.61 against a gate ceiling of **9.0**. `net_carbon()`
+      reads neither Ω, `area_ratio` nor `t_opt`, so applying B imports three objects Q1 lacks.
+      **THE DECIDING CRITERION IS WHERE THE CORRECTION LANDS, NOT HOW BIG IT IS:** Ω is
+      registered ONLY in `q2b_adapted/prereg.yaml:67` (zero occurrences in Q1's and Q2's), so
+      **a reading that makes a registered result depend on an unregistered parameter is a
+      RE-REGISTRATION, not a reading.** So the choice is **A vs C**: reading A leaves Q1 at
+      10.0 and Q1's headline HOLDS under S5 (12.7058, inside); reading C takes Q1 to 8.4394 and
+      it FAILS (11.5100, outside by 4.1%). **RECOMMENDED: READING A** — smaller Ω-commitment in
+      Q2b (6.8× spread vs C's 33.1×), and its 293 K anchor is the only one the code DECLARES
+      (`t_set = T_REF_K`) rather than labelling "declared assumption, not grounded". ⚠️ Recorded
+      against itself: reading A is also the verdict-preserving option, and that coincidence is
+      flagged rather than argued away. ⚠️ **§16's one-number-per-reading Q2b corrections are
+      each a FUNCTION OF Ω** (reading A algal 86.5049 → 12.7091 across the grid); its published
+      17.1498 is the Ω=20 cell. ⚠️ **THE ANCHOR IS STILL NOT GROUNDED** — §13's "not recorded in
+      the source" stands. Open route: the deposit's `Vcmax25` came from `Asat` via the one-point
+      method, which passes through a leaf-temperature term, so the anchor may be recoverable by
+      inversion; **NOT ATTEMPTED** (Dryad now 401s without a bearer token, public routes return
+      a WAF challenge, no workaround attempted).
+      ⚠️ Tell: **a correctly computed arm under the wrong name is invisible to every check that
+      compares results to results** — §16's arm reproduced its baseline, composed multiplicatively
+      with S5 as predicted, and passed a mutation check; all of that is true of the reading it
+      actually computed. Nothing compared the FACTOR to the DEFINITION three lines above it.
+      Tools: `tools/check_amax_reading.py` (6 controls, 3 positive).
       Tools: `tools/price_amax_anchor.py`, `tools/price_registered_corrections.py`.
       ✅✅ **2026-09-05 — THE SWEEP RE-RUN UNDER ITS OWN RULES; 2 NEW PAIRINGS IN ITS OWN
       OUTPUT (§17).** §11 is the one artifact here whose error rate is MEASURED — 3 of 4
