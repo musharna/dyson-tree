@@ -294,6 +294,37 @@ than being chosen and then justified.
       preset sources DO differ (`leaf_mass_ratio` 0.8 in `organism.py` vs 1.0 in Q2b's prereg,
       deliberate and commented): the name `algal` denotes two organisms, one guarded.
       Tools: `tools/price_amax_anchor.py`, `tools/price_registered_corrections.py`.
+      ✅✅ **2026-09-05 — THE SWEEP RE-RUN UNDER ITS OWN RULES; 2 NEW PAIRINGS IN ITS OWN
+      OUTPUT (§17).** §11 is the one artifact here whose error rate is MEASURED — 3 of 4
+      clearances did not survive, S1 and S3 both withdrawn, ~50% both ways — and it had never
+      been applied to §§11-16. ⚠️⚠️ **S8: THE ICE WALL IS MOLTEN AT 1 AU.** §13's own two-body
+      balance gives `Ts = T_eq` EXACTLY, independent of tau (verified to 1e-9 for tau in
+      [0,1]): the shell — the COLDEST part of the wall — is at **5.16 C**, its inner face at
+      24.10 C, and ice melts at 0 C (a threshold that only DROPS with pressure, so it is the
+      most generous line available). **No part of the wall is ice where every number in
+      §§13-15 was computed.** ⚠️ **The vessel has a habitable ANNULUS and 1 AU is outside it:**
+      inner edge **1.0381 AU** (tau-independent), outer edge 1.1446-1.2030 AU, width
+      0.11-0.16 AU; Q2b's algal temperature limit 1.1945 AU sits just beyond. Priced per §16 —
+      re-solving §13's fixed point at the inner edge takes p **3.002 -> 2.287 kPa**, still
+      INSIDE the bracket and DOWNWARD, **the third independent effect to point that way, so S8
+      cannot overturn S7 either.** ⚠️⚠️ **S9 PARTLY REVERSES S8:** `albedo = 0.0` paired with a
+      wall concluded to be ICE — the shell reaches melting at 1 AU at albedo **0.0721 (7.2%)**,
+      is -2.07 C at 0.10. **S8 holds in the model as written; its MAGNITUDE does not survive
+      S9.** Not internally inconsistent — Beer-Lambert models pure absorption, matching
+      albedo=0: **CONSISTENTLY WRONG, which is exactly why no single-expression check could see
+      it.** ⚠️⚠️ **§11's `equilibrium_temperature` CLEARANCE HAS NOW MISSED THREE THINGS (S7,
+      S8, S9) WHILE REMAINING LITERALLY ACCURATE — A CLEARANCE TRUE ABOUT THE EXPRESSION SAYS
+      NOTHING ABOUT THE OBJECT;** it cannot be made more correct, only replaced by a different
+      question. ✅ **CLEARED, measured not assumed:** `PHOTONS_PER_J` behind the wall —
+      `size_par_filter.py` weights photons and energy separately, so §12's failure does NOT
+      recur one level down. ⚠️ Tell: **AN UNCONTROLLED REIMPLEMENTATION THAT CONTRADICTS A
+      CONTROLLED PUBLISHED NUMBER IS EVIDENCE OF THE REIMPLEMENTATION, NOT OF A DISCREPANCY** —
+      my first `R_max` column read 38.4 km against §13's 11.9 km (monochromatic vs
+      spectrum-averaged `k`); removed, not reported as a finding. **The one quantity with no
+      control attached was the one that looked most like a discovery.** ⚠️ Scope stated, not
+      implied: §§1-8's biological groundings were NOT re-swept and the 122-test suite was
+      spot-checked, not swept, for §14-class tautologies. Tool: `tools/check_wall_phase.py`
+      (5 controls incl. two positive controls).
 - [ ] Ground each science-spine item with a real number and a citation, via
       `bio-grounding`; verify citations per the project's citation chain.
       **2026-09-03 pass: 1 of 2 targets closed.** Spine item 2's tensile input is

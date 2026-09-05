@@ -374,6 +374,11 @@ without the circularity Gate 2 exists to prevent.
 | §12's use of G173's 1366.1 normalisation with the project's 1360.8 TSI | **CHECKED, TRANSFERABLE** — the PAR fraction is dimensionless, a property of spectral SHAPE not scale; residual <= 0.39%, 41x smaller than S5. Stated rather than waved through (§13) |
 | "One IR-opaque shell == halving `area_ratio`, identical to 5.7e-14 K" | **TRUE ONLY AT tau = 1** — with a measured wall the two differ by **31-36 K**. The 5.7e-14 K agreement compared two expressions computing the SAME ASSUMPTION (§14) |
 | S5 and S6 as INDEPENDENT deferred defects | **NOT INDEPENDENT** — each alone leaves all six Q1 verdicts standing; TOGETHER (S5 + S6 reading B) vascular k=100 falls to r*=11.51, OUTSIDE the registered [12, 22]. The effects compose multiplicatively (§16) |
+| The ICE wall's own temperature | **S8: MOLTEN AT 1 AU** — section 13's two-body balance puts the shell at `Ts = T_eq` exactly, independent of tau: **5.16 C**, with the interior face at 24.10 C. Ice melts at 0 C, and that threshold only DROPS with pressure. No part of the wall is ice where sections 13-15 computed every number (§17) |
+| Where an ice vessel holding liquid water CAN exist | **A 0.11-0.16 AU ANNULUS, AND 1 AU IS OUTSIDE IT** — inner edge 1.0381 AU (tau-independent), outer edge 1.1446-1.2030 AU. Q2b's algal temperature limit, 1.1945 AU, sits just beyond it. Re-solving the fixed point at the inner edge takes p 3.002 -> 2.287 kPa: inside the bracket, DOWNWARD, the third effect to point that way (§17) |
+| `albedo = 0.0` paired with a wall concluded to be ICE | **S9, AND IT PARTLY REVERSES S8** — the shell reaches the melting point at 1 AU at albedo **0.0721**; at 0.10 it is -2.07 C. S8 holds in the model as written and its MAGNITUDE does not survive S9. Not internally inconsistent: Beer-Lambert models pure absorption, matching albedo=0 — consistently wrong, which is why no single-expression check could see it (§17) |
+| §11's clearance of `equilibrium_temperature` | **HAS NOW MISSED THREE THINGS** — S7, S8 and S9, while remaining literally accurate. A clearance true about the EXPRESSION says nothing about the OBJECT; the bullet cannot be made more correct, only replaced by a different question (§17) |
+| `PHOTONS_PER_J` applied behind the blue-pass wall | **CHECKED AND CLEAN** — `size_par_filter.py` computes photon- and energy-weighted transmission separately and applies the photon-weighted fraction to a photon-weighted flux. The obvious next instance of §12's failure is not present (§17) |
 | Q1's "the vascular default-k prediction HELD" | **CONDITIONAL ON THE S6 DECISION** — survives S5 + reading A (12.7058, inside); fails S5 + reading B (11.5100, misses the floor by 4.1%). The registration choice decides the published verdict (§16) |
 | S5's reach into Q2 | **NONE** — Q2 exits 2 at a purely thermal gate before any PAR-dependent code runs; unchanged in every digit. Q2b's `gates.csv` is byte-identical and its binding limit stays `temperature` at every omega (§16) |
 | `a_max`'s three anchors, sized | **52.66 K SPREAD** — 293.00 K (Q1), 298.15 K (Q2), 278.31 K (Q2b algal), 330.97 K (Q2b vascular). Re-anchored to a common 293 K the paths need `a_max` 10.0 to 367.53; the 36.75x extreme is inside the vascular class Gate B already FAILED, so the live factor is algal's 1.71x (§16) |
@@ -787,6 +792,13 @@ is a single cell). Same class as §4's `a_max` borrow, and now ledgered as such.
   - ⚠️ **TRUE AS STATED, AND IT MISSED §13 S7.** Narrowly correct — TSI is the only sourced
     input. But the pair that mattered was never inside this function: it is between its
     greenhouse premise and the ice optics two sections away, and no expression contains both.
+  - ⚠️⚠️ **AND IT MISSED TWO MORE — §17 S8 AND S9. THREE FINDINGS UNDER ONE STILL-ACCURATE
+    BULLET.** S8: the shell this function returns sits at `T_eq` = 5.16 °C, and the wall is
+    ICE, which melts at 0 °C. S9: its declared `albedo = 0` is paired with that same ice
+    conclusion, and 7.2% albedo would reverse S8. **A clearance that is true about the
+    EXPRESSION says nothing about the OBJECT.** This bullet cannot be made more correct — it
+    has to be replaced by a different question: *what does this function assume about the
+    world, and does anything else the project believes contradict it?*
 - `respiration(r_d, t)` — `r_d` is labelled a calibration knob in all three preregs, not a
   sourced value, so no pairing arises. `Q10 = 2.0` and `T_REF_K = 293` are declared.
   - ⚠️⚠️ **WITHDRAWN 2026-09-04 by §13 S6.** This examined the RESPIRATION side and never asked
@@ -1392,6 +1404,125 @@ no such check**, and the two sources do in fact differ: `leaf_mass_ratio` is 0.8
 organ"*). The divergence is deliberate and commented, so this is not a defect in the value — it
 is that the name `algal` denotes two different organisms across two experiments, and only one
 of them has a guard that would notice.
+
+## 17. The sweep re-run under the rules it produced — and two pairings in its own output
+
+**Trigger.** §11 is the origin of every S-finding, and it is now the one artifact in this
+project whose error rate has been *measured*: of its four clearances, **three did not survive**
+re-checking (§§12, 13); of its findings, **S1 and S3 were both withdrawn** (§§13, 15). Roughly
+50% error in both directions — from a sweep run before a single one of the five rules that
+followed it existed. It has also never been applied to §§11–16, i.e. to its own output.
+
+**Method.** Rather than re-list pairs, apply each rule that §11 lacked, and extend the scope to
+the sections and tools §11 predates.
+
+### The §12 rule (measure, don't read the label) — applied, and it CLEARS
+
+**`PHOTONS_PER_J` behind the wall.** §12 caught `PAR_FRACTION` being a surface number inside a
+top-of-atmosphere function. The same failure one level down would be using the *unfiltered*
+4.57 µmol/J to convert a *filtered* energy flux — a blue-pass wall raises the mean photon
+energy, so µmol/J must fall. **`tools/size_par_filter.py` does not make this error.** It
+computes photon- and energy-weighted transmission separately (`f_ph`, `f_en`), reports µmol/J
+behind the wall as its own column, and applies the photon-weighted fraction to a
+photon-weighted incident flux. Recorded as **checked and clean** — §15's rule says a sweep's
+false positive is a finding about the sweep, and the way to avoid producing one is to check
+whether the suspect number already reproduces correctly from inputs in hand.
+
+### The §13 rule (the unit is the OBJECT) — S8, and it is about the wall's phase
+
+Two conclusions of this project, in no shared expression:
+
+- the pressure wall is **ice**, its tensile strength 0.7–3.1 MPa taken from Petrovic via Hirata;
+- in §13's own two-body balance, adding the two equations gives `σ·Ts⁴ = A`, so the shell sits
+  at **`Ts = T_eq` exactly, independent of τ** (verified for τ ∈ [0, 1] to 1e-9).
+
+Nothing ever asked what temperature that ice is at. At 1 AU, where every number in §§13–15 was
+computed:
+
+| | temperature |
+| --- | --- |
+| shell — the **coldest** part of the wall | 278.31 K = **5.16 °C** |
+| interior — the inner face of that same wall | 297.25 K = 24.10 °C |
+| ice Ih, melting point (the most generous threshold available) | 273.15 K = 0.00 °C |
+
+**No part of the wall is ice.** The coldest part is 5.16 K above melting, and a gradient wall is
+worse rather than better — its inner face sits at 24.10 °C. Melting, not sublimation, is the
+right test for the inner face: it sees the interior pressure (2.2–3.0 kPa), which is above
+water's triple point (611.657 Pa), so liquid is a phase available to it. The melting point of
+ice Ih only *decreases* with pressure, so 273.15 K is the most forgiving line that can be drawn.
+
+**The vessel has a habitable annulus, and 1 AU is not in it.** The shell must be below freezing
+for the wall to be solid; the interior must be above freezing for there to be liquid to hold:
+
+| τ | inner edge | outer edge | width | contains 1 AU? |
+| --- | --- | --- | --- | --- |
+| 0.2156 (strong dust) | 1.0381 AU | 1.1446 AU | 0.1065 AU | **no** |
+| 0.3013 (§13 mid) | 1.0381 AU | 1.1843 AU | 0.1461 AU | **no** |
+| 0.3429 (§13 strong wall) | 1.0381 AU | 1.2030 AU | 0.1649 AU | **no** |
+
+The inner edge is τ-independent (it is a statement about the shell, and the shell is at `T_eq`
+whatever τ does). For scale, **Q2b's algal temperature limit is 1.1945 AU** — the annulus sits
+just inside it.
+
+**Priced, per §16.** Re-solving §13's fixed point at the inner edge takes the self-consistent
+pressure from **3.002 kPa to 2.287 kPa** — still inside the registered [882 Pa, 10 kPa], and
+**downward**, the same direction dust pushes it. So S8, like S3's real consequence, **cannot
+overturn S7; it can only deepen it.** Third independent effect now found pointing the same way.
+
+### The same rule once more — S9, which partly REVERSES S8
+
+`albedo = 0.0` is declared in `sim/thermal.py` and used for the solar side of the balance.
+Paired with "the shell is ice" — again, no expression contains both — a reflective shell absorbs
+less, runs colder, and freezes sooner. **How little albedo undoes S8:**
+
+`T_shell(a) = (1 − a)^0.25 · 278.31 K`, so the shell reaches the melting point at 1 AU at
+**albedo = 0.0721 — 7.2%.** At 10% it is −2.07 °C; at a snow-like 0.6, −51.82 °C. The predicate
+flips in both directions across that threshold.
+
+Note what is **not** wrong here: the Beer-Lambert `τ = exp(−k·t)` used throughout models pure
+absorption with no reflection, which is exactly consistent with `albedo = 0`. The model is
+**consistently wrong rather than internally inconsistent** — which is precisely why no
+single-expression check could see it, and why §11 cleared `equilibrium_temperature` by
+observing, correctly, that it has only one sourced input.
+
+> **S8 holds in the model as written. Its magnitude does not survive S9.** Both are real
+> pairings; neither was ever asked; and applying §16's rule to *findings* rather than to
+> defects, they interact — the first is conditional on the second.
+
+### The bullet that has now missed three things
+
+§11's clearance of `equilibrium_temperature` reads: *"one grounded input (TSI) against exact
+constants and declared emissivity/albedo. No two-source pair exists to mismatch."* §13 already
+banner-corrected it as **true as stated, and it missed S7**. It also missed **S8** and **S9**.
+Three findings under one bullet that was, and remains, literally accurate.
+
+**A clearance that is true about the expression says nothing about the object.** "No two-source
+pair exists" is a claim about what is *written in the function*. Every one of S7, S8 and S9 is a
+pairing between something in that function and something concluded elsewhere in the project.
+The bullet cannot be rewritten to be more correct; it has to be replaced by a different
+question — *what does this function assume about the world, and does anything else the project
+believes contradict it?*
+
+### Scope, stated rather than implied
+
+This pass applied the §12, §13 and §16 rules to the Q3 thermal chain and to `size_par_filter`.
+It did **not** re-sweep §§1–8's biological groundings, and it spot-checked rather than swept the
+122-test suite for §14-class tautologies (`tests/test_thermal.py:131–143` is a good sign — it
+explicitly discriminates a Gaussian from a Laplace that would pass every tangent-point check).
+Those remain unswept, and saying so is cheaper than implying coverage that was not achieved.
+
+### A tell, from getting it wrong inside this section
+
+The first version of `tools/check_wall_phase.py` printed an `R_max` column giving 38.4 km at
+σ = 1.5 MPa, beside §13's published 11.9 km. The gap was mine: §13 used a monochromatic `k` at
+680 nm and I had used a spectrum-averaged effective `k`. The number was removed rather than
+explained, because the finding does not need it.
+
+> **An uncontrolled reimplementation that contradicts a controlled published number is not
+> evidence of a discrepancy — it is evidence of an uncontrolled reimplementation.** The
+> temptation is to report it as a fourth finding. Every control in this section exists to make
+> that distinction, and the one quantity with no control attached was the one that looked most
+> like a discovery.
 
 ## References (all ghostcite-clean, 0 findings)
 
