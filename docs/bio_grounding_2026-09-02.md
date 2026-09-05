@@ -372,6 +372,10 @@ without the circularity Gate 2 exists to prevent.
 | S1's "the registered pressure bracket is self-inconsistent" | **WITHDRAWN** — S1 assumed tau=1. Solved as a fixed point the self-consistent p is **2.6-3.5 kPa, INSIDE [882 Pa, 10 kPa]**, 5.2-6.9x below S1's 18.02 kPa. S1's MECHANISM stands; its magnitude and verdict do not (§13 S7) |
 | Framing A (strength vs transparency collide at R = 10 km) | **SPLIT BY ICE STRENGTH** — at the self-consistent pressure R_max is 21.4 km (3.1 MPa), 11.9 km (1.5), 6.40 km (0.7). Binds only at the weak end (§13 S7) |
 | §12's use of G173's 1366.1 normalisation with the project's 1360.8 TSI | **CHECKED, TRANSFERABLE** — the PAR fraction is dimensionless, a property of spectral SHAPE not scale; residual <= 0.39%, 41x smaller than S5. Stated rather than waved through (§13) |
+| "One IR-opaque shell == halving `area_ratio`, identical to 5.7e-14 K" | **TRUE ONLY AT tau = 1** — with a measured wall the two differ by **31-36 K**. The 5.7e-14 K agreement compared two expressions computing the SAME ASSUMPTION (§14) |
+| The `area_ratio` degeneracy | **REAL BUT RESCALED, ~2.7x smaller** — T depends on `area_ratio/(1+tau)`, so a contained sphere presents at effective 2.98-3.17, not 2.0 (§14) |
+| "Q2b's algal band is not a statement about shape alone" | **REPLACED** — the band [3.630, 4.311] is a statement about shape CONDITIONAL on containment: a contained sphere presents BELOW its floor, and landing inside it would need a true `area_ratio` of 4.58-5.79, more extreme than a sphere (§14) |
+| "Two shells need 78.9 kPa" | **WITHDRAWN** — from `3^0.25*T_eq` = 93.13 C; at measured tau the interior is 25.67-32.80 C. Same falsified transparency premise that took S1's 18.02 kPa (§14) |
 | A comet organism's wall is ice | **convenient fiction** — §9 grounds ice, not the identification |
 | Antarctic dust loading bounds an organism's wall impurities | **convenient fiction** — no connection whatsoever; used only to show scattering CAN dominate (§9) |
 
@@ -1069,6 +1073,101 @@ however rigorous — cannot see it, because the two halves never meet in one.
 That is why S7 survived §9, §10, §11 and §12 — every one of which was looking at expressions.
 It was found only by asking what `equilibrium_temperature`'s _clearance_ had not looked at, and
 the clearance was **true as written**.
+
+## 14. The `area_ratio` degeneracy re-checked at a τ someone measured
+
+**Trigger.** §13 S7 replaced `T_interior = (N+1)^0.25 · T_eq` with `(1+τ)^0.25 · T_eq`. The
+roadmap's `area_ratio` degeneracy — _"adding one IR-opaque shell and halving `area_ratio` are
+the SAME operation (identical to 5.7e-14 K)"_ — is stated in terms of that superseded law. It
+is the symmetric case S7's own data already settles, so it gets checked rather than assumed.
+
+**Method.** Solve the N-shell radiative system for arbitrary τ instead of assuming
+transparency, shells IR-opaque and radiating from both faces:
+
+```
+shell 1:  (1-tau)*A             + S_2                = 2*S_1
+shell i:  (1-tau)*tau^(i-1)*A   + S_{i-1} + S_{i+1}  = 2*S_i
+shell N:  (1-tau)*tau^(N-1)*A   + S_{N-1} + S_core   = 2*S_N
+core:      tau^N * A            + S_N                = S_core
+```
+
+**Controls.** At τ = 1 the solver returns exactly `(N+1)·A` for N = 0…5 — the project's own
+law — and one shell then equals halving `area_ratio` to **5.7e-14 K**, reproducing the
+roadmap's published residue digit for digit. Mutants confirm both controls discriminate:
+detaching the innermost shell from the core gives 1.0 where 2 is required, and letting shells
+radiate from one face makes the system **singular**, which is the correct response to an
+energy balance that cannot be satisfied.
+
+### Result 1 — the identity holds only at τ = 1.
+
+| wall      | τ      | `T` with one shell | gap vs halving `area_ratio` |
+| --------- | ------ | ------------------ | --------------------------- |
+| σ 3.1 MPa | 0.3429 | 26.45 °C           | **−31.37 K**                |
+| σ 1.5 MPa | 0.3013 | 24.10 °C           | **−33.72 K**                |
+| σ 0.7 MPa | 0.2609 | 21.77 °C           | **−36.05 K**                |
+
+Halving `area_ratio` takes the algal sphere from 5.16 °C to 57.82 °C. A _real_ shell takes it
+to 21.8–26.5 °C. **The two operations differ by 31–36 K, not by 5.7e-14 K.**
+
+### Result 2 — but the degeneracy does not vanish. It rescales.
+
+```
+T = ( S*(1+tau) / (area_ratio * sigma) )^0.25
+```
+
+`area_ratio` and `(1+τ)` enter **only as a ratio**, so the degenerate quantity is
+`area_ratio/(1+τ)` — an _effective_ `area_ratio`. Containment does not stop masquerading as
+shape; it masquerades as **less** shape than was claimed:
+
+| wall                          | τ      | effective `area_ratio` |
+| ----------------------------- | ------ | ---------------------- |
+| σ 3.1 MPa                     | 0.3429 | 2.979                  |
+| σ 0.7 MPa                     | 0.2609 | 3.172                  |
+| _τ = 1 (the roadmap's claim)_ | 1.0000 | _2.000_                |
+
+So a registered `4.0` still carries a claim about containment — but the claim is "τ ≈ 0", and
+a contained sphere presents as ≈ 3.0–3.2, not as 2.0. **The confound is real and about 2.7×
+smaller in temperature than recorded.**
+
+### Result 3 — and a contained sphere falls outside Q2b's registered band entirely.
+
+Q2b registers the algal band as **[3.630, 4.311]**. A contained sphere presents at
+**2.979–3.172 — wholly below its floor.** Inverting: for a contained organism to present
+_inside_ that band, its true `area_ratio` would have to be **[4.577, 5.789]**. A sphere is
+4.0 and a face-on lamina is 2.0, so the entire band would demand a body **more extreme than a
+sphere** — elongated or flattened and seen near edge-on.
+
+This _replaces_ rather than confirms the roadmap's reading. The claim on record is that Q2b's
+band "is not a statement about shape alone". Corrected: **the band is a statement about shape,
+conditional on containment — and no contained sphere can produce a value in it.** Containment
+and shape are separable after all; they were only inseparable under τ = 1.
+
+### Result 4 — the N = 2 figure inherits the same falsified premise.
+
+The roadmap quotes _"two shells need 78.9 kPa"_ from `3^0.25 · T_eq` = 93.13 °C. At measured τ
+that interior is **25.67–32.80 °C**, not 93.13 °C. The 78.9 kPa figure is withdrawn on exactly
+the ground that took S1's 18.02 kPa: it assumes a transparency the optics deny. Note the shape
+of the corrected column — with real τ the shells saturate fast (5.16 → 21.8 → 25.7 → 26.7 °C
+at τ = 0.26), because each shell only passes a quarter of what reaches it. **Stacking shells
+is a far weaker lever than the transparent model implies.**
+
+### The lesson, and it is the project's oldest root class wearing a new coat
+
+The degeneracy was verified **numerically, to fourteen decimal places**. That is what made it
+look airtight, and it is exactly why it went unchallenged through §§9–13. But the check
+compared `(N+1)^0.25 · T_eq` against `T_eq` at half the `area_ratio` — **two expressions
+computing the same assumption.** Agreement to 5.7e-14 K measured floating-point arithmetic, not
+the world.
+
+> **A numerical identity confirmed to fourteen decimal places is still only as true as the
+> premise both sides compute.** An agreement that tight is evidence the two expressions share
+> an assumption, not evidence the assumption is right — and the tighter it is, the more
+> completely it hides that.
+
+This is the project's oldest root class — _a test that cannot fail_ — reappearing as a
+_verification_ that cannot fail. §11 already named the pattern for inputs and §13 for models;
+here it is for identities. The 5.7e-14 K is now this document's positive control **precisely
+because** it never could have been anything else.
 
 ## References (all ghostcite-clean, 0 findings)
 

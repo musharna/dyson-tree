@@ -221,6 +221,25 @@ than being chosen and then justified.
       between a docstring assumption and a data table two sections away, which is why §§9-12,
       all of which looked at expressions, could not see it. **THE UNIT OF VALIDATION IS
       ULTIMATELY THE OBJECT.** Tools: `check_greenhouse_transparency.py`, `check_amax_anchor.py`.
+      **DEGENERACY RE-CHECKED AT A MEASURED tau, 2026-09-04 — `bio_grounding` §14.** The
+      "adding one IR-opaque shell == halving `area_ratio`, identical to 5.7e-14 K" claim ABOVE
+      ⚠️ **HOLDS ONLY AT tau = 1.** With a measured wall the two operations differ by **31-36 K**
+      (halving takes the algal sphere to 57.82 C; a real shell takes it to 21.8-26.5 C).
+      ⚠️ **The degeneracy does NOT vanish — it RESCALES:** T depends on `area_ratio/(1+tau)`, so
+      a CONTAINED SPHERE presents at an effective `area_ratio` of **2.98-3.17, not 2.0** — the
+      confound is real but ~2.7x smaller in temperature than recorded. ⚠️⚠️ **AND A CONTAINED
+      SPHERE FALLS ENTIRELY BELOW Q2b's REGISTERED BAND [3.630, 4.311]**; landing inside it
+      would need a TRUE `area_ratio` of 4.58-5.79, more extreme than a sphere. So the claim
+      "Q2b's algal band is not a statement about shape alone" is **REPLACED**: it IS a statement
+      about shape, CONDITIONAL on containment — the two are separable, and were inseparable only
+      under tau = 1. ⚠️ **The "two shells need 78.9 kPa" figure is WITHDRAWN** (from 3^0.25*T_eq
+      = 93.13 C; at measured tau the interior is 25.67-32.80 C, and shells SATURATE fast because
+      each passes only a quarter of what reaches it). **The lesson: A NUMERICAL IDENTITY
+      CONFIRMED TO 14 DECIMAL PLACES IS STILL ONLY AS TRUE AS THE PREMISE BOTH SIDES COMPUTE.**
+      The 5.7e-14 K agreement measured floating-point arithmetic, not the world — the project's
+      oldest root class (a test that cannot fail) reappearing as a VERIFICATION that cannot
+      fail. It is now §14's positive control precisely because it never could have been anything
+      else. Tool: `tools/check_area_ratio_degeneracy.py`.
 - [ ] Ground each science-spine item with a real number and a citation, via
       `bio-grounding`; verify citations per the project's citation chain.
       **2026-09-03 pass: 1 of 2 targets closed.** Spine item 2's tensile input is
