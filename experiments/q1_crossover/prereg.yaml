@@ -10,7 +10,7 @@ grounding: docs/prior_art_2026-09-01.md
 # Must match sim/physiology.py constants; run.py refuses to run on mismatch.
 assumptions:
   tsi_w_m2: 1360.8        # Kopp & Lean 2011, 10.1029/2010GL045777
-  par_fraction: 0.45      # assumption
+  par_fraction: 0.3879    # CORRECTED 2026-09-06 (S5): measured AM0, was 0.45
   photons_per_j: 4.57     # assumption
   t_ref_k: 293.0
   q10: 2.0                # assumption

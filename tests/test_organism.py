@@ -119,8 +119,8 @@ def test_q1_presets_still_construct_with_unchanged_carbon_values():
     # net_carbon() reads neither area_ratio nor t_min (VASCULAR leaves them
     # defaulted; ALGAL now sets them explicitly below), so Q1's numbers are
     # untouched either way.
-    assert VASCULAR.net_carbon(1.0) == pytest.approx(8.3550, abs=1e-4)
-    assert ALGAL.net_carbon(1.0) == pytest.approx(9.6290, abs=1e-4)
+    assert VASCULAR.net_carbon(1.0) == pytest.approx(8.3020, abs=1e-4)  # S5: was 8.3550
+    assert ALGAL.net_carbon(1.0) == pytest.approx(9.6178, abs=1e-4)  # S5: was 9.6290
 
 
 def test_algal_preset_declares_sphere_geometry_and_its_own_thermal_floor():
@@ -328,8 +328,8 @@ def test_net_carbon_adapted_uses_leaf_mass_ratio():
 
 
 def test_net_carbon_adapted_does_not_disturb_the_q1_or_q2_paths():
-    assert VASCULAR.net_carbon(1.0) == pytest.approx(8.3550, abs=1e-4)
-    assert ALGAL.net_carbon(1.0) == pytest.approx(9.6290, abs=1e-4)
+    assert VASCULAR.net_carbon(1.0) == pytest.approx(8.3020, abs=1e-4)  # S5: was 8.3550
+    assert ALGAL.net_carbon(1.0) == pytest.approx(9.6178, abs=1e-4)  # S5: was 9.6290
 
 
 def test_net_carbon_adapted_actually_uses_omega():
@@ -378,11 +378,11 @@ def test_net_carbon_adapted_actually_uses_omega():
     )
     assert v20 == pytest.approx(expected_v20, rel=1e-9)
 
-    # A gap of ~4.66 (6.48 vs 1.82) is far beyond any floating-point
+    # A gap of ~4.66 (6.47 vs 1.81) is far beyond any floating-point
     # tolerance -- this cannot pass by omega being ignored.
     assert v20 - v10 > 1.0
-    assert v20 == pytest.approx(6.482859544582752, rel=1e-9)
-    assert v10 == pytest.approx(1.8170335849919963, rel=1e-9)
+    assert v20 == pytest.approx(6.4739253368753165, rel=1e-9)  # S5: was 6.482859544582752
+    assert v10 == pytest.approx(1.8144946283397414, rel=1e-9)  # S5: was 1.8170335849919963
 
 
 def test_net_carbon_adapted_leaf_mass_ratio_divides_respiration_not_gross():
@@ -423,5 +423,5 @@ def test_net_carbon_adapted_leaf_mass_ratio_divides_respiration_not_gross():
         expected, rel=1e-9
     )
     assert o.net_carbon_adapted(r_au, r_home_au=r_home_au) == pytest.approx(
-        6.447529593545817, rel=1e-9
+        6.438595385838382, rel=1e-9  # S5: was 6.447529593545817
     )

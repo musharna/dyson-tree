@@ -359,6 +359,34 @@ than being chosen and then justified.
       temperature. §13's verdict and §18's blocked one-point-method inversion route stand.
       Tools: `tools/apply_reading_a.py` (4 controls, 3 positive; calls Q2b's OWN `build()` and
       `classify_limit()`, reproduces all 5 committed `limits.csv` rows before any arm runs).
+      ✅✅✅ **2026-09-06 — S5 APPLIED: `PAR_FRACTION` 0.45 → 0.3879 AT FOUR SITES. EVERY
+      VERDICT HOLDS (§20).** `sim/physiology.py:16` + three `prereg.yaml:13`, each carrying an
+      inline `CORRECTED 2026-09-06 (S5)` note naming the old value. All six Q1 `r*` scale by
+      exactly `sqrt(par_fraction)` = 0.928487 and **ALL SIX VERDICTS ARE UNCHANGED**; vascular
+      k=100 lands at **12.7058 AU, inside [12,22]** — §16's predicted value reproduced to 4 dp
+      by the REAL runner. ⚠️ **`calibration.csv`, `q2_thermal/gates.csv` AND
+      `q2b_adapted/gates.csv` ARE ALL DATA-IDENTICAL** — `I_c` is an irradiance and is
+      PAR-independent, so Q2 is confirmed unchanged in every digit by applying the fix rather
+      than by predicting it. Q2b `outer_au` moves −0.008% to −0.047%; `binding` stays
+      `temperature` at every Ω. ⚠️ **S13: §18's S11 TABLE SURVIVES S5.** Its `I_c` column is
+      identical (incl. `NO COMPENSATION POINT` at Ω ∈ {10,15,20}); only `r*` moves (vascular
+      Ω=30 3.9237 → 3.6429, algal Ω=20 50.7909 → 47.1563). §18 rejected reading B on the `I_c`
+      column, so **S11's verdict is untouched**. ⚠️⚠️ **S14: APPLYING S5 INVERTED WHICH
+      CORRECTION IS LOAD-BEARING.** With S5 applied, **reading C alone now gives 11.5100,
+      OUTSIDE [12,22]**; before S5 it gave 12.3971, inside. **A CORRECTION'S EFFECT ON A VERDICT
+      IS NOT A PROPERTY OF THE CORRECTION BUT OF THE STATE IT IS APPLIED TO** — the order decides
+      which one carries the verdict. This is the retrospective case for reading A that §18 could
+      not make: the alternative was verdict-preserving only in a state the project was leaving.
+      ⚠️ **9 TESTS FAILED AND WERE UPDATED — and that is how a pass gets manufactured.** The
+      control is what did NOT move: `calibration.csv` and both `gates.csv` are data-identical,
+      and `I_c` is pinned by the same suite through the same code path as `r*` yet did not budge.
+      All 9 were SEEN TO FAIL before any test was edited. ⚠️ `check_amax_reading.py` and
+      `apply_reading_a.py` both **aborted at control 1** rather than report against a baseline
+      they could no longer reproduce — re-pinned; `price_registered_corrections.py` restructured
+      to price the surviving COUNTERFACTUALS, its `S6-B` arm RENAMED `READING C` per §18 S10.
+      ⚠️⚠️ **THIS DOES NOT FIX THE ORGANISM'S PAR.** `irradiance()` still delivers a flat
+      unattenuated top-of-atmosphere scalar to an organism §10 requires to sit behind a wall.
+      §12 S2's further 1.2×–5e5× overstatement is UNTOUCHED and OPEN.
       ✅✅ **2026-09-05 — THE SWEEP RE-RUN UNDER ITS OWN RULES; 2 NEW PAIRINGS IN ITS OWN
       OUTPUT (§17).** §11 is the one artifact here whose error rate is MEASURED — 3 of 4
       clearances did not survive, S1 and S3 both withdrawn, ~50% both ways — and it had never

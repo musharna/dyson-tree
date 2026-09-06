@@ -150,11 +150,14 @@ def test_algal_thermal_au_and_binding_are_pinned_against_the_real_prereg():
     # ~0.76-0.88 AU per Task 3's Step 5) or min() for max() (which would
     # pick "light", ~75 AU) is caught.
     expected_outer_au = {
-        10.0: 1.2120,
-        15.0: 1.3795,
-        20.0: 1.6180,
-        25.0: 1.9723,
-        30.0: 2.5301,
+        # S5 (2026-09-06) moved these by -0.008% to -0.047%; `binding` is
+        # unchanged at `temperature` for every omega. Was 1.2120 / 1.3795 /
+        # 1.6180 / 1.9723 / 2.5301 at PAR_FRACTION 0.45.
+        10.0: 1.2119,
+        15.0: 1.3794,
+        20.0: 1.6178,
+        25.0: 1.9718,
+        30.0: 2.5289,
     }
     for omega, exp_outer in expected_outer_au.items():
         org = run.build("algal", p, a, omega)

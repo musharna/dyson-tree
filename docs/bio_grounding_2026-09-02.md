@@ -380,7 +380,7 @@ without the circularity Gate 2 exists to prevent.
 | §11's clearance of `equilibrium_temperature` | **HAS NOW MISSED THREE THINGS** — S7, S8 and S9, while remaining literally accurate. A clearance true about the EXPRESSION says nothing about the OBJECT; the bullet cannot be made more correct, only replaced by a different question (§17) |
 | `PHOTONS_PER_J` applied behind the blue-pass wall | **CHECKED AND CLEAN** — `size_par_filter.py` computes photon- and energy-weighted transmission separately and applies the photon-weighted fraction to a photon-weighted flux. The obvious next instance of §12's failure is not present (§17) |
 | Q1's "the vascular default-k prediction HELD" | **CONDITIONAL ON THE S6 DECISION** — survives S5 + reading A (12.7058, inside); fails S5 + reading B (11.5100, misses the floor by 4.1%). The registration choice decides the published verdict (§16). ⚠️ **THE CHOICE IS A-vs-C; B IS INELIGIBLE** (§18). ✅ **DECIDED 2026-09-06 — READING A REGISTERED, so the headline HOLDS at 12.7058 AU under S5** (§19) |
-| S5's reach into Q2 | **NONE** — Q2 exits 2 at a purely thermal gate before any PAR-dependent code runs; unchanged in every digit. Q2b's `gates.csv` is byte-identical and its binding limit stays `temperature` at every omega (§16) |
+| S5's reach into Q2 | **NONE — CONFIRMED BY APPLYING IT (§20)**; `q2_thermal/gates.csv` is data-identical after the real fix. Q2 exits 2 at a purely thermal gate before any PAR-dependent code runs; unchanged in every digit. Q2b's `gates.csv` is byte-identical and its binding limit stays `temperature` at every omega (§16) |
 | `a_max`'s three anchors, sized | **52.66 K SPREAD** — 293.00 K (Q1), 298.15 K (Q2), 278.31 K (Q2b algal), 330.97 K (Q2b vascular). Re-anchored to a common 293 K the paths need `a_max` 10.0 to 367.53; the 36.75x extreme is inside the vascular class Gate B already FAILED, so the live factor is algal's 1.71x (§16) |
 | §16's "reading B" arm | **S10: IT IS NOT READING B** — the factor is `temperature_response(293, 265.15, 298.15)` = 0.8439, Q2's LINEAR ramp at Q2's DECLARED 25.00 °C `t_opt`. Reading B's own definition (the PEAK of Q2b's Gaussian at the ADAPTED optimum) gives 0.0272 — **31.0×** apart. Confirmed by reproducing §16's published 12.3971 exactly from `a_max = 8.4394`. Every number §16 published from the arm is right; the name is wrong (§18) |
 | True reading B applied to Q1 | **S11: INELIGIBLE — IT REMOVES THE RESULT, NOT THE VERDICT** — at Ω ∈ {10, 15, 20} the vascular organism has **no compensation point at any irradiance**; at Ω ∈ {25, 30} `I_c` is 187.92 and 47.61 against a gate ceiling of **9.0**. `net_carbon()` reads neither Ω, `area_ratio` nor `t_opt`, so applying B imports three objects Q1 does not have (§18) |
@@ -399,6 +399,12 @@ without the circularity Gate 2 exists to prevent.
 | §16's one number for reading A's CONSEQUENCE | **S12: ALSO A ROW, AND IT LEAVES THE WINDOW** — the light limit 75.434 → 99.291 AU (+31.6%) is reproduced exactly and is the **Ω = 20 cell**. Across the grid the corrected limit spans 85.263 → **224.263** AU; at Ω ∈ {10, 15} it lies **outside the registered `r_max_au: 100.0`**, where `classify_limit` records `nan`. That `nan` means "beyond the registered window", NOT "no crossover exists" — and it silently drops the candidate out of the `min()` that picks `binding` (§19) |
 | Q2b's insensitivity to a 6.8×-spread correction | **A PROPERTY OF THE REGISTRATION SURFACE, NOT OF THE CORRECTION** — `a_max` moves 10.0 → 86.5 at Ω=10, the light limit runs off the sweep window, `outer_au` moves 3.6%, and **nothing registered changes**, because Q2b registered a qualitative binding prediction and explicitly declined a numeric outer limit. The same restraint that makes Q2b robust makes it unable to DETECT the correction (§19) |
 | Applying the corrected `a_max` to Q2b's prereg | **NOT DONE, DELIBERATELY** — `prereg.yaml` line 1: _"Written BEFORE run.py produces limits.csv. Do not edit after."_ Editing a registered preset is a re-registration, a separate decision from choosing a reading. §19 measures what one WOULD produce; whether to perform it is unasked (§19) |
+| S5 (`PAR_FRACTION` 0.45) | ✅ **FIXED 2026-09-06 → 0.3879 (§20)** — four sites: `sim/physiology.py:16` + three `prereg.yaml:13`. All six Q1 verdicts HOLD; vascular k=100 lands at **12.7058**, reproducing §16's prediction to 4 dp from the real runner. `calibration.csv` and BOTH `gates.csv` are **data-identical** — `I_c` is an irradiance and is PAR-independent |
+| §18's S11 table under S5 | **S13: THE `I_c` COLUMN IS UNCHANGED, THE `r*` COLUMN MOVES** — vascular Ω=30 `r*` 3.9237 → 3.6429, algal Ω=20 50.7909 → 47.1563, but every `I_c` (incl. `NO COMPENSATION POINT` at Ω ∈ {10,15,20}) is identical. §18's rejection of reading B rests on the `I_c` column, so **S11's verdict survives S5 untouched** (§20) |
+| "S5 and S6 are individually harmless" (§16) | **S14: TRUE ONLY OF THE STATE IT WAS MEASURED IN** — with S5 now APPLIED, reading C alone gives **11.5100, OUTSIDE [12,22]**; before S5 it gave 12.3971, inside. **A correction's effect on a verdict is not a property of the correction but of the state it is applied to** — the order decides which one carries the verdict (§20) |
+| The 9 tests updated when S5 was applied | **NOT SELF-CONFIRMING, AND THE CONTROL IS NAMED** — updating pinned values to match new code is exactly how a pass is manufactured. The artifacts that did NOT move are the control: `calibration.csv` and both `gates.csv` are data-identical, and `I_c` is pinned by the same suite through the same code path as `r*` yet did not budge. All 9 were also SEEN TO FAIL before any test was edited (§20) |
+| `check_amax_reading.py` / `apply_reading_a.py` after S5 | **BOTH ABORTED AT CONTROL 1, CORRECTLY** — each refused to report against a committed baseline it could no longer reproduce, rather than silently re-deriving one. Re-pinned; their `I_c`-based findings were unaffected. `price_registered_corrections.py` restructured to price the surviving COUNTERFACTUALS, and its `S6-B` arm RENAMED to `READING C` per §18 S10 (§20) |
+| S5 fixes the organism's actual PAR | **NO — IT FIXES ONE 1.16× ERROR IN A QUANTITY STILL WRONG BY ORDERS OF MAGNITUDE** — `irradiance()` still delivers a flat unattenuated top-of-atmosphere scalar to an organism §10 requires to sit behind a wall. §12 S2's 1.2×–5e5× overstatement is untouched and OPEN (§20) |
 | A comet organism's wall is ice | **convenient fiction** — §9 grounds ice, not the identification |
 | Antarctic dust loading bounds an organism's wall impurities | **convenient fiction** — no connection whatsoever; used only to show scattering CAN dominate (§9) |
 
@@ -1800,6 +1806,118 @@ re-registration would produce; whether to perform one is unasked and unanswered 
 interpretation the project uses; it does not recover the temperature Westerband et al.'s `Asat`
 was measured at. §13's verdict — **not recorded in the source** — and §18's open one-point-method
 inversion route (blocked on Dryad access, no workaround attempted) both stand unchanged.
+
+## 20. S5 APPLIED — every verdict holds, and applying it made the S6 decision load-bearing
+
+**Trigger.** S5 was directed for application on 2026-09-06, immediately after S6 was registered
+as reading A. `PAR_FRACTION` moves **0.45 → 0.3879** at four sites: `sim/physiology.py:16` and
+`par_fraction` in all three `prereg.yaml:13`. The preregs' own "do not edit after" is overridden
+here by explicit instruction, and each edited line carries an inline `CORRECTED 2026-09-06 (S5)`
+note naming the old value, so the frozen record still reads what it used to say.
+
+**Why 0.3879 and not more digits.** The measured AM0 400–700 nm fraction is 0.38793993851109,
+but `tools/size_par_filter.py`'s own control B carries a tolerance of ±0.004 — the ASTM G173
+band is truncated at 280–4000 nm and returns 98.67% of the solar constant. Four decimal places
+already exceed what the method supports; registering six would be false precision. 0.3879 is
+also the value §12 published, so the ledger and the code now agree literally.
+
+### What moved, and what did not
+
+`r*` is a **distance** and scales as exactly `sqrt(par_fraction)`; `I_c` is an **irradiance**
+and does not depend on `PAR_FRACTION` at all. That split is the whole result:
+
+| artifact | outcome |
+| --- | --- |
+| `q1_crossover/calibration.csv` | **DATA IDENTICAL** — `I_c` 6.9519 and 0.4918 unchanged, both gates still pass |
+| `q2_thermal/gates.csv` | **DATA IDENTICAL** — Q2 unchanged in every digit, as §16 predicted |
+| `q2b_adapted/gates.csv` | **DATA IDENTICAL** |
+| `q1_crossover/crossover.csv` | all six `r*` scale by 0.928487; **ALL SIX VERDICTS UNCHANGED** |
+| `q2b_adapted/limits.csv` | `outer_au` moves −0.008% to −0.047%; `binding` = `temperature` at every Ω, unchanged |
+
+| class | k | `r*` before | `r*` after | band | verdict |
+| --- | --- | --- | --- | --- | --- |
+| vascular | 50 | 19.3537 | 17.9688 | [12, 22] | inside → **inside** |
+| vascular | 100 | 13.6851 | **12.7058** | [12, 22] | inside → **inside** |
+| vascular | 200 | 9.6769 | 8.9844 | [12, 22] | outside → outside |
+| algal | 10 | 95.1233 | 88.3162 | [35, 55] | outside → outside |
+| algal | 20 | 67.2623 | 62.4490 | [35, 55] | outside → outside |
+| algal | 40 | 47.5616 | 44.1581 | [35, 55] | inside → **inside** |
+
+**12.7058 is §16's predicted value reproduced to four decimal places** by the real runner, not by
+the scratch-copy harness that predicted it.
+
+### S13 (NEW). What S5 does to §18's own table — and why §18's conclusion survives
+
+§18 S11 rejected reading B on a table computed at `PAR_FRACTION = 0.45`. Re-measured at 0.3879:
+
+- the **`I_c` column is completely unchanged** — `NO COMPENSATION POINT` at Ω ∈ {10, 15, 20},
+  187.9236 and 47.6131 at Ω ∈ {25, 30}, algal 0.8585 at Ω = 20. `I_c` is PAR-independent.
+- the **`r*` column moves**: vascular Ω=30 3.9237 → **3.6429**; algal Ω=20 50.7909 → **47.1563**.
+
+§18's argument rests entirely on the `I_c` column — reading B removes the vascular compensation
+point at three of five registered Ω — so **S11's verdict is untouched by S5.** The counter-note
+also survives: algal k=20 under reading B still lands inside [35, 55] (47.1563). A conclusion
+that depended on the `r*` magnitudes would have needed re-deriving; this one did not, and the
+reason is recorded rather than assumed.
+
+### S14 (NEW). Applying S5 inverted which correction is load-bearing
+
+§16 measured S5 and reading C as *individually harmless and jointly decisive*. With S5 now
+**applied**, that composition re-reads:
+
+| arm | vascular k=100 `r*` | band [12, 22] |
+| --- | --- | --- |
+| as registered (reading A + S5) | **12.7058** | **inside** |
+| S5 reverted to 0.45 | 13.6851 | inside |
+| reading C, on top of applied S5 | **11.5100** | **OUTSIDE** |
+| reverted + reading C | 12.3971 | inside |
+
+Before S5 was applied, reading C alone was harmless (12.3971, inside). After S5, reading C alone
+is **fatal** (11.5100, outside). Same correction, opposite verdict.
+
+> **A correction's effect on a verdict is not a property of the correction. It is a property of
+> the state it is applied to.** S5 and S6 were filed as two independent deferred defects and
+> §16 showed they compose; what applying one of them shows is stronger — the *order* decides
+> which one carries the verdict. Reading C was never "the safe option that happened to lose";
+> it was safe only while S5 was still outstanding.
+
+This is also the retrospective case for reading A that §18 could not make: §18 recommended A on
+the Ω-commitment and the declared-anchor arguments, and flagged that A was *also* the
+verdict-preserving option. S14 shows the alternative was verdict-preserving only in a state the
+project was about to leave.
+
+### The methodological problem this section had to solve
+
+Applying S5 broke **9 tests** — 5 pinned-value assertions and 3 "committed CSVs regenerate
+exactly" checks and one Q2b pin. Every one of them was then updated to the new value. That is
+precisely the move that manufactures a pass: if the only evidence is that the tests now agree
+with the code, the tests have been fitted to whatever the code does.
+
+The controls that make it legitimate are the artifacts that did **not** change:
+`calibration.csv`, `q2_thermal/gates.csv` and `q2b_adapted/gates.csv` are **data-identical**
+across the change. `I_c` is computed by the same code path as `r*` and is pinned by the same
+suite, and it did not move — because it is not a distance. A change that had leaked beyond the
+PAR-dependent quantities would have moved them too. The 9 failures were also observed **before**
+any test was touched, so each was seen to fail for its stated reason rather than being
+pre-emptively adjusted.
+
+Two tools failed the same way and for the same good reason: `check_amax_reading.py` and
+`apply_reading_a.py` both abort at **control 1**, their "reproduce the committed baseline"
+positive control, rather than reporting against a baseline they can no longer produce. Both were
+re-pinned; the `I_c`-based findings in each were unaffected. `price_registered_corrections.py`
+was restructured — with S5 applied and reading A registered, its arms now price the surviving
+**counterfactuals** (revert S5; apply reading C), which is a stronger check because reverting
+must reproduce the exact pre-fix numbers §16 published. Its `S6-B` arm was **renamed to
+`READING C`** per §18 S10.
+
+### What this does NOT do
+
+S5 corrects the fraction of TSI that is PAR **at the top of the atmosphere**. §12's other finding
+stands untouched: the organism §10 requires sits behind a wall, and `irradiance()` still delivers
+a flat unattenuated scalar to it. S2's sizing — PAR overstated by a further 1.2× to 5×10⁵×
+depending on wall thickness — is **not** addressed by this fix and remains open. Correcting
+0.45 → 0.3879 removes a 1.16× error from a quantity that may still be wrong by orders of
+magnitude for the organism actually modelled.
 
 ## References (all ghostcite-clean, 0 findings)
 

@@ -40,11 +40,13 @@ OMEGA = [float(x) for x in pre["omega_grid_k"]]
 
 # The five rows committed in experiments/q2b_adapted/limits.csv.
 SHIPPED = {
-    10.0: (1.2120, "temperature"),
-    15.0: (1.3795, "temperature"),
-    20.0: (1.6180, "temperature"),
-    25.0: (1.9723, "temperature"),
-    30.0: (2.5301, "temperature"),
+    # S5 (2026-09-06) moved these by -0.008% to -0.047%; binding unchanged.
+    # Were 1.2120 / 1.3795 / 1.6180 / 1.9723 / 2.5301 at PAR_FRACTION 0.45.
+    10.0: (1.2119, "temperature"),
+    15.0: (1.3794, "temperature"),
+    20.0: (1.6178, "temperature"),
+    25.0: (1.9718, "temperature"),
+    30.0: (2.5289, "temperature"),
 }
 
 

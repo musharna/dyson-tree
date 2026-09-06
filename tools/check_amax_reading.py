@@ -22,6 +22,12 @@
 # arm is correctly identified, not merely alleged), and that true reading B does something
 # else entirely -- it removes Q1's compensation point altogether.
 #
+# RE-PINNED 2026-09-06 by S5 (PAR_FRACTION 0.45 -> 0.3879). r* is a DISTANCE and scales as
+# sqrt(par_fraction), so C1's baseline moved 13.6851 -> 12.7058 and C2's reading-C figure
+# moved 12.3971 -> 11.5100 (which is exactly section 16's predicted S5 x reading-C composite).
+# I_c is an IRRADIANCE and is PAR-independent: every I_c below, and C6's 17.1498, are
+# unchanged. The finding this tool reports is therefore untouched by S5 -- reading B still
+# removes the vascular compensation point at omega in {10, 15, 20}. See section 20.
 # Run from anywhere; needs no external data files.
 import signal
 import sys
@@ -54,7 +60,7 @@ TOPT = {
 # A harness that cannot reproduce the baseline cannot be trusted to report a departure from it.
 r_reg = crossover_distance_for(V, k=100.0)
 ic_reg = compensation_irradiance(V)
-assert abs(r_reg - 13.6851) < 1e-3, f"C1 FAILED: registered r* = {r_reg}"
+assert abs(r_reg - 12.7058) < 1e-3, f"C1 FAILED: registered r* = {r_reg}"  # S5: was 13.6851
 assert abs(ic_reg - 6.9519) < 1e-3, f"C1 FAILED: registered I_c = {ic_reg}"
 print(
     f"control 1 OK -- registered presets reproduce r* = {r_reg:.4f} AU, I_c = {ic_reg:.4f}"
@@ -66,13 +72,13 @@ print(
 f_lin = temperature_response(T_REF_K, V.t_min, T25)
 assert abs(f_lin - 0.843939) < 1e-6, f"C2 FAILED: linear ramp gives {f_lin}"
 r_c = crossover_distance_for(replace(V, a_max=10.0 * f_lin), k=100.0)
-assert abs(r_c - 12.3971) < 1e-3, f"C2 FAILED: got {r_c}, section 16 published 12.3971"
+assert abs(r_c - 11.5100) < 1e-3, f"C2 FAILED: got {r_c}, expected 11.5100"  # S5: was 12.3971
 print(f"control 2 OK -- temperature_response(293, {V.t_min}, {T25}) = {f_lin:.6f},")
 print(
     f"              and a_max = 10.0 x that = {10.0 * f_lin:.4f} returns r* = {r_c:.4f} AU,"
 )
 print(
-    "              reproducing section 16's 'reading B' figure EXACTLY. The arm is the"
+    "              reproducing section 16's 'reading B' arm EXACTLY. The arm is the"
 )
 print(
     f"              {T25 - 273.15:.2f} C anchor -- Q2's -- not Q2b's adapted optimum.\n"

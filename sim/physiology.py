@@ -13,7 +13,7 @@ from scipy.optimize import brentq
 # Kopp & Lean 2011, doi:10.1029/2010GL045777 (2008 solar minimum)
 TSI_W_M2 = 1360.8
 # Assumptions, declared in experiments/q1_crossover/prereg.yaml
-PAR_FRACTION = 0.45  # fraction of TSI in 400-700 nm
+PAR_FRACTION = 0.3879  # measured AM0 400-700 nm fraction of TSI (S5, bio_grounding 12/20)
 PHOTONS_PER_J = 4.57  # µmol photons per J of PAR
 T_REF_K = 293.0
 Q10 = 2.0

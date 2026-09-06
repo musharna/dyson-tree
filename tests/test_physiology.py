@@ -12,9 +12,11 @@ from sim.physiology import (
 
 
 def test_irradiance_at_1_au_matches_stated_assumptions():
-    # 1360.8 * 0.45 * 4.57 = 2798.5 (top-of-atmosphere PAR photon flux)
+    # 1360.8 * 0.3879 * 4.57 = 2412.3 (top-of-atmosphere PAR photon flux).
+    # PAR_FRACTION was 0.45 until 2026-09-06; S5 corrected it to the MEASURED
+    # AM0 400-700 nm fraction. See docs/bio_grounding_2026-09-02.md sections 12 and 20.
     assert irradiance(1.0) == pytest.approx(TSI_W_M2 * PAR_FRACTION * PHOTONS_PER_J)
-    assert irradiance(1.0) == pytest.approx(2798.5, rel=1e-3)
+    assert irradiance(1.0) == pytest.approx(2412.3, rel=1e-3)
 
 
 def test_irradiance_inverse_square():
