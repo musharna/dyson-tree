@@ -373,13 +373,13 @@ without the circularity Gate 2 exists to prevent.
 | Framing A (strength vs transparency collide at R = 10 km) | **SPLIT BY ICE STRENGTH** — at the self-consistent pressure R_max is 21.4 km (3.1 MPa), 11.9 km (1.5), 6.40 km (0.7). Binds only at the weak end (§13 S7) |
 | §12's use of G173's 1366.1 normalisation with the project's 1360.8 TSI | **CHECKED, TRANSFERABLE** — the PAR fraction is dimensionless, a property of spectral SHAPE not scale; residual <= 0.39%, 41x smaller than S5. Stated rather than waved through (§13) |
 | "One IR-opaque shell == halving `area_ratio`, identical to 5.7e-14 K" | **TRUE ONLY AT tau = 1** — with a measured wall the two differ by **31-36 K**. The 5.7e-14 K agreement compared two expressions computing the SAME ASSUMPTION (§14) |
-| S5 and S6 as INDEPENDENT deferred defects | **NOT INDEPENDENT** — each alone leaves all six Q1 verdicts standing; TOGETHER (S5 + S6 reading B) vascular k=100 falls to r*=11.51, OUTSIDE the registered [12, 22]. The effects compose multiplicatively (§16). ⚠️ **THAT ARM IS READING C, NOT B** — §18 S10 |
+| S5 and S6 as INDEPENDENT deferred defects | **NOT INDEPENDENT** — each alone leaves all six Q1 verdicts standing; TOGETHER (S5 + S6 reading B) vascular k=100 falls to r*=11.51, OUTSIDE the registered [12, 22]. The effects compose multiplicatively (§16). ⚠️ **THAT ARM IS READING C, NOT B** — §18 S10. ✅ **S6 CLOSED 2026-09-06: reading A registered; the composed flip was reading C's and does not occur** (§19) |
 | The ICE wall's own temperature | **S8: MOLTEN AT 1 AU** — section 13's two-body balance puts the shell at `Ts = T_eq` exactly, independent of tau: **5.16 C**, with the interior face at 24.10 C. Ice melts at 0 C, and that threshold only DROPS with pressure. No part of the wall is ice where sections 13-15 computed every number (§17) |
 | Where an ice vessel holding liquid water CAN exist | **A 0.11-0.16 AU ANNULUS, AND 1 AU IS OUTSIDE IT** — inner edge 1.0381 AU (tau-independent), outer edge 1.1446-1.2030 AU. Q2b's algal temperature limit, 1.1945 AU, sits just beyond it. Re-solving the fixed point at the inner edge takes p 3.002 -> 2.287 kPa: inside the bracket, DOWNWARD, the third effect to point that way (§17) |
 | `albedo = 0.0` paired with a wall concluded to be ICE | **S9, AND IT PARTLY REVERSES S8** — the shell reaches the melting point at 1 AU at albedo **0.0721**; at 0.10 it is -2.07 C. S8 holds in the model as written and its MAGNITUDE does not survive S9. Not internally inconsistent: Beer-Lambert models pure absorption, matching albedo=0 — consistently wrong, which is why no single-expression check could see it (§17) |
 | §11's clearance of `equilibrium_temperature` | **HAS NOW MISSED THREE THINGS** — S7, S8 and S9, while remaining literally accurate. A clearance true about the EXPRESSION says nothing about the OBJECT; the bullet cannot be made more correct, only replaced by a different question (§17) |
 | `PHOTONS_PER_J` applied behind the blue-pass wall | **CHECKED AND CLEAN** — `size_par_filter.py` computes photon- and energy-weighted transmission separately and applies the photon-weighted fraction to a photon-weighted flux. The obvious next instance of §12's failure is not present (§17) |
-| Q1's "the vascular default-k prediction HELD" | **CONDITIONAL ON THE S6 DECISION** — survives S5 + reading A (12.7058, inside); fails S5 + reading B (11.5100, misses the floor by 4.1%). The registration choice decides the published verdict (§16). ⚠️ **THE CHOICE IS A-vs-C; B IS INELIGIBLE** (§18) |
+| Q1's "the vascular default-k prediction HELD" | **CONDITIONAL ON THE S6 DECISION** — survives S5 + reading A (12.7058, inside); fails S5 + reading B (11.5100, misses the floor by 4.1%). The registration choice decides the published verdict (§16). ⚠️ **THE CHOICE IS A-vs-C; B IS INELIGIBLE** (§18). ✅ **DECIDED 2026-09-06 — READING A REGISTERED, so the headline HOLDS at 12.7058 AU under S5** (§19) |
 | S5's reach into Q2 | **NONE** — Q2 exits 2 at a purely thermal gate before any PAR-dependent code runs; unchanged in every digit. Q2b's `gates.csv` is byte-identical and its binding limit stays `temperature` at every omega (§16) |
 | `a_max`'s three anchors, sized | **52.66 K SPREAD** — 293.00 K (Q1), 298.15 K (Q2), 278.31 K (Q2b algal), 330.97 K (Q2b vascular). Re-anchored to a common 293 K the paths need `a_max` 10.0 to 367.53; the 36.75x extreme is inside the vascular class Gate B already FAILED, so the live factor is algal's 1.71x (§16) |
 | §16's "reading B" arm | **S10: IT IS NOT READING B** — the factor is `temperature_response(293, 265.15, 298.15)` = 0.8439, Q2's LINEAR ramp at Q2's DECLARED 25.00 °C `t_opt`. Reading B's own definition (the PEAK of Q2b's Gaussian at the ADAPTED optimum) gives 0.0272 — **31.0×** apart. Confirmed by reproducing §16's published 12.3971 exactly from `a_max = 8.4394`. Every number §16 published from the arm is right; the name is wrong (§18) |
@@ -394,6 +394,11 @@ without the circularity Gate 2 exists to prevent.
 | §11 S3 ("pure ice absorption divided by dusty ice scattering") | **WITHDRAWN — S3 IS FALSE.** §9's `L_d` uses Ackermann's OWN absorption AND scattering; 18.3-115.5 m reproduces exactly from them, S3's attribution gives 67.0-211.8 m (§15) |
 | §10's "the scattering caveat is unaffected" | **FALSE** — `R_max` is linear in sigma there too. With ice sigma: 11.8-330 km, not 1345-8508 km. Conclusion survives, margin collapses 134x -> 1.2x (§15) |
 | Dust's effect on section 13's tau | **DIRECTION PINNED, magnitude still ungrounded** — a DECLARED dust floor from Ackermann's diffusion lengths gives tau 0.216-0.282 and p 2.21-2.81 kPa, always INSIDE the bracket and always DOWNWARD. S3 cannot overturn S7, only deepen it (§15) |
+| Reading A's downstream reach, measured | **IT MOVES NO VERDICT ANYWHERE** — Q1 unchanged by construction (A's anchor IS `t_set`, factor exactly 1.0000); Q2 exits 2 at `response` gates that take no `a_max` and produces no `limits.csv`, so the correction has nowhere to land; Q2b's `binding` stays `temperature` at all five Ω and `outer_au` moves 1.70–3.61% against a prereg that registered `predicted_outer_limit_au: null` (§19) |
+| "Q2 needs correction under reading A" | **TRUE INTERPRETIVELY, EMPTY OPERATIONALLY** — `temperature_response()` takes `t_min` and `t_opt` and no `a_max`; Q2's two failing `response` gates (0.3939 vs [0.6,0.7]; 0.2424 vs [0.3,0.4]) are `a_max`-free and Q2 writes no limits. There is no Q2 output for the correction to move (§19) |
+| §16's one number for reading A's CONSEQUENCE | **S12: ALSO A ROW, AND IT LEAVES THE WINDOW** — the light limit 75.434 → 99.291 AU (+31.6%) is reproduced exactly and is the **Ω = 20 cell**. Across the grid the corrected limit spans 85.263 → **224.263** AU; at Ω ∈ {10, 15} it lies **outside the registered `r_max_au: 100.0`**, where `classify_limit` records `nan`. That `nan` means "beyond the registered window", NOT "no crossover exists" — and it silently drops the candidate out of the `min()` that picks `binding` (§19) |
+| Q2b's insensitivity to a 6.8×-spread correction | **A PROPERTY OF THE REGISTRATION SURFACE, NOT OF THE CORRECTION** — `a_max` moves 10.0 → 86.5 at Ω=10, the light limit runs off the sweep window, `outer_au` moves 3.6%, and **nothing registered changes**, because Q2b registered a qualitative binding prediction and explicitly declined a numeric outer limit. The same restraint that makes Q2b robust makes it unable to DETECT the correction (§19) |
+| Applying the corrected `a_max` to Q2b's prereg | **NOT DONE, DELIBERATELY** — `prereg.yaml` line 1: _"Written BEFORE run.py produces limits.csv. Do not edit after."_ Editing a registered preset is a re-registration, a separate decision from choosing a reading. §19 measures what one WOULD produce; whether to perform it is unasked (§19) |
 | A comet organism's wall is ice | **convenient fiction** — §9 grounds ice, not the identification |
 | Antarctic dust loading bounds an organism's wall impurities | **convenient fiction** — no connection whatsoever; used only to show scattering CAN dominate (§9) |
 
@@ -1694,6 +1699,107 @@ This is the same shape as §15's "a mutation that silently fails to apply is ind
 from a control that cannot fail" and §16's own "the assertion must be that the edit applied to
 the thing under test", one level up: here the edit applied to the right file, the arithmetic was
 right, and the **name** was the thing that did not describe the object.
+
+## 19. Reading A REGISTERED — and it moves no verdict anywhere, for a reason worth recording
+
+**Trigger.** S6 was decided on 2026-09-06: **reading A** — `a_max = 10.0` is the assimilation
+rate at 293 K, Q1's own `t_set`. §18 established the choice and eliminated B and C; it did not
+measure what *adopting* A does to the experiments A says "need correction". This section does.
+`tools/apply_reading_a.py`, four controls, three of them positive. Nothing registered was
+edited: the tool calls Q2b's own `build()` and `classify_limit()` rather than reimplementing
+them, per §17's rule that an uncontrolled reimplementation contradicting a controlled published
+number is evidence about the reimplementation.
+
+§18's table said reading A leaves **Q1** unchanged and puts a correction on **Q2** and **Q2b**.
+Taken one leg at a time against the live code:
+
+**Q1 — unchanged, by construction.** A's anchor *is* Q1's anchor (`t_set = T_REF_K`), so the
+factor is exactly 1.0000. No Q1 number moves. This is the half of the decision that was never
+in doubt.
+
+**Q2 — the correction has nowhere to land.** Q2 exits 2. Its `gates.csv` records a passing
+thermal gate and two failing `response` gates (`f(278.15 K)` = 0.3939 against [0.6, 0.7];
+`f(273.15 K)` = 0.2424 against [0.3, 0.4]), and `temperature_response()` takes `t_min` and
+`t_opt` — **no `a_max` argument at all**. Q2 produces no `limits.csv`, so there is no Q2 result
+for an `a_max` correction to move. "Q2 needs correction" is true as a statement about
+interpretive consistency and empty as a statement about Q2's output.
+
+**Q2b — the correction lands, and changes no registered thing.** Gate B still excludes vascular
+(control 3), so reading A's 1.82e7 vascular factor never enters Q2b's output and only algal's
+6.8×-spread row is live. Corrected `a_max = 10.0 / f_gauss(293, t_opt_adapted, Ω)`:
+
+| Ω  | `a_max` under A | temperature (AU) | light (AU)  | carbon (AU) | binding         | carbon as shipped | move   |
+| -- | --------------- | ---------------- | ----------- | ----------- | --------------- | ----------------- | ------ |
+| 10 | 86.5049         | 1.1945           | **224.263** | 1.2557      | **temperature** | 1.2120            | +3.61% |
+| 15 | 26.0893         | 1.1945           | **122.762** | 1.4160      | **temperature** | 1.3795            | +2.64% |
+| 20 | 17.1498         | 1.1945           | 99.291      | 1.6526      | **temperature** | 1.6180            | +2.14% |
+| 25 | 14.1230         | 1.1945           | 89.967      | 2.0088      | **temperature** | 1.9723            | +1.85% |
+| 30 | 12.7091         | 1.1945           | 85.263      | 2.5732      | **temperature** | 2.5301            | +1.70% |
+
+`binding` is `min(temperature, light, carbon)`; `temperature` is a fixed 1.1945 AU floor
+independent of `a_max`, while `light` and `carbon` both move **outward** as `a_max` rises. So
+reading A cannot flip `binding` toward `carbon` — it moves the two `a_max`-sensitive candidates
+*away* from the floor. Control 1 reproduces all five committed `limits.csv` rows from the
+registered `a_max = 10.0` before any arm runs; control 2 reproduces §18's published 17.1498 at
+Ω = 20, so the factor applied here is the one §18 priced.
+
+Control 4 is the positive control on the verdict itself: `binding` **can** be something other
+than `temperature`. At `a_max = 3.0`, Ω = 10 the carbon crossover falls to 1.1844 AU, inside the
+floor, and `binding` becomes `carbon`. A predicate that returned one constant could not report
+that reading A left it alone.
+
+**Q2b's registered prediction `predicted_binding_limit.algal: carbon` was already FALSIFIED by
+the shipped run** (§ROADMAP; `binding` = `temperature` at every Ω). Reading A does not rescue it
+and could not: it widens the margin by which it failed.
+
+### S12 (NEW). Reading A's light limit leaves the registered sweep window at narrow Ω
+
+§16 priced reading A's effect on Q2b as a single number — the light limit moving
+**75.434 → 99.291 AU, +31.6%**. Both values are reproduced exactly here, and both are the
+**Ω = 20 cell**. Across the registered grid the corrected light limit spans **85.263 → 224.263
+AU**, a 2.6× range, and at **Ω ∈ {10, 15} it lies outside the registered sweep window**
+`r_max_au: 100.0` entirely. Inside the window `crossover_distance_for` finds no root and
+`classify_limit` records `nan`; re-run with `r_max = 1e6` the roots appear at 224.263 and
+122.762 AU. The `nan` is **"beyond the registered window", not "no crossover exists"** — a
+distinction the CSV cannot express, and one that matters because `nan` drops the candidate out
+of the `min()` that picks `binding`.
+
+This is §18's Ω-function point recurring one level down: §16 quoted one number per reading for
+the `a_max` correction and it was a row spanning 6.8×; it also quoted one number for the
+*consequence*, and that too is a row — one that runs off the end of the registered window.
+
+### So: registering reading A moves no verdict in this project
+
+Q1 unchanged by construction; Q2 has no output to move; Q2b's `binding` stays `temperature` at
+every Ω and its `outer_au` moves 1.70–3.61%, against a prereg that deliberately registered
+**`predicted_outer_limit_au.algal: null`**. The one Q2b prediction `a_max` could touch was
+already falsified and moves further from rescue.
+
+> **A correction that moves no registered number may mean the correction is small, or that the
+> registration is too coarse to feel it — and those are not the same finding.** Here it is
+> demonstrably the second. The correction is not small: `a_max` moves 10.0 → 86.5 at Ω = 10, the
+> light limit moves off the end of the sweep window, and `outer_au` moves 3.6%. None of it
+> registers, because Q2b registered a *qualitative* binding prediction and explicitly declined
+> to register a numeric outer limit. The insensitivity is a property of the registration
+> surface, not of the correction.
+
+That §17-shaped restraint (register no band you cannot independently justify) is what makes Q2b
+robust here — and it is the same choice that makes Q2b unable to *detect* a 6.8×-spread
+correction to its least grounded input. Both are true at once and neither cancels the other.
+
+### What is deliberately NOT done
+
+The corrected `a_max` is **not written into `experiments/q2b_adapted/prereg.yaml`.** That file's
+first line reads _"Written BEFORE run.py produces limits.csv. Do not edit after."_ Changing a
+registered preset is a re-registration, which is a separate decision from choosing a reading,
+and §18's own criterion — that a change making a registered result depend on new parameters is a
+re-registration — applies to this project's own edits too. The measurement above is what a
+re-registration would produce; whether to perform one is unasked and unanswered here.
+
+**The anchor remains ungrounded.** Registering a reading fixes which internally consistent
+interpretation the project uses; it does not recover the temperature Westerband et al.'s `Asat`
+was measured at. §13's verdict — **not recorded in the source** — and §18's open one-point-method
+inversion route (blocked on Dryad access, no workaround attempted) both stand unchanged.
 
 ## References (all ghostcite-clean, 0 findings)
 

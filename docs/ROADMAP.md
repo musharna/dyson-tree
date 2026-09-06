@@ -327,6 +327,38 @@ than being chosen and then justified.
       actually computed. Nothing compared the FACTOR to the DEFINITION three lines above it.
       Tools: `tools/check_amax_reading.py` (6 controls, 3 positive).
       Tools: `tools/price_amax_anchor.py`, `tools/price_registered_corrections.py`.
+      ✅✅✅ **2026-09-06 — S6 DECIDED BY THE USER: READING A IS REGISTERED. IT MOVES NO
+      VERDICT ANYWHERE (§19).** Q1 unchanged by construction (A's anchor IS `t_set`; factor
+      exactly 1.0000), so **Q1's vascular k=100 headline HOLDS at 12.7058 AU under S5, inside
+      the registered [12, 22]**. ⚠️ **"Q2 needs correction" is TRUE INTERPRETIVELY AND EMPTY
+      OPERATIONALLY** — `temperature_response()` takes no `a_max`, Q2's two failing `response`
+      gates (0.3939 vs [0.6,0.7]; 0.2424 vs [0.3,0.4]) are `a_max`-free, and Q2 exits 2 writing
+      no `limits.csv`: there is no Q2 output for the correction to land on. **Q2b: `binding`
+      stays `temperature` at ALL FIVE Ω** (Gate B still excludes vascular, so the 1.82e7 factor
+      never enters); `outer_au` moves **+1.70% to +3.61%** against a prereg that deliberately
+      registered `predicted_outer_limit_au.algal: null`. `binding` CANNOT flip toward `carbon`
+      under A — `temperature` is a fixed 1.1945 AU floor and A moves the two `a_max`-sensitive
+      candidates OUTWARD. The already-FALSIFIED `predicted_binding_limit.algal: carbon` is not
+      rescued; its failure margin widens. ⚠️ **S12: §16's ONE NUMBER FOR READING A'S CONSEQUENCE
+      IS ALSO A ROW, AND IT LEAVES THE REGISTERED WINDOW.** The light limit 75.434 → 99.291 AU
+      (+31.6%) reproduces exactly and is the **Ω=20 cell**; across the grid the corrected limit
+      spans 85.263 → **224.263 AU**, and at Ω ∈ {10, 15} it lies **outside `r_max_au: 100.0`**,
+      where `classify_limit` records `nan`. That `nan` means **"beyond the registered window",
+      not "no crossover exists"**, and it silently drops the candidate out of the `min()` that
+      picks `binding`. ⚠️⚠️ Tell: **a correction that moves no registered number may mean the
+      correction is small, or that the registration is too coarse to feel it — and those are not
+      the same finding.** Here it is demonstrably the second: `a_max` moves 10.0 → 86.5, the
+      light limit runs off the sweep window, `outer_au` moves 3.6%, and nothing registered
+      changes. The §17-shaped restraint that makes Q2b robust is the same choice that makes it
+      unable to DETECT a 6.8×-spread correction to its least grounded input.
+      ⚠️ **NOT DONE, DELIBERATELY:** the corrected `a_max` is NOT written into
+      `q2b_adapted/prereg.yaml` ("Do not edit after"). Editing a registered preset is a
+      RE-REGISTRATION — a separate decision from choosing a reading, and unasked here.
+      ⚠️ **THE ANCHOR IS STILL NOT GROUNDED** — registering a reading fixes which internally
+      consistent interpretation is used; it does not recover Westerband's measurement
+      temperature. §13's verdict and §18's blocked one-point-method inversion route stand.
+      Tools: `tools/apply_reading_a.py` (4 controls, 3 positive; calls Q2b's OWN `build()` and
+      `classify_limit()`, reproduces all 5 committed `limits.csv` rows before any arm runs).
       ✅✅ **2026-09-05 — THE SWEEP RE-RUN UNDER ITS OWN RULES; 2 NEW PAIRINGS IN ITS OWN
       OUTPUT (§17).** §11 is the one artifact here whose error rate is MEASURED — 3 of 4
       clearances did not survive, S1 and S3 both withdrawn, ~50% both ways — and it had never
