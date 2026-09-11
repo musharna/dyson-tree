@@ -181,3 +181,105 @@ Restored; 131 pass.
 
 **Stage 2 DONE:** parity green, two mutants seen to fail, one of them a
 correction to this stage's own reasoning, all recorded above.
+
+## Stage 3 — the page
+
+`web/index.html` + `web/app.js`, hand-drawn SVG, no build step, no CDN, no
+dependency. Inputs are exactly the three the plan allows: preset, distance
+(log slider, 0.5–100 AU), and `k` restricted to the registered grid. Outputs:
+net carbon vs distance for the selected preset/`k` with the current `r` marked,
+the crossover (or "no crossover in range"), `T_eq(r)`, and the compensation
+irradiance. All arithmetic comes from `web/model.js`; nothing is recomputed in
+the page, so it cannot drift from the parity-checked port.
+
+The pre-registered bands are drawn hatched, dashed, captioned
+`pre-registered (HELD)` / `pre-registered (FAILED)`, and painted BEFORE the
+results so a prediction can never read as a measurement. Measured crossovers are
+solid dots, and the current one carries `(model output)` on the plot itself.
+Legend text, verbatim: `pre-registered band (Q1) — vascular: HELD · algal: FAILED`.
+
+### Structural decision: classic script, not ES module
+
+The plan requires the page to work from `file://`. Browsers refuse to load ES
+modules from `file://` (origin `null` fails the module CORS check), so
+`web/model.js` became a classic script that assigns `window.DysonModel`, with
+`module.exports` at the bottom for node; `web/parity.mjs` reaches it through
+`createRequire`. `web/package.json` was deleted. Both load paths are exercised
+by the smoke test below, and the parity suite still passes.
+
+### Site build
+
+`tools/build_site.sh` copies an explicit ALLOWLIST (`index.html`, `model.js`,
+`app.js`) plus `.nojekyll` — not `cp -r web/`, which would publish the 170 KB
+fixture file and the parity harness the page never loads. It then greps the
+built page for remote assets (`src=`, and `href=` on `<link>`) and fails if it
+finds any. That guard was seen to fire: pointing the script tag at
+`https://cdn.example.com/model.js` gave
+
+```
+ERROR: site/index.html loads a remote asset; assets must be relative
+exit=1
+```
+
+### Clean-checkout proof
+
+```
+$ git clone --depth=1 --branch release/1.0-rc file://$PWD $TMP/dt-verify
+$ cd $TMP/dt-verify && tools/build_site.sh
+-rw-r--r-- .nojekyll   app.js   index.html   model.js
+CLEAN-CLONE PROOF: site/index.html and site/.nojekyll both present
+$ python3 tools/smoke_page.py
+79 passed, 0 failed
+```
+
+### Headless smoke (`tools/smoke_page.py`, Playwright/chromium)
+
+Runs against `site/` — the artifact that is published, not `web/` — twice: from
+`file://` and from a real http subpath (`/dyson-tree/`, served from a temp
+directory), because Pages serves this project from a subpath. Displayed numbers
+are compared against `web/fixtures.json`, the same reference the Python/JS
+parity test uses. **79 assertions, 0 failures**, including HTTP 200, zero
+console errors/warnings, zero failed requests, displayed r* 12.7058 and I_c
+6.9519 matching the fixtures, the slider moving both the readout and the plot
+marker, both presets rendering, algal k=20 reported OUTSIDE its band and k=40
+inside, and the limitations panel visible with all four of its claims.
+
+**Negative control.** With `PAR_FRACTION` mutated to 0.45 in `web/model.js` and
+the site rebuilt, the smoke fails and names the page's own numbers:
+
+```
+FAIL  [http subpath] displayed r* 13.6851 matches fixture 12.70583146241671
+FAIL  [http subpath] algal k=20 displayed r* 67.2623 matches fixture 62.448984713841384
+41 passed, 4 failed
+```
+
+Those two mutant values, 13.6851 and 67.2623, are exactly the pre-S5 numbers
+still quoted in `experiments/q1_crossover/RESULTS.md` — which is independent
+confirmation that the shipped page displays the S5-corrected model.
+
+### Three defects this stage's own checks found, and what was wrong with the checks
+
+1. **The micro-sign trap.** `text-transform: uppercase` on control labels mapped
+   U+00B5 MICRO SIGN to U+039C GREEK CAPITAL MU, rendering the k unit as
+   `MMOL M⁻² S⁻¹` — milli, a factor of 1000 — while the DOM, the source and
+   every DOM-level assertion stayed correct. Fixed by removing `text-transform`
+   from the page entirely (headings are typed in the case they display in) and
+   guarded by an assertion on the RENDERED text that U+039C never appears.
+2. **Colliding and clipped plot labels.** My first geometry check compared label
+   x-positions against a fixed 62px threshold; labels are 90–200px wide, so it
+   passed a view whose three crossover labels ran into each other and off the
+   right edge. Replaced with `getBoundingClientRect` (not `getBBox`, which
+   reports geometry before the element's own transform and made the rotated
+   y-axis title measure as off-canvas at x=−77) and pairwise rectangle overlap.
+   Labels moved to three rows ABOVE the zero line, and `break-even` moved to the
+   left end of that line, away from where every crossover lands.
+3. **A check that only ever ran on one view.** The geometry check sat inline
+   before the preset switch, so it measured the vascular layout only — and
+   passed an algal layout whose crossover labels sat on top of the x-axis tick
+   numbers. It is now a function called once per preset and again after the
+   slider moves. The bug that hid this was mine: an editing script replaced a
+   block up to the next `def`, silently deleting the slider and algal
+   assertions, and the assertion count fell 53 → 43 without my noticing. The
+   suite was rewritten whole and now runs **79** assertions.
+
+**Stage 3 DONE:** clean-checkout proof and smoke pass recorded above.
