@@ -46,8 +46,10 @@ from sim.physiology import (  # noqa: E402
 )
 from sim.thermal import (  # noqa: E402
     SIGMA_W_M2_K4,
+    adapted_optimum,
     equilibrium_temperature,
     temperature_response,
+    temperature_response_gaussian,
 )
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -112,16 +114,29 @@ def main() -> int:
                 "compensation_irradiance": compensation_irradiance(org, k=k),
                 "crossover_au": xover,
             }
+        t_eq = [
+            equilibrium_temperature(float(r), org.area_ratio, org.emissivity, org.albedo)
+            for r in grid
+        ]
+        # Every function the JS port contains gets a fixture. thermal.py is
+        # ported whole (the ship plan says so), so its two Q2/Q2b response
+        # forms are sampled here even though the page plots neither -- a
+        # ported function with no fixture is a test that cannot fail.
+        t_opt_home = adapted_optimum(1.0, org.area_ratio, org.emissivity, org.albedo)
         cases[cls] = {
             "preset": org_to_dict(org),
             "leaf_respiration": org.leaf_respiration(),
             "organism_respiration": org.organism_respiration(),
+            "adapted_t_opt_home_1au": t_opt_home,
+            "temperature_response": [
+                temperature_response(t, org.t_min, org.t_opt) for t in t_eq
+            ],
+            "temperature_response_gaussian": [
+                temperature_response_gaussian(t, t_opt_home, org.omega) for t in t_eq
+            ],
             "irradiance": [irradiance(float(r)) for r in grid],
             "equilibrium_temperature": [
-                equilibrium_temperature(
-                    float(r), org.area_ratio, org.emissivity, org.albedo
-                )
-                for r in grid
+                t for t in t_eq
             ],
             "net_carbon_at_equilibrium": [
                 org.net_carbon_at_equilibrium(float(r)) for r in grid
@@ -182,8 +197,15 @@ def main() -> int:
 
     # (3) The algal t_min floor (254.65 K, Pointing et al. 2015): the Q2 linear
     # response switches off AT the floor, not asymptotically. Sampled at the
-    # distance where T_eq == t_min exactly and one step either side, so a port
-    # that used `<` where Python uses `<=` is caught.
+    # distance where T_eq == t_min exactly and one step either side.
+    #
+    # What this does NOT discriminate: `t < t_min` vs `t <= t_min` in the guard.
+    # At t == t_min the ramp evaluates to (t - t_min)/(t_opt - t_min) = 0
+    # anyway, so both spellings return exactly 0 and the sample cannot tell
+    # them apart. What it DOES pin is that the clamp exists at all -- the
+    # `outside` sample sits below the floor, where an unclamped ramp goes
+    # NEGATIVE -- and that net carbon steps down across the floor (gross
+    # vanishes while respiration continues).
     t_floor = algal.t_min
     s_at_floor = (
         algal.area_ratio * algal.emissivity * SIGMA_W_M2_K4 * t_floor**4
@@ -213,7 +235,11 @@ def main() -> int:
         {
             "name": "algal_t_min_floor",
             "why": "T_eq crosses the algal t_min floor (254.65 K) at r="
-            f"{r_floor:.6f} AU; temperature_response is 0 at and below it",
+            f"{r_floor:.6f} AU; temperature_response is 0 at and below it. "
+            "The `outside` sample is below the floor, where a ramp with no "
+            "clamp would return a NEGATIVE response -- that is what this "
+            "case discriminates. It does not distinguish `<` from `<=`: at "
+            "t == t_min the ramp is 0 either way.",
             "preset": org_to_dict(algal),
             "t_min": t_floor,
             "r_floor_au": float(r_floor),
@@ -270,6 +296,13 @@ def main() -> int:
                 "why": "closed form",
             },
             "compensation_irradiance": {"rtol": 1e-9, "atol": 0.0, "why": "closed form"},
+            "adapted_t_opt_home_1au": {"rtol": 1e-9, "atol": 0.0, "why": "closed form"},
+            "temperature_response_gaussian": {
+                "rtol": 1e-9,
+                "atol": 1e-15,
+                "why": "closed form; underflows to exact 0 far from t_opt, where "
+                "a relative bound has no meaning",
+            },
             "temperature_response": {
                 "rtol": 1e-9,
                 "atol": 1e-15,
