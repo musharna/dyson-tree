@@ -26,6 +26,12 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          # Full history, not the default depth-1: tests/test_derived_csvs.py checks
+          # that every CSV's `git_sha` header names a commit object in the clone. On a
+          # shallow checkout an ancestor SHA is absent and the guard fails on a clone
+          # artefact, not a provenance defect (run 34578387898).
+          fetch-depth: 0
       - uses: actions/setup-python@v5
         with:
           # Exact patch version, not "3.13": the committed experiment CSVs carry a

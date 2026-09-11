@@ -40,6 +40,10 @@ header line except `git_sha` and `written` — so on any other 3.13.x patch rele
 guard working as designed, not a broken checkout; the failure message shows a
 one-line diff.
 
+**Clone with full history**, not `--depth 1`: `tests/test_derived_csvs.py` checks that
+every CSV's `git_sha` header names a commit present in your clone, and a shallow clone
+lacks the ancestors those headers name (three tests fail on the clone, not the data).
+
 Optional, for the parts beyond the test suite:
 
 | For                                        | You need                    |
