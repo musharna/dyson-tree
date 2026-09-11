@@ -16,57 +16,178 @@
         --band: #8a8378;
         --warn: #8a3b2a;
       }
-      * { box-sizing: border-box; }
+      * {
+        box-sizing: border-box;
+      }
       body {
         margin: 0;
         padding: 24px 16px 48px;
         background: var(--bg);
         color: var(--ink);
-        font: 15px/1.55 ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+        font:
+          15px/1.55 ui-sans-serif,
+          system-ui,
+          -apple-system,
+          "Segoe UI",
+          Roboto,
+          sans-serif;
       }
-      main { max-width: 1100px; margin: 0 auto; }
-      h1 { font-size: 21px; margin: 0 0 4px; letter-spacing: -0.01em; }
+      main {
+        max-width: 1100px;
+        margin: 0 auto;
+      }
+      h1 {
+        font-size: 21px;
+        margin: 0 0 4px;
+        letter-spacing: -0.01em;
+      }
       /* NO text-transform anywhere on this page. `text-transform: uppercase`
          maps U+00B5 MICRO SIGN to U+039C GREEK CAPITAL MU, which renders as a
          Latin M: a unit written "µmol" reaches the reader as "MMOL", off by a
          factor of 1000, with the DOM and every DOM-level test still correct.
          Headings are typed in the case they are displayed in. */
-      h2 { font-size: 13px; margin: 0 0 8px; letter-spacing: 0.07em; color: var(--muted); font-weight: 600; }
-      p { margin: 0 0 10px; }
-      a { color: var(--curve); }
-      .sub { color: var(--muted); margin-bottom: 18px; }
-      .layout { display: grid; grid-template-columns: minmax(0, 1fr) 300px; gap: 20px; align-items: start; }
-      .panel { background: var(--panel); border: 1px solid var(--rule); border-radius: 6px; padding: 14px 16px; }
-      .controls { display: flex; flex-wrap: wrap; gap: 18px; align-items: flex-end; margin-bottom: 14px; }
-      .control { display: flex; flex-direction: column; gap: 4px; }
-      .control label { font-size: 12px; letter-spacing: 0.04em; color: var(--muted); }
-      select { font: inherit; padding: 4px 6px; border: 1px solid var(--rule); border-radius: 4px; background: #fff; }
-      .slider { flex: 1 1 260px; min-width: 220px; }
-      .slider input { width: 100%; }
-      svg { display: block; width: 100%; height: auto; }
-      table { border-collapse: collapse; width: 100%; font-variant-numeric: tabular-nums; }
-      td, th { text-align: left; padding: 3px 0; vertical-align: baseline; }
-      th { font-weight: 500; color: var(--muted); font-size: 13px; padding-right: 10px; }
-      .num { font-size: 15px; }
-      .verdict-held { color: var(--curve); font-weight: 600; }
-      .verdict-failed { color: var(--warn); font-weight: 600; }
-      .legend { display: flex; flex-wrap: wrap; gap: 14px; margin-top: 8px; font-size: 13px; color: var(--muted); }
-      .legend span { display: inline-flex; align-items: center; gap: 6px; }
-      .swatch { width: 22px; height: 10px; display: inline-block; border: 1px solid var(--rule); }
-      .isnot li { margin-bottom: 7px; }
-      .isnot ul { padding-left: 18px; margin: 0 0 10px; }
-      footer { margin-top: 22px; color: var(--muted); font-size: 13px; }
-      code { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 13px; }
-      @media (max-width: 820px) { .layout { grid-template-columns: minmax(0, 1fr); } }
+      h2 {
+        font-size: 13px;
+        margin: 0 0 8px;
+        letter-spacing: 0.07em;
+        color: var(--muted);
+        font-weight: 600;
+      }
+      p {
+        margin: 0 0 10px;
+      }
+      a {
+        color: var(--curve);
+      }
+      .sub {
+        color: var(--muted);
+        margin-bottom: 18px;
+      }
+      .layout {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) 300px;
+        gap: 20px;
+        align-items: start;
+      }
+      .panel {
+        background: var(--panel);
+        border: 1px solid var(--rule);
+        border-radius: 6px;
+        padding: 14px 16px;
+      }
+      .controls {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 18px;
+        align-items: flex-end;
+        margin-bottom: 14px;
+      }
+      .control {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+      }
+      .control label {
+        font-size: 12px;
+        letter-spacing: 0.04em;
+        color: var(--muted);
+      }
+      select {
+        font: inherit;
+        padding: 4px 6px;
+        border: 1px solid var(--rule);
+        border-radius: 4px;
+        background: #fff;
+      }
+      .slider {
+        flex: 1 1 260px;
+        min-width: 220px;
+      }
+      .slider input {
+        width: 100%;
+      }
+      svg {
+        display: block;
+        width: 100%;
+        height: auto;
+      }
+      table {
+        border-collapse: collapse;
+        width: 100%;
+        font-variant-numeric: tabular-nums;
+      }
+      td,
+      th {
+        text-align: left;
+        padding: 3px 0;
+        vertical-align: baseline;
+      }
+      th {
+        font-weight: 500;
+        color: var(--muted);
+        font-size: 13px;
+        padding-right: 10px;
+      }
+      .num {
+        font-size: 15px;
+      }
+      .verdict-held {
+        color: var(--curve);
+        font-weight: 600;
+      }
+      .verdict-failed {
+        color: var(--warn);
+        font-weight: 600;
+      }
+      .legend {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 14px;
+        margin-top: 8px;
+        font-size: 13px;
+        color: var(--muted);
+      }
+      .legend span {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+      }
+      .swatch {
+        width: 22px;
+        height: 10px;
+        display: inline-block;
+        border: 1px solid var(--rule);
+      }
+      .isnot li {
+        margin-bottom: 7px;
+      }
+      .isnot ul {
+        padding-left: 18px;
+        margin: 0 0 10px;
+      }
+      footer {
+        margin-top: 22px;
+        color: var(--muted);
+        font-size: 13px;
+      }
+      code {
+        font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+        font-size: 13px;
+      }
+      @media (max-width: 820px) {
+        .layout {
+          grid-template-columns: minmax(0, 1fr);
+        }
+      }
     </style>
   </head>
   <body>
     <main>
       <h1>Dyson tree — carbon-budget explorer</h1>
       <p class="sub">
-        Where does a photosynthetic organism in vacuum stop breaking even? This page runs the
-        repository's own model in your browser. Every number here is checked against the Python
-        that produced the committed results — see
+        Where does a photosynthetic organism in vacuum stop breaking even? This
+        page runs the repository's own model in your browser. Every number here
+        is checked against the Python that produced the committed results — see
         <a href="#provenance">provenance</a>.
       </p>
 
@@ -82,22 +203,57 @@
                 </select>
               </div>
               <div class="control">
-                <label for="kselect">Half-saturation <i>k</i> (µmol m⁻² s⁻¹)</label>
+                <label for="kselect"
+                  >Half-saturation <i>k</i> (µmol m⁻² s⁻¹)</label
+                >
                 <select id="kselect"></select>
               </div>
               <div class="control slider">
-                <label for="rslider">Distance <span id="rlabel">1.000 AU</span></label>
-                <input id="rslider" type="range" min="0" max="10000" step="1" value="0" />
+                <label for="rslider"
+                  >Distance <span id="rlabel">1.000 AU</span></label
+                >
+                <input
+                  id="rslider"
+                  type="range"
+                  min="0"
+                  max="10000"
+                  step="1"
+                  value="0"
+                />
               </div>
             </div>
 
-            <svg id="plot" viewBox="0 0 720 400" role="img"
-                 aria-label="Net carbon assimilation against heliocentric distance"></svg>
+            <svg
+              id="plot"
+              viewBox="0 0 720 400"
+              role="img"
+              aria-label="Net carbon assimilation against heliocentric distance"
+            ></svg>
 
             <div class="legend">
-              <span><span class="swatch" style="background: var(--curve); border-color: var(--curve)"></span> net carbon (model output)</span>
-              <span><span class="swatch" id="bandswatch"></span> pre-registered band (Q1) — vascular: HELD · algal: FAILED</span>
-              <span><span class="swatch" style="background: var(--result); border-color: var(--result); border-radius: 50%; width: 10px"></span> crossover r* (model output)</span>
+              <span
+                ><span
+                  class="swatch"
+                  style="background: var(--curve); border-color: var(--curve)"
+                ></span>
+                net carbon (model output)</span
+              >
+              <span
+                ><span class="swatch" id="bandswatch"></span> pre-registered
+                band (Q1) — vascular: HELD · algal: FAILED</span
+              >
+              <span
+                ><span
+                  class="swatch"
+                  style="
+                    background: var(--result);
+                    border-color: var(--result);
+                    border-radius: 50%;
+                    width: 10px;
+                  "
+                ></span>
+                crossover r* (model output)</span
+              >
             </div>
           </div>
 
@@ -105,18 +261,39 @@
             <h2>AT THE SELECTED DISTANCE</h2>
             <table>
               <tbody>
-                <tr><th>Distance r</th><td class="num" id="out-r"></td></tr>
-                <tr><th>PAR irradiance</th><td class="num" id="out-i"></td></tr>
-                <tr><th>Net carbon</th><td class="num" id="out-net"></td></tr>
-                <tr><th>Equilibrium temperature T<sub>eq</sub></th><td class="num" id="out-teq"></td></tr>
+                <tr>
+                  <th>Distance r</th>
+                  <td class="num" id="out-r"></td>
+                </tr>
+                <tr>
+                  <th>PAR irradiance</th>
+                  <td class="num" id="out-i"></td>
+                </tr>
+                <tr>
+                  <th>Net carbon</th>
+                  <td class="num" id="out-net"></td>
+                </tr>
+                <tr>
+                  <th>Equilibrium temperature T<sub>eq</sub></th>
+                  <td class="num" id="out-teq"></td>
+                </tr>
               </tbody>
             </table>
             <h2 style="margin-top: 14px">FOR THIS CLASS AND <i>k</i></h2>
             <table>
               <tbody>
-                <tr><th>Crossover r*</th><td class="num" id="out-xover"></td></tr>
-                <tr><th>Pre-registered band</th><td class="num" id="out-band"></td></tr>
-                <tr><th>Compensation irradiance I<sub>c</sub></th><td class="num" id="out-ic"></td></tr>
+                <tr>
+                  <th>Crossover r*</th>
+                  <td class="num" id="out-xover"></td>
+                </tr>
+                <tr>
+                  <th>Pre-registered band</th>
+                  <td class="num" id="out-band"></td>
+                </tr>
+                <tr>
+                  <th>Compensation irradiance I<sub>c</sub></th>
+                  <td class="num" id="out-ic"></td>
+                </tr>
               </tbody>
             </table>
           </div>
@@ -125,21 +302,46 @@
         <aside class="panel isnot">
           <h2>WHAT THIS IS / IS NOT</h2>
           <ul>
-            <li>An <strong>uncontained</strong> organism at a <strong>fixed tissue temperature</strong>
-                — the Q1 model. Net carbon is light in, respiration out; nothing holds it together.</li>
-            <li><strong>No pressure vessel.</strong> Liquid water cannot exist in vacuum at these
-                temperatures; the vessel that would contain it is unbuilt, and it is a
-                <em>precondition</em> of the modelling line, not a later extension.</li>
-            <li><strong>No spectral wall.</strong> A scalar attenuation coefficient <em>k</em> for a
-                wall was shown to be a category error (Q3): the wall's PAR attenuation is spectral
-                across a factor of ~701, so one number cannot stand for it.</li>
-            <li>The <strong>registered thermal predictions were falsified</strong> (Q2b): carbon was
-                predicted to bind, and temperature binds instead.</li>
-            <li>The hatched bands are <strong>predictions written before the run</strong>, not
-                results. For the algal class the prediction <strong>failed</strong>.</li>
+            <li>
+              An <strong>uncontained</strong> organism at a
+              <strong>fixed tissue temperature</strong> — the Q1 model. Net
+              carbon is light in, respiration out; nothing holds it together.
+            </li>
+            <li>
+              <strong>No pressure vessel.</strong> Liquid water cannot exist in
+              vacuum at these temperatures; the vessel that would contain it is
+              unbuilt, and it is a <em>precondition</em> of the modelling line,
+              not a later extension.
+            </li>
+            <li>
+              <strong>No spectral wall.</strong> A scalar attenuation
+              coefficient <em>k</em> for a wall was shown to be a category error
+              (Q3): the wall's PAR attenuation is spectral across a factor of
+              ~701, so one number cannot stand for it.
+            </li>
+            <li>
+              The
+              <strong>registered thermal predictions were falsified</strong>
+              (Q2b): carbon was predicted to bind, and temperature binds instead
+              — <strong>for the algal class</strong>, the only class the run
+              answered. The gate that excluded the vascular class has since been
+              retired as uninformative, and running the same code on vascular
+              gives carbon as the binding limit at &#937; = 25 and 30, where the
+              prediction would have held. The falsification stands for algal;
+              whether it generalises is open (see FINDINGS).
+            </li>
+            <li>
+              The hatched bands are
+              <strong>predictions written before the run</strong>, not results.
+              For the algal class the prediction <strong>failed</strong>.
+            </li>
           </ul>
           <p>
-            <a href="https://github.com/musharna/dyson-tree/blob/master/docs/FINDINGS.md" id="findings-link">Findings (falsifications first)</a><br />
+            <a
+              href="https://github.com/musharna/dyson-tree/blob/master/docs/FINDINGS.md"
+              id="findings-link"
+              >Findings (falsifications first)</a
+            ><br />
             <a href="https://github.com/musharna/dyson-tree">Repository</a>
           </p>
         </aside>
@@ -147,17 +349,20 @@
 
       <footer id="provenance">
         <p>
-          The browser model (<code>web/model.js</code>) is a port of <code>sim/physiology.py</code>,
-          <code>sim/thermal.py</code> and <code>sim/organism.py</code>. It is pinned to the Python
-          model by <code>web/fixtures.json</code> through <code>tests/test_parity_js.py</code>, and
-          its crossover values are checked against the committed
+          The browser model (<code>web/model.js</code>) is a port of
+          <code>sim/physiology.py</code>, <code>sim/thermal.py</code> and
+          <code>sim/organism.py</code>. It is pinned to the Python model by
+          <code>web/fixtures.json</code> through
+          <code>tests/test_parity_js.py</code>, and its crossover values are
+          checked against the committed
           <code>experiments/q1_crossover/crossover.csv</code>.
         </p>
         <p>
-          © 2026 Jaret Arnold. Code (<code>sim/ tools/ tests/ web/</code>) is licensed
-          <a href="./LICENSE">MIT</a>; documents, figures and results are
-          <a href="./LICENSE-docs">CC BY 4.0</a> — attribute to Jaret Arnold and link back
-          to the repository. Cite via <code>CITATION.cff</code> in the repository.
+          © 2026 Jaret Arnold. Code (<code>sim/ tools/ tests/ web/</code>) is
+          licensed <a href="./LICENSE">MIT</a>; documents, figures and results
+          are <a href="./LICENSE-docs">CC BY 4.0</a> — attribute to Jaret Arnold
+          and link back to the repository. Cite via <code>CITATION.cff</code> in
+          the repository.
         </p>
       </footer>
     </main>

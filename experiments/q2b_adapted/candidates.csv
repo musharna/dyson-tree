@@ -1,0 +1,19 @@
+# derived_by=tools/derive_q2b_candidates.py
+# git_sha=c239801bb51d1109b3a076e694f4aaab85a72887
+# source=experiments/q2b_adapted/prereg.yaml md5=fd303cb1dd48869a087e55db63a2b44c
+# source=experiments/q2b_adapted/limits.csv md5=bb0c6b898c699a21e9a7a3d09821b5a5
+# python=3.13.2
+# numpy=2.3.5
+# scipy=1.16.3
+# written=2026-09-11T03:45:23-04:00
+class,omega,temperature_au,light_au,carbon_au,binding,in_limits_csv
+algal,10,1.1945,70.0357,1.2119,temperature,yes
+algal,15,1.1945,70.0357,1.3794,temperature,yes
+algal,20,1.1945,70.0357,1.6178,temperature,yes
+algal,25,1.1945,70.0357,1.9718,temperature,yes
+algal,30,1.1945,70.0357,2.5289,temperature,yes
+vascular,10,1.5581,12.7058,,temperature,no (gate B excluded)
+vascular,15,1.5581,12.7058,,temperature,no (gate B excluded)
+vascular,20,1.5581,12.7058,,temperature,no (gate B excluded)
+vascular,25,1.5581,12.7058,1.2060,carbon,no (gate B excluded)
+vascular,30,1.5581,12.7058,1.3920,carbon,no (gate B excluded)

@@ -67,26 +67,26 @@ itself.
   `net_carbon_at_equilibrium(r)` on the grid.
 - Per preset × per registered `k`: `net_carbon(r, k)` on the grid,
   `compensation_irradiance(org, k)`, and `crossover_distance_for(org, k,
-  n_grid=200)` — `null` where there is no root.
+n_grid=200)` — `null` where there is no root.
 
 ### Edge cases (all inside the model's own domain)
 
-| name | what it pins |
-| --- | --- |
-| `no_crossover_in_window` | algal at `k=5`: the root lies beyond `r_max`, so `crossover_distance_for` RAISES. JS must report `null`, not extrapolate. Python message recorded. |
-| `compensation_at_respiration_boundary` | `r_d == a_max == 10.0` with `t_set == t_ref`: leaf respiration equals `a_max` exactly, so there is no compensation point. Python raises; JS must too. |
-| `algal_t_min_floor` | `T_eq` crosses the algal floor (254.65 K, Pointing et al. 2015) at **1.194466 AU** — the same 1.1945 AU floor Q2b reports as binding. Sampled at `0.999·r`, `r`, `1.001·r`: the response is 0 **at** the floor (Python uses `t <= t_min`), so a port written with `<` fails here. |
+| name                                   | what it pins                                                                                                                                                                                                                                                                      |
+| -------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `no_crossover_in_window`               | algal at `k=5`: the root lies beyond `r_max`, so `crossover_distance_for` RAISES. JS must report `null`, not extrapolate. Python message recorded.                                                                                                                                |
+| `compensation_at_respiration_boundary` | `r_d == a_max == 10.0` with `t_set == t_ref`: leaf respiration equals `a_max` exactly, so there is no compensation point. Python raises; JS must too.                                                                                                                             |
+| `algal_t_min_floor`                    | `T_eq` crosses the algal floor (254.65 K, Pointing et al. 2015) at **1.194466 AU** — the same 1.1945 AU floor Q2b reports as binding. Sampled at `0.999·r`, `r`, `1.001·r`: the response is 0 **at** the floor (Python uses `t <= t_min`), so a port written with `<` fails here. |
 
 ### Declared tolerances
 
 `abs_err <= atol + rtol * |ref|`, declared in the fixture file itself:
 
-| quantity | rtol | atol | reason |
-| --- | --- | --- | --- |
-| irradiance, gross, respiration, T_eq, compensation | 1e-9 | 0 | closed form |
-| `temperature_response` | 1e-9 | 1e-15 | exact 0 below `t_min`, where a relative bound has no meaning |
-| `net_carbon`, `net_carbon_at_equilibrium` | 1e-9 | 1e-12 | a difference that passes through zero at the crossover; near the root `\|ref\|` is ~1e-17 and a pure relative bound would demand bit-exact cancellation of two O(1) terms. 1e-12 µmol is ~1e-13 of the grid-end values. |
-| `crossover_au` | 1e-6 | 1e-6 AU | bracketed root: JS bisects where Python uses `brentq(xtol=1e-6)`, so agreement is bounded by solver tolerance, not float precision |
+| quantity                                           | rtol | atol    | reason                                                                                                                                                                                                                  |
+| -------------------------------------------------- | ---- | ------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| irradiance, gross, respiration, T_eq, compensation | 1e-9 | 0       | closed form                                                                                                                                                                                                             |
+| `temperature_response`                             | 1e-9 | 1e-15   | exact 0 below `t_min`, where a relative bound has no meaning                                                                                                                                                            |
+| `net_carbon`, `net_carbon_at_equilibrium`          | 1e-9 | 1e-12   | a difference that passes through zero at the crossover; near the root `\|ref\|` is ~1e-17 and a pure relative bound would demand bit-exact cancellation of two O(1) terms. 1e-12 µmol is ~1e-13 of the grid-end values. |
+| `crossover_au`                                     | 1e-6 | 1e-6 AU | bracketed root: JS bisects where Python uses `brentq(xtol=1e-6)`, so agreement is bounded by solver tolerance, not float precision                                                                                      |
 
 No tolerance has been loosened. If one ever is, the reason is written beside it
 in `web/fixtures.json` and the number is never changed silently.
@@ -239,7 +239,7 @@ Runs against `site/` — the artifact that is published, not `web/` — twice: f
 directory), because Pages serves this project from a subpath. Displayed numbers
 are compared against `web/fixtures.json`, the same reference the Python/JS
 parity test uses. **79 assertions, 0 failures**, including HTTP 200, zero
-console errors/warnings, zero failed requests, displayed r* 12.7058 and I_c
+console errors/warnings, zero failed requests, displayed r\* 12.7058 and I_c
 6.9519 matching the fixtures, the slider moving both the readout and the plot
 marker, both presets rendering, algal k=20 reported OUTSIDE its band and k=40
 inside, and the limitations panel visible with all four of its claims.
@@ -313,11 +313,11 @@ So the CSVs are current; three pieces of committed prose are not. Per this
 repository's convention — banner superseded claims, never rewrite them — each got
 a banner naming the old value, the new one, and the fact that no verdict moves:
 
-| file | stale claim | current |
-| --- | --- | --- |
-| `experiments/q1_crossover/RESULTS.md` | 13.6851 / 67.2623 AU (all six r\*) | 12.7058 / 62.4490 AU (× 0.9284396) |
-| `experiments/q2b_adapted/RESULTS.md` | pasted stdout, light limit 75.434 AU | 70.036 AU; light never binding |
-| `docs/ROADMAP.md` | summary quotes 13.69 / 67.26 AU | bannered at the top |
+| file                                  | stale claim                          | current                            |
+| ------------------------------------- | ------------------------------------ | ---------------------------------- |
+| `experiments/q1_crossover/RESULTS.md` | 13.6851 / 67.2623 AU (all six r\*)   | 12.7058 / 62.4490 AU (× 0.9284396) |
+| `experiments/q2b_adapted/RESULTS.md`  | pasted stdout, light limit 75.434 AU | 70.036 AU; light never binding     |
+| `docs/ROADMAP.md`                     | summary quotes 13.69 / 67.26 AU      | bannered at the top                |
 
 The regenerated CSVs were reverted (`git checkout -- experiments/`) so the
 committed provenance headers stay as they were.
@@ -484,17 +484,17 @@ here before being acted on, and all nine reproduced.** Seven were claims that
 their own cited sources did not support — which is exactly the category the gate
 exists for, and not one of them was visible to any test in the suite.
 
-| # | finding | disposition |
-| --- | --- | --- |
-| 1 | Page displayed "1.000 AU" while evaluating **0.99987 AU**; `T_eq` and PAR beside it were computed there, disagreeing with the repo's own published `T_eq` at 1 AU in the second decimal | **FIXED** in `web/app.js` |
-| 2 | `sqrt(0.3879/0.45) = 0.928487` is arithmetically false | **FIXED** → 0.9284396 |
-| 3 | The reachability percentages in "What holds" are pre-S5 and do not rescale | **FIXED** — recomputed |
-| 4 | "the rate is zero past 1.1945 AU" — Q2b's Gaussian has no floor | **FIXED** — rewritten |
-| 5 | "the falsification is not affected" — retiring Gate B readmits vascular, where carbon binds at 2 of 5 Ω | **FIXED** — scope narrowed |
-| 6 | The Gate-B *pass* was listed among the classes that fail their window | **FIXED** |
-| 7 | `T_interior = (N+1)^0.25·T_eq` presented as standing; §13 S7 marks its premise falsified | **FIXED** — τ correction attached |
-| 8 | The published `site/` named no copyright holder | **FIXED** |
-| 9 | CSV headers name a commit whose code cannot produce them | **DOCUMENTED + escalated** |
+| #   | finding                                                                                                                                                                                 | disposition                       |
+| --- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------- |
+| 1   | Page displayed "1.000 AU" while evaluating **0.99987 AU**; `T_eq` and PAR beside it were computed there, disagreeing with the repo's own published `T_eq` at 1 AU in the second decimal | **FIXED** in `web/app.js`         |
+| 2   | `sqrt(0.3879/0.45) = 0.928487` is arithmetically false                                                                                                                                  | **FIXED** → 0.9284396             |
+| 3   | The reachability percentages in "What holds" are pre-S5 and do not rescale                                                                                                              | **FIXED** — recomputed            |
+| 4   | "the rate is zero past 1.1945 AU" — Q2b's Gaussian has no floor                                                                                                                         | **FIXED** — rewritten             |
+| 5   | "the falsification is not affected" — retiring Gate B readmits vascular, where carbon binds at 2 of 5 Ω                                                                                 | **FIXED** — scope narrowed        |
+| 6   | The Gate-B _pass_ was listed among the classes that fail their window                                                                                                                   | **FIXED**                         |
+| 7   | `T_interior = (N+1)^0.25·T_eq` presented as standing; §13 S7 marks its premise falsified                                                                                                | **FIXED** — τ correction attached |
+| 8   | The published `site/` named no copyright holder                                                                                                                                         | **FIXED**                         |
+| 9   | CSV headers name a commit whose code cannot produce them                                                                                                                                | **DOCUMENTED + escalated**        |
 
 ### The three that mattered most
 
@@ -559,17 +559,22 @@ still has `PAR_FRACTION = 0.45` and would produce 13.6851 AU rather than the
 12.7058 in the file: the runners were re-run with the S5 edit in the working tree
 while `HEAD` was at the parent commit. The `*_md5` lines in the same header are
 correct and identify `1d9cea5`. Repairing it means re-running frozen experiments,
-which this plan's scope forbids, so FINDINGS now carries *A note on the CSV
-provenance headers* saying which half to trust and to reproduce from `1d9cea5` or
+which this plan's scope forbids, so FINDINGS now carries _A note on the CSV
+provenance headers_ saying which half to trust and to reproduce from `1d9cea5` or
 later. **Coordinator: the clean fix is to re-run and re-commit the CSVs at the
 release commit — data is byte-identical, only the header moves — but that is the
 owner's call, not an executor's.**
+
+> ✅ **Repaired in 1.0.1** — see _For the coordinator_ item 3 below. The re-run was
+> authorised and performed; the data came back byte-identical as predicted, and
+> FINDINGS' _A note on the CSV provenance headers_ now records a closed defect
+> rather than a live one.
 
 ### Scale-factor discrepancy left in place
 
 `docs/ROADMAP.md` (2026-09-06 entry) and `bio_grounding` §20 state the factor as
 0.928487, which is `sqrt(0.38793993851109/0.45)` — the full-precision
-*measurement*. The code registers `PAR_FRACTION = 0.3879`, so the factor that
+_measurement_. The code registers `PAR_FRACTION = 0.3879`, so the factor that
 reproduces the six committed `r*` is 0.9284396; 0.928487 reproduces none of them at
 4 dp. Those entries are earlier records and are bannered, not rewritten, per the
 repository's convention; the banner at the top of `ROADMAP.md` names the
@@ -631,16 +636,16 @@ unaffected (43.272% from the exact floor).
 **Five surviving mutants — checks that could not fail — all now closed.** The
 re-review built each mutation and confirmed the suite stayed green:
 
-| mutation | before | after |
-| --- | --- | --- |
+| mutation                                                         | before   | after       |
+| ---------------------------------------------------------------- | -------- | ----------- |
 | `#rlabel` hard-coded to "0.500 AU" (the slider's own label lies) | 107 pass | **10 fail** |
-| plot marker drawn at twice the distance | 107 pass | **2 fail** |
-| displayed net carbon doubled | 107 pass | **10 fail** |
-| `I_c` always computed at k=100 | 107 pass | **4 fail** |
-| licence copy removed from `build_site.sh` (page ships two 404s) | 107 pass | **4 fail** |
+| plot marker drawn at twice the distance                          | 107 pass | **2 fail**  |
+| displayed net carbon doubled                                     | 107 pass | **10 fail** |
+| `I_c` always computed at k=100                                   | 107 pass | **4 fail**  |
+| licence copy removed from `build_site.sh` (page ships two 404s)  | 107 pass | **4 fail**  |
 
-The gaps were the same shape each time: an assertion that something *changed*
-rather than that it changed *to the right value*, or a value checked once for one
+The gaps were the same shape each time: an assertion that something _changed_
+rather than that it changed _to the right value_, or a value checked once for one
 view and never re-checked after the controls moved. The suite now recomputes net
 carbon and `I_c` from the fixture preset on every view, requires the slider label
 to equal the readout it drives, pins the marker to the "1" axis tick at exactly
@@ -687,29 +692,29 @@ d294774 release: stage 6 round 2 -- two more non-waivable fixed, five surviving 
 
 ### Versions
 
-| | |
-| --- | --- |
-| Python | 3.13.2 |
-| numpy | 2.3.5 |
-| scipy | 1.16.3 |
-| PyYAML | 6.0.3 |
-| pytest | 9.1.1 |
-| Node | v18.19.1 |
-| gitleaks | 8.30.1 |
-| ghostcite | 0.5.2 |
+|                     |                                                 |
+| ------------------- | ----------------------------------------------- |
+| Python              | 3.13.2                                          |
+| numpy               | 2.3.5                                           |
+| scipy               | 1.16.3                                          |
+| PyYAML              | 6.0.3                                           |
+| pytest              | 9.1.1                                           |
+| Node                | v18.19.1                                        |
+| gitleaks            | 8.30.1                                          |
+| ghostcite           | 0.5.2                                           |
 | Playwright chromium | bundled, `~/.cache/ms-playwright/chromium-1234` |
 
 ### Results
 
-| check | result |
-| --- | --- |
-| `python -m pytest -q` | **131 passed** (122 pre-existing + 9 parity) |
-| `python3 tools/smoke_page.py` | **147 assertions, 0 failed** (79 → 107 → 147 across the two critic rounds) |
-| 14 `tools/*.py` | **all exit 0**, run from a directory outside the repository |
-| `gitleaks git --redact .` | **no leaks found**, 91 commits |
-| `gitleaks dir --redact site/` | **no leaks found** |
-| `ghostcite --format doi docs/dois.txt` | **69 DOIs, 0 retracted, 0 unresolvable** |
-| clean-clone build | `site/index.html` + `site/.nojekyll` present, smoke passes from the clone |
+| check                                  | result                                                                     |
+| -------------------------------------- | -------------------------------------------------------------------------- |
+| `python -m pytest -q`                  | **131 passed** (122 pre-existing + 9 parity)                               |
+| `python3 tools/smoke_page.py`          | **147 assertions, 0 failed** (79 → 107 → 147 across the two critic rounds) |
+| 14 `tools/*.py`                        | **all exit 0**, run from a directory outside the repository                |
+| `gitleaks git --redact .`              | **no leaks found**, 91 commits                                             |
+| `gitleaks dir --redact site/`          | **no leaks found**                                                         |
+| `ghostcite --format doi docs/dois.txt` | **69 DOIs, 0 retracted, 0 unresolvable**                                   |
+| clean-clone build                      | `site/index.html` + `site/.nojekyll` present, smoke passes from the clone  |
 
 ⚠️ **The DOI extraction needed fixing at this stage and is worth repeating
 correctly.** The regex in the plan (`10\.[0-9]{4,9}/[^ )>\]"]+`) captures a
@@ -730,17 +735,17 @@ must match the live `sim/` modules, and the JS crossovers are compared against
 
 **Mutants seen to fail** (each restored, suite green again afterwards):
 
-| mutant | result |
-| --- | --- |
+| mutant                                                            | result                                                                                                                            |
+| ----------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------- |
 | `PAR_FRACTION 0.3879 → 0.45` in `web/model.js` (the pre-S5 value) | **6 of 9 parity tests fail**; first failure names the constant: `AssertionError: constant PAR_FRACTION: JS 0.45 != Python 0.3879` |
-| delete the `t_min` clamp from `temperatureResponse` | **2 fail**, naming the sample: `temperature_response [t_min floor outside]: \|-0.00292481806...` |
-| `PAR_FRACTION` mutant, rebuilt, against the page | smoke **4 fail**, showing the page's own numbers reverting to the pre-S5 13.6851 / 67.2623 |
-| `#rlabel` hard-coded | smoke **10 fail** |
-| plot marker at 2× distance | smoke **2 fail** |
-| displayed net carbon doubled | smoke **10 fail** |
-| `I_c` always at k=100 | smoke **4 fail** |
-| licence copy dropped from `build_site.sh` | smoke **4 fail** |
-| remote `<script src>` / `<link href>` injected | `build_site.sh` **exits 1** |
+| delete the `t_min` clamp from `temperatureResponse`               | **2 fail**, naming the sample: `temperature_response [t_min floor outside]: \|-0.00292481806...`                                  |
+| `PAR_FRACTION` mutant, rebuilt, against the page                  | smoke **4 fail**, showing the page's own numbers reverting to the pre-S5 13.6851 / 67.2623                                        |
+| `#rlabel` hard-coded                                              | smoke **10 fail**                                                                                                                 |
+| plot marker at 2× distance                                        | smoke **2 fail**                                                                                                                  |
+| displayed net carbon doubled                                      | smoke **10 fail**                                                                                                                 |
+| `I_c` always at k=100                                             | smoke **4 fail**                                                                                                                  |
+| licence copy dropped from `build_site.sh`                         | smoke **4 fail**                                                                                                                  |
+| remote `<script src>` / `<link href>` injected                    | `build_site.sh` **exits 1**                                                                                                       |
 
 ### Critic survivors (all waivable, none blocking)
 
@@ -772,6 +777,11 @@ must match the live `sim/` modules, and the JS crossovers are compared against
    re-commit the CSVs at the release commit — data is byte-identical, only the
    header moves — but that touches frozen experiment records and is the owner's
    call, not an executor's.
+   > ✅ **Closed in 1.0.1.** The owner took that call and authorised the re-run.
+   > All three runners were re-run at `c239801` under Python 3.13.2 / numpy 2.3.5 /
+   > scipy 1.16.3 and the CSVs re-committed. The prediction held: across all seven
+   > files the entire diff is two header lines each (`git_sha`, `written`), with
+   > every data row and every `*_md5` line byte-identical.
 4. **The home path and the Windows account name remain in git
    history** (~17 commits' worth of added lines). Working-tree redactions cannot
    reach them; removing them needs a history rewrite. Two account names, no

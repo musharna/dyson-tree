@@ -1,4 +1,4 @@
-# git_sha=fc6ba42a6af761d788fb4814ec1b1bc65001bcf7
+# git_sha=c239801bb51d1109b3a076e694f4aaab85a72887
 # thermal_md5=6b0ecfc0353686a3534939ac9eff9a0e
 # organism_md5=8882eac48ee3e4932e643650e75e0732
 # physiology_md5=af16830e7f15c5cf9848c8eb694e99c8
@@ -6,7 +6,7 @@
 # python=3.13.2
 # numpy=2.3.5
 # scipy=1.16.3
-# written=2026-09-06T01:21:36-04:00
+# written=2026-09-11T03:44:56-04:00
 gate,detail,observed,lo,hi,passed
 thermal,T_eq at 1.0 AU,278.3112,275.0,282.0,True
 response,f(T=278.15 K),0.3939,0.6,0.7,False

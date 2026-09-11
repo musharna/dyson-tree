@@ -1,14 +1,23 @@
 # Q2b: what limits range from the Sun for an organism whose optimum is PREDICTED, not fitted?
 
-> ⚠️ **ONE SUPERSEDED NUMBER, NO VERDICT CHANGE (2026-09-06, S5).** The stdout
-> pasted in section 1 is from a run before `PAR_FRACTION` was corrected from
-> 0.45 to the measured 0.3879. In it the light limit reads **75.434 AU**; it is
-> now **70.036 AU**. Light was never binding — the temperature floor at
-> 1.1945 AU binds at every omega — so no row of `limits.csv` and no verdict in
-> this file changes. `limits.csv`, `gates.csv` and `sweep.csv` in this directory
-> are current and regenerate byte-identically. Superseded text is bannered, not
-> rewritten. See `docs/bio_grounding_2026-09-02.md` §20 and `docs/FINDINGS.md`.
-
+> ⚠️ **PRE-S5 NUMBERS THROUGHOUT, NO VERDICT CHANGE (2026-09-06, S5; scope
+> corrected 2026-09-11).** The prose and pasted stdout in this file predate the
+> correction of `PAR_FRACTION` from 0.45 to the measured 0.3879. Two places are
+> affected, not one:
+>
+> - The stdout in section 1 reads a light limit of **75.434 AU**; it is now
+>   **70.036 AU**. Light was never binding either way.
+> - **The whole `outer_au` column of the section 4 table is pre-S5**, and is the
+>   more important of the two, because it is the table a reader takes the result
+>   from. It reads 1.2120 / 1.3795 / 1.6180 / 1.9723 / 2.5301; the committed
+>   `limits.csv` says **1.2119 / 1.3794 / 1.6178 / 1.9718 / 2.5289**. Each is
+>   marked inline below.
+>
+> No verdict in this file changes: the temperature floor at 1.1945 AU still binds
+> at every Ω, and every binding column still reads `temperature`. `limits.csv`,
+> `gates.csv` and `sweep.csv` in this directory are current and regenerate
+> byte-identically. Superseded text is bannered, not rewritten. See
+> `docs/bio_grounding_2026-09-02.md` §20 and `docs/FINDINGS.md`.
 
 ## 1. Registered question
 
@@ -106,21 +115,22 @@ here rather than left as an unremarked number in a gates.csv column no one names
 
 From `limits.csv` (all rows are `class=algal`; vascular has none):
 
-| Ω (K) | outer_au (net carbon crossover) | binding     |
-| ----- | ------------------------------- | ----------- |
-| 10    | 1.2120                          | temperature |
-| 15    | 1.3795                          | temperature |
-| 20    | 1.6180                          | temperature |
-| 25    | 1.9723                          | temperature |
-| 30    | 2.5301                          | temperature |
+| Ω (K) | outer_au (net carbon crossover)        | binding     |
+| ----- | -------------------------------------- | ----------- |
+| 10    | 1.2120 ⚠️ superseded → **1.2119** (S5) | temperature |
+| 15    | 1.3795 ⚠️ superseded → **1.3794** (S5) | temperature |
+| 20    | 1.6180 ⚠️ superseded → **1.6178** (S5) | temperature |
+| 25    | 1.9723 ⚠️ superseded → **1.9718** (S5) | temperature |
+| 30    | 2.5301 ⚠️ superseded → **2.5289** (S5) | temperature |
 
 Two different numbers matter here and should not be conflated. `outer_au` is the
 distance at which the full coupled model (`net_carbon_adapted`, the Gaussian
 temperature response applied to the actual carbon budget) itself crosses zero —
 this is the number that moves with Ω. `binding` is a separate, three-way diagnostic
-(`classify_limit`) that also computes a pure light-only crossover (75.434 AU,
-constant — it doesn't depend on temperature or Ω at all). **This is not Q1's
-committed algal value** (67.2623 AU, `experiments/q1_crossover/crossover.csv`):
+(`classify_limit`) that also computes a pure light-only crossover (75.434 AU
+⚠️ _superseded → **70.0357 AU** (S5)_, constant — it doesn't depend on temperature
+or Ω at all). **This is not Q1's committed algal value** (67.2623 AU
+⚠️ _superseded → **62.4490 AU** (S5)_, `experiments/q1_crossover/crossover.csv`):
 Q1 froze `leaf_mass_ratio=0.8`, while this prereg registers the grounded
 unicellular value `leaf_mass_ratio=1.0` (§ presets), and `crossover_distance_for`
 moves with that divisor — the two numbers differ because the input differs, not

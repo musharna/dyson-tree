@@ -1,0 +1,10 @@
+# derived_by=tools/derive_q2b_floor_response.py
+# git_sha=c239801bb51d1109b3a076e694f4aaab85a72887
+# source=experiments/q2b_adapted/prereg.yaml md5=fd303cb1dd48869a087e55db63a2b44c
+# python=3.13.2
+# numpy=2.3.5
+# scipy=1.16.3
+# written=2026-09-11T03:45:24-04:00
+evaluated_at,omega,r_au,t_eq_k,gaussian_response,net_carbon
+thermal floor (full precision),10,1.194466,254.650000,0.003703,+0.019783
+1.1945 AU (as printed in FINDINGS),10,1.194500,254.646415,0.003697,+0.019725

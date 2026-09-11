@@ -38,8 +38,13 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 Spec at `docs/superpowers/specs/2026-09-04-q3-pressure-vessel-design.md`. Never
 reached pre-registration. Answered analytically: an IR-opaque shell sets the
-interior temperature at `(N+1)^0.25 · T_eq`, and adding a shell is
-indistinguishable from halving `area_ratio`. Its central input — a scalar wall
+interior temperature at `(N+1)^0.25 · T_eq` ⚠️ _that form holds only at **τ = 1**
+(a shortwave-transparent wall); the general form is `(1 + τ)^0.25 · T_eq`, and a
+pressure-bearing ice wall measures τ = 0.26–0.34, giving 21.8–26.5 °C for one
+shell rather than 57.82 °C — see `docs/FINDINGS.md` and
+`docs/bio_grounding_2026-09-02.md` §13 S7_, and adding a shell is
+indistinguishable from halving `area_ratio` ⚠️ _also τ = 1 only; at the measured
+τ the two differ by 31–36 K (§14)_. Its central input — a scalar wall
 attenuation `k` — does not exist: grounded against Warren & Brandt 2008, PAR
 absorption spans a factor of 701, so the wall is a spectral filter. Needs
 re-registering.
@@ -47,15 +52,22 @@ re-registering.
 ### Q2b — adapted optimum — registered 2026-09-02, run, PREDICTION FALSIFIED
 
 `experiments/q2b_adapted/`. Predicted that carbon binds the outer limit. It does
-not: temperature binds at every Ω, at a hard 1.1945 AU floor. Only the algal
-class was answered; the gate that excluded the vascular class was later retired
-as a category error (`docs/thermal_premise_retired_2026-09-03.md`), which does
-not affect the falsification.
+not: temperature binds at every Ω, at a hard 1.1945 AU floor — **for the algal
+class, the only class the run answered**. The gate that excluded the vascular
+class was later retired as a category error
+(`docs/thermal_premise_retired_2026-09-03.md`). That retirement leaves the algal
+falsification intact — it compared two quantities both computed inside the model
+— but it readmits the vascular class, where the same `classify_limit` gives
+carbon as the binding limit at Ω = 25 and 30, i.e. where the registered
+prediction would have HELD. The falsification stands for algal; whether it
+generalises is open. See `docs/FINDINGS.md` and
+`experiments/q2b_adapted/candidates.csv`.
 
 ### Q2 — thermal limit — registered 2026-09-02, run, GATE FAILED
 
-`experiments/q2_thermal/`. The held-out response anchors were missed by roughly a
-factor of two, the runner exited 2, and no limits were reported. `t_opt` was not
+`experiments/q2_thermal/`. The held-out response anchors were missed by factors
+of 1.2–1.8× (see `docs/FINDINGS.md` for the four ratios), the runner exited 2,
+and no limits were reported. `t_opt` was not
 tuned to make it pass; Q2b was registered as a successor instead.
 
 ### Q1 — carbon crossover — registered 2026-09-02, run, ONE OF TWO PREDICTIONS HELD
@@ -66,7 +78,9 @@ of each prediction the calibration gate had already decided. Those percentages
 are pre-S5 and do not rescale (the bands are fixed while the reachable interval
 shrank 7.16%); recomputed at the release code, **66.4%** of the gate-admissible
 vascular range produces a hit and **43.3%** of the algal band was unreachable
-before the sweep ran. See `docs/FINDINGS.md`, "What holds".
+before the sweep ran. See `docs/FINDINGS.md`, "What holds". Since 1.0.1 those
+figures live in `experiments/q1_crossover/reachability.csv`
+(`python3 tools/derive_q1_reachability.py`).
 
 ### S5 — PAR fraction corrected — 2026-09-06
 

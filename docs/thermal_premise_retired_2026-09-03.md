@@ -17,7 +17,7 @@ Q2b's Gate B compared a model-predicted optimum against a measured one:
 Terrestrial tissue temperature is not set by radiation alone. It is set by radiation plus
 conduction to substrate, convection through an atmosphere, and evaporative loss. The scale
 of the difference is not subtle: **Earth's own blackbody equilibrium temperature is −18 °C
-while its mean surface temperature is about +15 °C.** That 33 K gap *is* the non-radiative
+while its mean surface temperature is about +15 °C.** That 33 K gap _is_ the non-radiative
 physics.
 
 So Gate B asked whether a vacuum-radiative temperature matches an Earth-thermodynamic one.
@@ -35,9 +35,9 @@ not a signal.
 
 The obvious repair is to compare against organisms whose temperature genuinely IS
 radiatively set — vacuum-exposed. Lichens have been flown on ISS exposure facilities
-(ESA's BIOMEX on EXPOSE-R2; de Vera et al. 2019, *Astrobiology* 19:145,
+(ESA's BIOMEX on EXPOSE-R2; de Vera et al. 2019, _Astrobiology_ 19:145,
 doi:10.1089/ast.2018.1897). But those experiments report, in the paper's own framing,
-*"analysis on the viability of the investigated organisms"* after exposure — assays run
+_"analysis on the viability of the investigated organisms"_ after exposure — assays run
 post-return, on Earth. A photosynthetic temperature optimum measured that way is another
 Earth optimum.
 
@@ -49,11 +49,11 @@ An organism at free radiative equilibrium in vacuum cannot photosynthesise at al
 it cannot hold liquid water. Saturation vapour pressure (Buck equation) at each modelled
 temperature, against an ambient of effectively zero:
 
-| modelled body | T_eq at 1 AU | P_sat |
-| --- | --- | --- |
-| algal sphere (ratio 4) | 5.16 °C | 882 Pa |
-| vascular lamina (ratio 2) | 57.82 °C | 18,017 Pa |
-| crust mat (ratio 1) | 120.44 °C | 200,686 Pa |
+| modelled body             | T_eq at 1 AU | P_sat      |
+| ------------------------- | ------------ | ---------- |
+| algal sphere (ratio 4)    | 5.16 °C      | 882 Pa     |
+| vascular lamina (ratio 2) | 57.82 °C     | 18,017 Pa  |
+| crust mat (ratio 1)       | 120.44 °C    | 200,686 Pa |
 
 Water boils when its saturation pressure exceeds ambient. In vacuum, all three lose water
 immediately. There is no liquid phase, so there is no photosynthesis, so there is no
@@ -88,16 +88,19 @@ their pre-registrations frozen. What changes is the reading:
   correct; the temperature it holds fixed is unattainable without containment.
 - **Q2** registered a gate that failed and reported no limits. That failure stands, and the
   grounding that followed it (`docs/bio_grounding_2026-09-02.md` §4d) stands.
-> ⚠️ **NARROWED 2026-09-10 (release 1.0).** The bullet below says the Q2b
-> falsification is unaffected by this note. That is true **within the algal
-> class**, which is the only class Q2b answered — but retiring Gate B readmits the
-> vascular class, and running Q2b's own `classify_limit` there gives `carbon` as
-> the binding limit at Ω = 25 and Ω = 30, where the registered prediction would
-> have HELD. The falsification stands for algal; whether it generalises is open.
-> Superseded text is bannered, not rewritten. See `docs/FINDINGS.md`.
+
+  > ⚠️ **NARROWED 2026-09-10 (release 1.0).** The bullet below says the Q2b
+  > falsification is unaffected by this note. That is true **within the algal
+  > class**, which is the only class Q2b answered — but retiring Gate B readmits the
+  > vascular class, and running Q2b's own `classify_limit` there gives `carbon` as
+  > the binding limit at Ω = 25 and Ω = 30, where the registered prediction would
+  > have HELD. The falsification stands for algal; whether it generalises is open.
+  > Superseded text is bannered, not rewritten. See `docs/FINDINGS.md`.
 
 - **Q2b** registered a prediction that was falsified. **The falsification itself is not
-  affected by this note** — it compared the thermal floor against the carbon crossing, both
+  affected by this note** ⚠️ _scoped → true for the **algal** class only; retiring Gate B
+  readmits vascular, where carbon binds at Ω = 25, 30 (see the banner above and
+  `docs/FINDINGS.md`)_ — it compared the thermal floor against the carbon crossing, both
   computed inside the model, and `temperature` won at every Ω regardless of whether Gate B
   was meaningful. What this note retires is Gate B, not the Q2b result.
 
