@@ -664,3 +664,134 @@ to equal the readout it drives, pins the marker to the "1" axis tick at exactly
 
 **Final state: 131 tests, 147 smoke assertions, 14 tools green, zero non-waivable
 findings outstanding.**
+
+---
+
+## Stage 7 — handoff
+
+**Branch:** `release/1.0-rc`, pushed to origin. Nothing else was pushed; `master`
+is untouched. The RC SHA is the tip of that branch — `git rev-parse
+release/1.0-rc` — which is the commit carrying this section. Its parent,
+`d294774`, is the last content commit. Commits, oldest first:
+
+```
+333ce2a release: stage 1 -- baseline, fixture generator, web/fixtures.json
+34adaa7 release: stage 2 -- JS port, parity harness, two mutants seen to fail
+ed5c977 release: stage 3 -- explorer page, site builder, headless smoke
+f14193a release: stage 3 evidence -- clean-clone proof, smoke, three defects and their causes
+607eab9 release: stage 4 -- FINDINGS, README, supersession banners, DOI audit
+c971e36 release: stage 5 -- licences, citation, third-party, changelog, pages workflow, path sweep
+e247cac release: stage 6 -- critic gate round 1, nine non-waivable findings fixed
+d294774 release: stage 6 round 2 -- two more non-waivable fixed, five surviving mutants closed
+```
+
+### Versions
+
+| | |
+| --- | --- |
+| Python | 3.13.2 |
+| numpy | 2.3.5 |
+| scipy | 1.16.3 |
+| PyYAML | 6.0.3 |
+| pytest | 9.1.1 |
+| Node | v18.19.1 |
+| gitleaks | 8.30.1 |
+| ghostcite | 0.5.2 |
+| Playwright chromium | bundled, `~/.cache/ms-playwright/chromium-1234` |
+
+### Results
+
+| check | result |
+| --- | --- |
+| `python -m pytest -q` | **131 passed** (122 pre-existing + 9 parity) |
+| `python3 tools/smoke_page.py` | **147 assertions, 0 failed** (79 → 107 → 147 across the two critic rounds) |
+| 14 `tools/*.py` | **all exit 0**, run from a directory outside the repository |
+| `gitleaks git --redact .` | **no leaks found**, 91 commits |
+| `gitleaks dir --redact site/` | **no leaks found** |
+| `ghostcite --format doi docs/dois.txt` | **69 DOIs, 0 retracted, 0 unresolvable** |
+| clean-clone build | `site/index.html` + `site/.nojekyll` present, smoke passes from the clone |
+
+⚠️ **The DOI extraction needed fixing at this stage and is worth repeating
+correctly.** The regex in the plan (`10\.[0-9]{4,9}/[^ )>\]"]+`) captures a
+trailing backtick from DOIs written inside code spans, which ghostcite then reports
+as **"DOI does not resolve (dead or fabricated DOI)"** — a blocker condition,
+produced entirely by the extraction. Excluding the backtick (`[^ )>\]"`+]`)
+returns the 69 real DOIs and the two benign DataCite registrations. A run of this
+check that reports unresolvable DOIs should be suspected of this before anything
+else.
+
+### Parity report
+
+`web/model.js` is pinned to the Python model per quantity by `web/fixtures.json`
+through `tests/test_parity_js.py`. Declared tolerances and their reasons are in the
+fixture file; none was loosened. Positive controls: the fixture provenance md5s
+must match the live `sim/` modules, and the JS crossovers are compared against
+`experiments/q1_crossover/crossover.csv` itself.
+
+**Mutants seen to fail** (each restored, suite green again afterwards):
+
+| mutant | result |
+| --- | --- |
+| `PAR_FRACTION 0.3879 → 0.45` in `web/model.js` (the pre-S5 value) | **6 of 9 parity tests fail**; first failure names the constant: `AssertionError: constant PAR_FRACTION: JS 0.45 != Python 0.3879` |
+| delete the `t_min` clamp from `temperatureResponse` | **2 fail**, naming the sample: `temperature_response [t_min floor outside]: \|-0.00292481806...` |
+| `PAR_FRACTION` mutant, rebuilt, against the page | smoke **4 fail**, showing the page's own numbers reverting to the pre-S5 13.6851 / 67.2623 |
+| `#rlabel` hard-coded | smoke **10 fail** |
+| plot marker at 2× distance | smoke **2 fail** |
+| displayed net carbon doubled | smoke **10 fail** |
+| `I_c` always at k=100 | smoke **4 fail** |
+| licence copy dropped from `build_site.sh` | smoke **4 fail** |
+| remote `<script src>` / `<link href>` injected | `build_site.sh` **exits 1** |
+
+### Critic survivors (all waivable, none blocking)
+
+1. Crossover labels crowd the hatched band's dashed edge in the algal view;
+   no label boxes overlap and prediction/result styling stays distinct.
+2. Plot text is ~4 px at 390 px width. The page reflows without horizontal
+   overflow; the plot is not phone-readable.
+3. `README.md` references `_pm/` and three private tool names — repo-external
+   references a public reader cannot resolve.
+4. The pre-registrations carry a post-run `par_fraction` edit, disclosed in-file
+   and mechanically enforced by the runners' `assert_assumptions_match`. Changes
+   no registered prediction; flagged for the owner.
+5. Small plateaus at the near end of the distance slider — the stated cost of
+   making the displayed distance the evaluated one.
+
+### For the coordinator — four items, in priority order
+
+1. **The page's FINDINGS link 404s until this branch merges.** `web/index.html`
+   points at `https://github.com/musharna/dyson-tree/blob/master/docs/FINDINGS.md`
+   and `docs/FINDINGS.md` does not exist on `master` yet. Merging fixes it; flipping
+   visibility before merging would publish a broken link.
+2. **The Pages workflow bills while the repo is private.** It runs on
+   GitHub-hosted runners and triggers on push to `master`. Nothing has run yet —
+   this RC is on a branch — but a merge to `master` before the visibility flip
+   would. Flip first, or accept the minutes.
+3. **CSV provenance headers name a commit whose code cannot produce them**
+   (`fc6ba42`; its `PAR_FRACTION` is still 0.45). The `*_md5` lines are correct and
+   identify `1d9cea5`. Documented in FINDINGS. The clean fix is to re-run and
+   re-commit the CSVs at the release commit — data is byte-identical, only the
+   header moves — but that touches frozen experiment records and is the owner's
+   call, not an executor's.
+4. **`/home/mjarnold` and the Windows account name `a2b32` remain in git
+   history** (~17 commits' worth of added lines). Working-tree redactions cannot
+   reach them; removing them needs a history rewrite. Two account names, no
+   credentials, no email address, and the GitHub identity is already public —
+   recommend **accept and flip**, but it is a decision to take before the repo
+   goes public, not after.
+
+### Rebuild from scratch
+
+```bash
+git clone <repo> && cd dyson-tree && git switch release/1.0-rc
+python3 -m venv .venv && . .venv/bin/activate && pip install -e '.[dev]'
+python -m pytest -q                 # 131 passed
+python3 tools/make_fixtures.py      # regenerate web/fixtures.json from the Python model
+tools/build_site.sh                 # -> site/  (this is the Pages artifact)
+python3 tools/smoke_page.py         # 147 assertions; needs playwright + chromium
+gitleaks git --redact -v . && gitleaks dir --redact -v site/
+grep -rhoE '10\.[0-9]{4,9}/[^ )>\]"`]+' docs README.md | sed 's/[.,;:`]*$//' | sort -u > docs/dois.txt
+ghostcite --format doi docs/dois.txt
+```
+
+**Stage 7 DONE. Executor stops here.** No merge, no visibility flip, no Pages
+enablement, no tag, no release — all of those belong to the coordinator.
