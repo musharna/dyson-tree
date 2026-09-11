@@ -3,3 +3,8 @@ node_modules/
 __pycache__/
 .pytest_cache/
 site/
+
+# Third-party data tables the tools FETCH but this repository never redistributes.
+# See docs/THIRD-PARTY.md for the source addresses and their terms.
+ASTMG173.csv
+iop2008.dat

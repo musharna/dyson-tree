@@ -1,5 +1,11 @@
 # Q2 Thermal Limit Implementation Plan
 
+> **Path redaction (2026-09-10, release 1.0).** The local paths in this plan were
+> written for one machine. Before the repository was made public the operator's
+> home directory and Windows account name were replaced with `~` and
+> `<windows-user>`. Only those identifiers changed; every command, claim and
+> number in this file is untouched.
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** Determine whether light, carbon, or temperature sets the outer limit for a passive organism at radiative equilibrium, and at what heliocentric distance.
@@ -1079,8 +1085,8 @@ Run: `Rscript experiments/q2_thermal/plot.R` and confirm both PNGs exist.
 Copy them where the user can see them and open once:
 
 ```bash
-cp experiments/q2_thermal/figures/*.png /mnt/c/Users/a2b32/Downloads/
-cd /mnt/c/Users/a2b32/Downloads && cmd.exe /c start "" which_limit_binds.png
+cp experiments/q2_thermal/figures/*.png /mnt/c/Users/<windows-user>/Downloads/
+cd /mnt/c/Users/<windows-user>/Downloads && cmd.exe /c start "" which_limit_binds.png
 ```
 
 Read the PNGs yourself too. A warning-free render is not evidence a layer drew: Q1's prediction band silently vanished under a log axis and the implementer called the warning harmless without looking.

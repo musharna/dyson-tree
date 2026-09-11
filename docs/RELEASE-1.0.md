@@ -368,3 +368,105 @@ Craine & Reich 2005 and Richardson 1983 (the Q1 calibration gates,
 
 **Stage 4 DONE:** FINDINGS numbers match the CSVs they cite (the check is above),
 ghostcite clean, README rewritten.
+
+## Stage 5 — licensing, citation, hygiene
+
+Added: `LICENSE` (MIT, © 2026 Jaret Arnold), `LICENSE-docs` (CC-BY-4.0),
+`CITATION.cff` (v1.0.0, ORCID 0009-0003-4055-5238, no DOI until the coordinator
+mints the Zenodo concept DOI), `docs/THIRD-PARTY.md`, `CHANGELOG.md` (backfilled
+one entry per registered question plus S5), `docs/dois.txt`, and
+`.github/workflows/pages.yml`. The file-class boundary is stated in the README
+and in `LICENSE-docs`: `sim/ tools/ tests/ web/ experiments/**/*.py` → MIT;
+`docs/**`, `experiments/**/{RESULTS.md,*.csv,figures,prereg.yaml}` → CC-BY-4.0.
+
+### Third-party terms — read, not assumed
+
+`docs/THIRD-PARTY.md` records that this repository **redistributes no
+third-party data file**; each external table is fetched by the tool that uses it
+from the address in that tool's header. The Warren & Brandt host page
+(<https://atmos.uw.edu/ice_optical_constants/>) was **fetched and read on
+2026-09-10**: it carries no licence, no copyright notice, no permission statement
+and no citation request — only the reference, an NSF funding acknowledgment, a
+wavelength-by-wavelength provenance table and the download link. Because it grants
+no redistribution rights, none are assumed. `ASTMG173.csv` and `iop2008.dat` were
+added to `.gitignore` so a future run cannot accidentally commit them.
+
+### Workflow
+
+`pages.yml`: `on: push: [master]` + `workflow_dispatch`; `permissions:
+contents: read, pages: write, id-token: write`; build job runs `pytest` (which
+includes the JS parity check) BEFORE `upload-pages-artifact`, so a drifted port
+fails the build instead of shipping. Every action major tag was verified to exist
+rather than assumed:
+
+```
+$ gh api repos/<action>/git/matching-refs/tags
+actions/checkout                   v1 v2 v3 v4 v5 v6 v7
+actions/setup-python               v1 v2 v3 v4 v5 v6 v7
+actions/upload-pages-artifact      v0 v1 v2 v3 v4 v5
+actions/deploy-pages               v1 v2 v3 v4 v5
+```
+
+⚠️ **For the coordinator:** this workflow runs on GitHub-hosted runners. While the
+repository is PRIVATE those minutes bill. It only triggers on push to `master`
+and on manual dispatch, and this RC is pushed to `release/1.0-rc`, so nothing runs
+before the visibility flip — but a merge to `master` while still private would.
+
+### Secret sweep — gitleaks 8.30.1
+
+```
+$ gitleaks git --redact -v .
+91 commits scanned.  scanned ~1144569 bytes (1.14 MB) in 373ms
+no leaks found
+
+$ gitleaks dir --redact -v site/
+scanned ~30958 bytes (30.96 KB) in 6.68ms
+no leaks found
+```
+
+Git authorship across all 91 commits is a single identity,
+`Jaret Arnold <96366172+musharna@users.noreply.github.com>` — no private email
+address anywhere in history.
+
+### Private paths — removed, or justified
+
+The path grep found three classes. Each is dispositioned rather than waved
+through:
+
+1. **`/home/mjarnold/dyson-tree` hardcoded in 11 tools** (`sys.path.insert`, plus
+   a `PREREG` and a `REPO` constant). **REMOVED** — replaced with
+   `Path(__file__).resolve().parents[1]`. This was also a portability bug: those
+   tools could only ever run on one machine. Verified by real execution, not by
+   compiling: **all 14 tools were run from a directory outside the repository and
+   every one exited 0** (the two that need external tables got them from the
+   fetch commands in their own headers).
+2. **`/mnt/c/Users/a2b32/Downloads` and `/home/mjarnold/...` in three plan
+   documents.** **REDACTED** to `/mnt/c/Users/<windows-user>/`, `~/scratch/` and
+   `~/dyson-tree`, each file carrying a note saying exactly what was changed and
+   that no command, claim or number moved.
+3. **`/home/mjarnold/dyson-tree/experiments/q2_thermal` in
+   `experiments/q2_thermal/RESULTS.md`.** **JUSTIFIED, NOT REMOVED.** It sits
+   inside a verbatim paste of the runner's stdout, and the runner prints an
+   absolute path by design. Editing a transcript so that it reads better makes it
+   no longer a transcript. It exposes a Linux account name and nothing else.
+
+⚠️ **Escalation for the coordinator — history, not the working tree.** The
+redactions above are forward-looking. `/home/mjarnold` and the Windows account
+name `a2b32` also appear in **git history** (roughly 17 commits' worth of added
+lines), where the working-tree edits cannot reach them. Removing them requires a
+history rewrite, which is outside an executor's authority and needs the repo
+owner's explicit say-so. Assessment: two account names, no credentials, no email
+address, and the GitHub identity is already public — low sensitivity. Recommended
+disposition: **accept and flip**, or rewrite before the flip if the owner prefers.
+Not a decision this session took.
+
+### Re-verified after all of the above
+
+```
+$ python -m pytest -q
+131 passed
+$ tools/build_site.sh && python3 tools/smoke_page.py
+79 passed, 0 failed
+```
+
+**Stage 5 DONE:** files exist, sweep recorded clean, every path hit dispositioned.

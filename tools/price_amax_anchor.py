@@ -13,7 +13,7 @@ signal.signal(
     lambda *_: (sys.stderr.write("aborting: walltime guard\n"), sys.exit(2)),
 )
 signal.alarm(60)
-sys.path.insert(0, "/home/mjarnold/dyson-tree")
+sys.path.insert(0, str(__import__("pathlib").Path(__file__).resolve().parents[1]))
 from sim.organism import PRESETS  # noqa: E402
 from sim.physiology import T_REF_K  # noqa: E402
 from sim.thermal import (  # noqa: E402

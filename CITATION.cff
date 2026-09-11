@@ -1,0 +1,25 @@
+cff-version: 1.2.0
+message: "If you use this repository, please cite it as below."
+title: "Dyson tree: a pre-registered carbon-budget model for photosynthesis under 1/r^2 insolation"
+abstract: >-
+  A minimal, pre-registered carbon-budget model for a single photosynthetic
+  organism at heliocentric distance r, with a browser explorer. Three questions
+  were registered and run; exactly one of their predictions held. The findings
+  are reported falsifications-first in docs/FINDINGS.md.
+type: software
+authors:
+  - given-names: Jaret
+    family-names: Arnold
+    orcid: "https://orcid.org/0009-0003-4055-5238"
+version: 1.0.0
+date-released: "2026-09-10"
+license: MIT
+license-url: "https://github.com/musharna/dyson-tree/blob/master/LICENSE"
+repository-code: "https://github.com/musharna/dyson-tree"
+url: "https://musharna.github.io/dyson-tree/"
+keywords:
+  - astrobiology
+  - photosynthesis
+  - carbon balance
+  - pre-registration
+  - simulation

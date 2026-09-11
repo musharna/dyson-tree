@@ -22,7 +22,7 @@ signal.signal(
     lambda *_: (sys.stderr.write("aborting: walltime guard\n"), sys.exit(2)),
 )
 signal.alarm(180)
-sys.path.insert(0, "/home/mjarnold/dyson-tree")
+sys.path.insert(0, str(__import__("pathlib").Path(__file__).resolve().parents[1]))
 from copy import deepcopy
 from pathlib import Path
 
@@ -30,7 +30,7 @@ from experiments.q2b_adapted.run import build, classify_limit, load_prereg, run_
 from sim.physiology import T_REF_K
 from sim.thermal import adapted_optimum, temperature_response_gaussian
 
-PREREG = Path("/home/mjarnold/dyson-tree/experiments/q2b_adapted/prereg.yaml")
+PREREG = Path(__file__).resolve().parents[1] / "experiments/q2b_adapted/prereg.yaml"
 pre = load_prereg(PREREG)
 a = pre["assumptions"]
 sw = pre["sweep"]

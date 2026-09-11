@@ -1,5 +1,11 @@
 # Q1 Carbon-Budget Crossover Implementation Plan
 
+> **Path redaction (2026-09-10, release 1.0).** The local paths in this plan were
+> written for one machine. Before the repository was made public the operator's
+> home directory and Windows account name were replaced with `~` and
+> `<windows-user>`. Only those identifiers changed; every command, claim and
+> number in this file is untouched.
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** Build a pure-function carbon-budget model of one Dyson-tree organism, gate it on published 1 AU compensation irradiance, then sweep heliocentric distance to measure where net carbon crosses zero per photosystem class.
@@ -12,7 +18,7 @@
 
 ## Global Constraints
 
-- All work in `/home/mjarnold/dyson-tree` on `master`. Run commands from the repo root.
+- All work in `~/dyson-tree` on `master`. Run commands from the repo root.
 - Every commit message ends with the line `Claude-Session: https://claude.ai/code/session_01JCjkg29wRHsrygFNa2Q68M`.
 - Fail loud: no try/except that defaults, no clamping. Out-of-range inputs raise `ValueError` naming the offending value.
 - Units: irradiance in µmol photons m⁻² s⁻¹; assimilation and respiration in µmol CO₂ m⁻² s⁻¹ per unit photosynthetic area; temperature in K; distance in AU.
@@ -910,17 +916,17 @@ cat("wrote", fig_dir, "\n")
 - [ ] **Step 3: Produce test CSVs in a temp dir and run the plot script against them**
 
 ```bash
-python3 experiments/q1_crossover/run.py --out /home/mjarnold/.claude/jobs/ced21084/tmp/q1_plotcheck && \
-Rscript experiments/q1_crossover/plot.R /home/mjarnold/.claude/jobs/ced21084/tmp/q1_plotcheck && \
-ls -la /home/mjarnold/.claude/jobs/ced21084/tmp/q1_plotcheck/figures/
+python3 experiments/q1_crossover/run.py --out ~/scratch/q1_plotcheck && \
+Rscript experiments/q1_crossover/plot.R ~/scratch/q1_plotcheck && \
+ls -la ~/scratch/q1_plotcheck/figures/
 ```
 Expected: exit 0, two PNGs listed. If R errors on `expression(...)` axis label, replace with the plain string `"net carbon (umol m-2 s-1)"`.
 
 - [ ] **Step 4: Open the figures for the user** (the user cannot see inline images)
 
 ```bash
-cp /home/mjarnold/.claude/jobs/ced21084/tmp/q1_plotcheck/figures/*.png /mnt/c/Users/a2b32/Downloads/ && \
-cmd.exe /c start /mnt/c/Users/a2b32/Downloads/net_carbon_vs_distance.png
+cp ~/scratch/q1_plotcheck/figures/*.png /mnt/c/Users/<windows-user>/Downloads/ && \
+cmd.exe /c start /mnt/c/Users/<windows-user>/Downloads/net_carbon_vs_distance.png
 ```
 
 - [ ] **Step 5: Commit**
@@ -1002,8 +1008,8 @@ Light-only, tissue temperature fixed at 293 K. The heating cost (v2) can only mo
 - [ ] **Step 4: Open both figures for the user**
 
 ```bash
-cp experiments/q1_crossover/figures/*.png /mnt/c/Users/a2b32/Downloads/ && \
-cmd.exe /c start /mnt/c/Users/a2b32/Downloads/crossover_vs_k.png
+cp experiments/q1_crossover/figures/*.png /mnt/c/Users/<windows-user>/Downloads/ && \
+cmd.exe /c start /mnt/c/Users/<windows-user>/Downloads/crossover_vs_k.png
 ```
 
 - [ ] **Step 5: Update the roadmap** (Iron Law: `cat docs/ROADMAP.md` first; the strings below are from the live file at commit 9772d9e)

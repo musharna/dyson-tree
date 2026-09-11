@@ -29,7 +29,7 @@ signal.signal(
 )
 signal.alarm(600)
 
-REPO = Path("/home/mjarnold/dyson-tree")
+REPO = Path(__file__).resolve().parents[1]
 CSVS = [
     "experiments/q1_crossover/calibration.csv",
     "experiments/q1_crossover/crossover.csv",

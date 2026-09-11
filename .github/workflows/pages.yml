@@ -1,0 +1,55 @@
+# Build and publish the explorer to GitHub Pages.
+#
+# The suite runs BEFORE the artifact is uploaded, and tests/test_parity_js.py is
+# part of it: a JS port that has drifted from the Python model fails the build
+# rather than shipping. Action major tags verified to exist on 2026-09-10 via
+# `gh api repos/<action>/git/matching-refs/tags`.
+name: pages
+
+on:
+  push:
+    branches: [master]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# One deploy at a time; never cancel one in flight.
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - name: Install
+        run: pip install -e .[dev]
+      - name: Test
+        # Includes the Python/JS parity check, which needs node. The runner
+        # image ships node; if it ever stops doing so this step FAILS rather
+        # than skipping -- see the docstring in tests/test_parity_js.py.
+        run: |
+          node --version
+          python -m pytest -q
+      - name: Build site
+        run: tools/build_site.sh
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: site
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

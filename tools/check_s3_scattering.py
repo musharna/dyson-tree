@@ -22,7 +22,7 @@ signal.signal(
 signal.alarm(60)
 import numpy as np
 
-sys.path.insert(0, "/home/mjarnold/dyson-tree")
+sys.path.insert(0, str(__import__("pathlib").Path(__file__).resolve().parents[1]))
 from sim.thermal import equilibrium_temperature
 
 # Ackermann et al. 2006, deep South Pole glacial ice at 400 nm, as quoted in section 9

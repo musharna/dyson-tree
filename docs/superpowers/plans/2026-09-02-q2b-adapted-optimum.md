@@ -1,5 +1,11 @@
 # Q2b Adapted-Optimum Implementation Plan
 
+> **Path redaction (2026-09-10, release 1.0).** The local paths in this plan were
+> written for one machine. Before the repository was made public the operator's
+> home directory and Windows account name were replaced with `~` and
+> `<windows-user>`. Only those identifiers changed; every command, claim and
+> number in this file is untouched.
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** Determine the outer limit for a passive organism whose photosynthetic optimum is predicted from its own equilibrium temperature at a home distance, rather than fitted.
@@ -905,8 +911,8 @@ cat("wrote", fig_dir, "\n")
 Run `Rscript experiments/q2b_adapted/plot.R`, confirm both PNGs exist, then **look at them**:
 
 ```bash
-cp experiments/q2b_adapted/figures/*.png /mnt/c/Users/a2b32/Downloads/
-cd /mnt/c/Users/a2b32/Downloads && cmd.exe /c start "" outer_limit_vs_omega.png
+cp experiments/q2b_adapted/figures/*.png /mnt/c/Users/<windows-user>/Downloads/
+cd /mnt/c/Users/<windows-user>/Downloads && cmd.exe /c start "" outer_limit_vs_omega.png
 ```
 
 Read the PNGs yourself too. A warning-free render is not evidence a layer drew — Q1's prediction band silently vanished under a log axis.
