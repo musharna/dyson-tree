@@ -1,11 +1,11 @@
 # derived_by=tools/derive_q2b_candidates.py
-# git_sha=91bdb973b9ce646a9508c9dd17abe9efc2198ff6
+# git_sha=2e836f72ab445e44a257a087e76653b13739de99
 # source=experiments/q2b_adapted/prereg.yaml md5=a7d25919e942f6bdc2894e16f1311c90
-# source=experiments/q2b_adapted/limits.csv md5=7155ecf9ca36f47446fcbfafa9329489
+# source=experiments/q2b_adapted/limits.csv md5=ec06f869f8fb852b78f2d5d15bba40a2
 # python=3.13.2
 # numpy=2.3.5
 # scipy=1.16.3
-# written=2026-09-11T04:06:11-04:00
+# written=2026-09-11T04:09:51-04:00
 class,omega,temperature_au,light_au,carbon_au,binding,in_limits_csv
 algal,10,1.1945,70.0357,1.2119,temperature,yes
 algal,15,1.1945,70.0357,1.3794,temperature,yes

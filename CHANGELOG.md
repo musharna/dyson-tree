@@ -14,20 +14,37 @@ byte-identical to 1.0.0. What changed is what the repository _says_ about it.
 
 ### Fixed
 
+- **A provenance header named a commit that no clone would have.** Found by the
+  release critic pass, and introduced by this release's own repair: amending a
+  commit after regenerating a CSV orphaned the SHA it had recorded, so it resolved
+  only in one working clone. Every committed CSV and `web/fixtures.json` are now
+  regenerated together on a clean tree at one reachable commit, and
+  `tests/test_derived_csvs.py::test_provenance_sha_is_a_real_reachable_commit`
+  asserts each `git_sha` is a commit object and an ancestor of `HEAD` — a class the
+  regenerate-exactly guards are structurally blind to, since they exclude that line
+  by design. Working rule: regenerate the artifacts last, once the commit shape is
+  settled.
+- **`web/fixtures.json` recorded `worktree_dirty: true`** — the generator had run
+  against a tree it did not describe, the same defect class. Regenerated clean;
+  every non-provenance value is byte-identical.
 - **CSV provenance headers named a commit whose code cannot produce them.** Every
   header said `git_sha=fc6ba42`, whose `PAR_FRACTION` is still 0.45 and which
   would produce 13.6851 AU rather than the committed 12.7058. All three runners
   were re-run at the 1.0.1 branch point under Python 3.13.2 and the CSVs
-  re-committed: **the data came back byte-identical**, the whole diff being
-  `git_sha` and `written`, two lines per file. Documented in 1.0.0 as
+  re-committed: **the data came back byte-identical**. The whole diff is two
+  header lines per file (`git_sha`, `written`), or three for the Q2b files, whose
+  `prereg_md5` moves because the prereg gained a comment block in this release. Documented in 1.0.0 as
   unrepairable-within-scope; repaired here.
 - **Four sets of numbers in `docs/FINDINGS.md` had no committed producer.** The
   Q2b temperature and light candidates (1.1945 / 70.04 AU) lived in no file —
   `limits.csv` holds only the carbon candidate — and neither did the vascular
   `classify_limit` table, the Gaussian response at the thermal floor, or the
   gate-reachability scan. Each now has one; see _Added_ below.
-- **The Q2b falsification was stated unscoped** in `web/index.html`, this file and
-  `docs/thermal_premise_retired_2026-09-03.md`. It holds **for the algal class**,
+- **The Q2b falsification was stated unscoped** in `web/index.html`, this file,
+  `docs/thermal_premise_retired_2026-09-03.md`, `README.md`, and — found by the
+  critic pass — in `docs/FINDINGS.md`'s own section heading and headline paragraph,
+  where the scope arrived 17 and 122 lines later. A heading and an abstract are
+  where a reader who reads nothing else looks. It holds **for the algal class**,
   the only class the run answered; the retired Gate B readmits vascular, where
   carbon binds at Ω = 25 and 30 — where the registered prediction would have held.
 - **`docs/FINDINGS.md` said Q3 "was registered".** It was _specified_; its premise
@@ -67,7 +84,8 @@ which `LICENSE-docs` includes.
   with synthetic curves, so they pinned the selector, not the table.
 - **`tests/test_derived_csvs.py`** — regenerate-exactly guards for the three
   derived CSVs, plus checks that each header names its producer and that no
-  source md5 has gone stale. 8 tests; 131 → 139.
+  source md5 has gone stale, and that every `git_sha` names a reachable commit.
+  18 tests; 131 → 149.
 - **`README.md` now has a "Run it" block** — install, test and build, with the
   version requirements stated: Python **3.13.2 exactly** (on any other 3.13.x
   patch six tests fail on the `# python=` header line alone, with identical
@@ -82,9 +100,11 @@ which `LICENSE-docs` includes.
 ### Changed
 
 - `docs/FINDINGS.md`'s rule "every number names the file it lives in and the
-  command that produces it" now says what is actually true: it holds for every
-  computed number, and Q3 — answered analytically, with no runner — is named as
-  the exception rather than left as a false universal.
+  command that produces it" now says what is actually true. It holds for every
+  number reported as a **result**; the two kinds that are not in a CSV are named
+  explicitly — Q3's figures (answered analytically, no runner) and a few one-off
+  diagnostics quoted inside an argument, each of which now names the model function
+  or CSV it comes from at its point of use.
 - The **factor of 701** for ice PAR absorption is **kept, and sourced**. It is
   correct: it comes from the unrounded coefficients (700.69), not from dividing
   the two 5-dp figures printed beside it (which give 703.5). FINDINGS now says so

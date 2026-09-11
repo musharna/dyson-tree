@@ -18,7 +18,8 @@ commits it covers are below.
 | --------- | --------------------------------------------------------------- |
 | `09a820a` | items 1–5, 10 — derived artifacts, scoped claims, re-run        |
 | `91bdb97` | items 6–9, 11–13 — README, licences, prereg citation, changelog |
-| (tip)     | this evidence log and the critic-pass record                    |
+| `2e836f7` | critic gate — the ten findings below                            |
+| (tip)     | provenance regenerated on a clean tree, and this log             |
 
 ## The scope rule this release was held to
 
@@ -218,11 +219,11 @@ is used instead.
 
 ## Acceptance
 
-### Tests — 139 passed (131 + 8 new)
+### Tests — 149 passed (131 + 18 new)
 
 ```
 $ python -m pytest -q
-139 passed in 2.16s
+149 passed in 2.93s
 ```
 
 `tests/test_derived_csvs.py` adds regenerate-exactly guards for the three derived
@@ -293,6 +294,104 @@ $ grep -rn -E "/home/|-home-|a2b32|mjarnold" site/
 The only hit is the plan file quoting the patterns as its own rule text. No
 machine path, no account name, in the tree or in the built site.
 
+## The fresh-critic pass
+
+One independent critic, given the rendered page and FINDINGS, told to hunt three
+non-waivable classes and to report clean categories as clean. It drove Chromium
+directly rather than trusting the smoke suite.
+
+**It found three non-waivable defects. All three were real.**
+
+### NW-1 — a committed CSV named a commit that does not exist in a clone
+
+`experiments/q2_thermal/gates.csv` carried `git_sha=a734813`: a commit amended
+away while removing the stray wheels (below) from this branch. It resolved in this
+clone's reflog and in no clone anyone else would make.
+
+This is **the 1.0.0 defect this release exists to close, in a worse form** —
+`fc6ba42` at least resolved — and it was introduced by the repair itself.
+
+*Mechanism, not symptom:* `git_sha()` records `HEAD` at runtime, so regenerating a
+CSV and **then** amending or rebasing orphans the SHA. The regenerate-exactly
+guards cannot see it: they exclude the `git_sha` line by design, because it moves
+on every run. That exclusion is correct, and is precisely why this class needed
+its own check.
+
+**Fixed two ways.** All ten CSVs *and* `web/fixtures.json` were regenerated
+together, on a clean tree, at a settled commit — every one now names the same
+reachable SHA. And
+`tests/test_derived_csvs.py::test_provenance_sha_is_a_real_reachable_commit`
+now asserts, for every committed CSV, that its `git_sha` is a commit object **and**
+an ancestor of `HEAD`.
+
+**Seen to fail**, on both halves of that assertion, with the other nine files
+staying green as positive control:
+
+```
+$ sed -i 's/^# git_sha=.*/# git_sha=a7348134…/' experiments/q2_thermal/gates.csv
+1 failed, 9 passed   → "…names git_sha=a7348134, which exists locally but is NOT
+                        an ancestor of HEAD -- most likely amended or rebased away"
+$ sed -i 's/^# git_sha=.*/# git_sha=0123456789…/' experiments/q2_thermal/gates.csv
+1 failed, 9 passed   → "…which is not a commit object in this repository at all"
+```
+
+**The rule this leaves:** regenerate the CSVs and the fixtures **last**, once the
+commit shape is settled. Never amend afterwards.
+
+### NW-2 — the falsification was unscoped in FINDINGS' two most-read positions
+
+The section heading and the headline paragraph both stated the Q2b result
+baldly; the algal scope arrived 17 and 122 lines later. A heading and an abstract
+are the two places a reader who reads nothing else will read. `README.md` had the
+same. All three now carry the scope. **The rendered page was already clean** —
+the critic confirmed `web/index.html` carries the full scope and that no other
+Q2b falsification statement appears anywhere on the page.
+
+### NW-3 — the provenance section was wrong in four checkable particulars
+
+In the release named for that section. The three per-finding bullets named
+`c239801` where the files said otherwise; "all three runners were re-run at
+`c239801`" held only for Q1; "**the md5 lines did not move**" was false for the
+three Q2b files; and "two lines each" was three for those. Every one was a claim
+`head -9` of the file it described would have falsified.
+
+The *data* was never in question — `sim/` is byte-identical throughout and every
+data row still matches 1.0.0. It was the prose describing how the data reproduces
+that did not survive contact with the files. Rewritten to what they actually say,
+with the per-file line counts as a table.
+
+### Waivable — disposition
+
+| #   | Finding                                                     | Disposition                                                                 |
+| --- | ------------------------------------------------------------- | ----------------------------------------------------------------------------- |
+| W-1 | `pyproject.toml` still said `version = "1.0.0"`              | Fixed → `1.0.1`.                                                              |
+| W-2 | `pages.yml` said "three tests" on the `# python=` line        | Fixed → six. Stale since this release added the derived CSVs.                 |
+| W-3 | The traceability rule still had counterexamples (−8.47, 120.44 °C, the four ratios) — all Q2b/Q2, outside the declared Q3 exception | Fixed. The rule now names the one-off diagnostics that are in no CSV, and −8.47 and 120.44 °C are sourced to the model function at their point of use. |
+| W-4 | "Release commit: `1d9cea5`" — that is the S5 commit          | Fixed. `v1.0.0` is `4d4d8a7`.                                                 |
+| W-5 | Plot illegible at 390 px — measured at **4.95 effective px** | **Not fixed.** Already a recorded 1.0.0 waivable; a rendering change is outside this release's scope. Carried forward for the coordinator. |
+| W-6 | 21.8–26.5 °C came from unrounded τ; the printed τ gives 21.72–26.29 | Fixed — disclosed, as the 701 and 1.1945 AU roundings already were.      |
+| W-7 | `web/fixtures.json` carried `worktree_dirty: true`           | Fixed. Regenerated on a clean tree: `worktree_dirty: false`, SHA and branch current. Every non-provenance value byte-identical. |
+
+### What the critic checked and found clean
+
+- **Page numbers vs `fixtures.json`** — all 6 (class, k) combinations × 5
+  distances × 7 readouts, driven in Chromium and diffed against both the fixture
+  arrays and a fresh Python evaluation at the displayed distance. **Zero
+  mismatches.** `app.js`'s hard-coded registered block and `model.js`'s constants
+  and presets match the fixtures exactly.
+- **Unscoped falsification on the page** — clean.
+- **Links** — all 30 file paths cited in FINDINGS exist; `#provenance` resolves;
+  the licence files are shipped into `site/`. The `blob/master` link is judged
+  expected pre-merge, and not a 404: `master` already carries a FINDINGS that has
+  the algal scope.
+- **Every other FINDINGS number against its cited CSV** — recomputed or grepped,
+  including all five Q2b candidate rows, the vascular table, all six Q1
+  crossovers, the four Q2 ratios, all five reachability figures, the S5 factor,
+  the ice ratio both ways, and Q2's exit code (**it ran it**). All correct.
+- **Page mechanics** — no console errors, no overflow at 390 px, labels inside
+  the viewBox and non-overlapping.
+
+
 ## For the coordinator
 
 1. **`docs/superpowers/specs/2026-09-11-v1.0.1-plan.md` is an internal executor
@@ -306,7 +405,19 @@ machine path, no account name, in the tree or in the built site.
    path and Windows account name in ~17 commits of _git history_. Working-tree
    redactions cannot reach them; `gitleaks` finds no credential. Recommendation
    at 1.0.0 was accept-and-flip.
-4. `CITATION.cff` now says `version: 1.0.1` and `date-released: 2026-09-11`. If
-   the tag slips, that date needs updating with it.
+4. `CITATION.cff` and `pyproject.toml` now say `1.0.1`, and `CITATION.cff` says
+   `date-released: 2026-09-11`. If the tag slips, that date needs updating with it.
+5. **The plot is illegible at phone width** — measured in Chromium at 390 px, the
+   SVG renders at scale 0.45, so `font-size: 11` labels paint at **4.95 effective
+   px**, the headline `k=100 · 12.71 AU` result among them. This was already a
+   recorded 1.0.0 waivable; the critic quantified it. The fix is a media-query
+   viewBox/font bump, not a layout change — a rendering change, so outside this
+   release's "changes what is SAID" scope. Recommend scheduling it.
+6. **Do not amend or rebase this branch.** The CSV and fixture provenance headers
+   name the commit they were generated at; an amend orphans that SHA, which is the
+   NW-1 defect. The new reachability test will catch it, but the cheap fix is not
+   to rewrite. If the branch must be rewritten, regenerate the artifacts afterwards:
+   `python3 tools/make_fixtures.py` on a clean tree, then the three runners, then
+   the three `tools/derive_*.py`.
 
 **Executor stops here.** No merge, no tag, no release, no visibility change.

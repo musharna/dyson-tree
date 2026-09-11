@@ -29,7 +29,7 @@ documents, figures, results and pre-registrations (`docs/**`,
 git clone https://github.com/musharna/dyson-tree && cd dyson-tree
 python3 -m venv .venv && . .venv/bin/activate
 pip install -e '.[dev]'
-python -m pytest -q          # 139 passed
+python -m pytest -q          # 149 passed
 tools/build_site.sh          # build the published page into site/
 ```
 
