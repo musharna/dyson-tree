@@ -60,12 +60,12 @@ the binding constraint, which A can treat as a swept input. See
 The design track is the work and the code is downstream of it, so keep the
 order:
 
-- `superpowers:brainstorming` before any new mechanic — Q1 went through it and
+- Brainstorm and write a spec before any new mechanic — Q1 went through that and
   the spec is the binding authority for what the runner does.
-- `deep-sim-design` for what to simulate individually versus as a field, and for
-  what the observer actually perturbs.
-- `bio-grounding` before any borrowed biological mechanism becomes a load-bearing
-  design primitive. The science spine above is exactly the kind of thing that
+- Decide what to simulate individually versus as a field, and what the observer
+  actually perturbs, before writing the model.
+- Ground every borrowed biological mechanism in a real number and a source before it
+  becomes a load-bearing design primitive. The science spine above is exactly the kind of thing that
   degrades into flavour text if it is not checked against real numbers.
   `leaf_mass_ratio` is the standing example: uncited, invisible to the
   calibration gate, and wide enough on its own to decide whether Q1's algal
@@ -85,7 +85,7 @@ name — and is no longer open.
 
 ## Layout
 
-Mirrors `_pm/`, which is the sibling project furthest along:
+Layout:
 
     docs/         ROADMAP.md is canonical for "what phase, what's next";
                   pre-registrations and results live here, dated
