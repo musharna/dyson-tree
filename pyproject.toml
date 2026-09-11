@@ -1,6 +1,6 @@
 [project]
 name = "dyson-tree"
-version = "0.1.0"
+version = "1.0.0"
 description = "Carbon-budget model for a photosynthetic organism under 1/r^2 insolation"
 requires-python = ">=3.13"
 # Versions in use when experiments/q1_crossover was run. The reported r* comes
@@ -17,6 +17,12 @@ dev = [
     "pytest==9.1.1",
     "ruff==0.15.15",
 ]
+
+# Explicit discovery: the flat layout also holds `web/` (the static explorer) and
+# `experiments/` (runners), which setuptools would otherwise refuse as "multiple
+# top-level packages" — the Pages build failed on exactly that (run 34559785038).
+[tool.setuptools.packages.find]
+include = ["sim*", "experiments*"]
 
 [tool.pytest.ini_options]
 pythonpath = ["."]
