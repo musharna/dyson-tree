@@ -433,26 +433,26 @@ address anywhere in history.
 The path grep found three classes. Each is dispositioned rather than waved
 through:
 
-1. **`/home/mjarnold/dyson-tree` hardcoded in 11 tools** (`sys.path.insert`, plus
+1. **`<home>/dyson-tree` hardcoded in 11 tools** (`sys.path.insert`, plus
    a `PREREG` and a `REPO` constant). **REMOVED** — replaced with
    `Path(__file__).resolve().parents[1]`. This was also a portability bug: those
    tools could only ever run on one machine. Verified by real execution, not by
    compiling: **all 14 tools were run from a directory outside the repository and
    every one exited 0** (the two that need external tables got them from the
    fetch commands in their own headers).
-2. **`/mnt/c/Users/a2b32/Downloads` and `/home/mjarnold/...` in three plan
+2. **`/mnt/c/Users/<windows-user>/Downloads` and `<home>/...` in three plan
    documents.** **REDACTED** to `/mnt/c/Users/<windows-user>/`, `~/scratch/` and
    `~/dyson-tree`, each file carrying a note saying exactly what was changed and
    that no command, claim or number moved.
-3. **`/home/mjarnold/dyson-tree/experiments/q2_thermal` in
-   `experiments/q2_thermal/RESULTS.md`.** **JUSTIFIED, NOT REMOVED.** It sits
+3. **`<home>/dyson-tree/experiments/q2_thermal` in
+   `experiments/q2_thermal/RESULTS.md`.** **Redacted to `<repo>` in v1.0.1 (was kept verbatim in v1.0.0).** It sits
    inside a verbatim paste of the runner's stdout, and the runner prints an
    absolute path by design. Editing a transcript so that it reads better makes it
    no longer a transcript. It exposes a Linux account name and nothing else.
 
 ⚠️ **Escalation for the coordinator — history, not the working tree.** The
-redactions above are forward-looking. `/home/mjarnold` and the Windows account
-name `a2b32` also appear in **git history** (roughly 17 commits' worth of added
+redactions above are forward-looking. The home path and the Windows account
+name also appear in **git history** (roughly 17 commits' worth of added
 lines), where the working-tree edits cannot reach them. Removing them requires a
 history rewrite, which is outside an executor's authority and needs the repo
 owner's explicit say-so. Assessment: two account names, no credentials, no email
@@ -772,7 +772,7 @@ must match the live `sim/` modules, and the JS crossovers are compared against
    re-commit the CSVs at the release commit — data is byte-identical, only the
    header moves — but that touches frozen experiment records and is the owner's
    call, not an executor's.
-4. **`/home/mjarnold` and the Windows account name `a2b32` remain in git
+4. **The home path and the Windows account name remain in git
    history** (~17 commits' worth of added lines). Working-tree redactions cannot
    reach them; removing them needs a history rewrite. Two account names, no
    credentials, no email address, and the GitHub identity is already public —

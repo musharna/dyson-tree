@@ -20,7 +20,7 @@ gate response f(T=278.15 K): 0.3939 in [0.6, 0.7] FAIL
 gate response f(T=273.15 K): 0.2424 in [0.3, 0.4] FAIL
 GATE FAILED: limits not reported.
 Do NOT tune t_opt to pass. Report the failure and the implied t_opt.
-removed any stale sweep.csv/limits.csv from /home/mjarnold/dyson-tree/experiments/q2_thermal
+removed any stale sweep.csv/limits.csv from <repo>/experiments/q2_thermal
 ```
 
 **Gate 1 (thermal physics, `gate_thermal`)**: PASS. Equilibrium temperature of a sphere

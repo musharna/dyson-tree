@@ -12,7 +12,7 @@ authors:
     family-names: Arnold
     orcid: "https://orcid.org/0009-0003-4055-5238"
 version: 1.0.0
-date-released: "2026-09-10"
+date-released: "2026-09-11"
 license: MIT
 license-url: "https://github.com/musharna/dyson-tree/blob/master/LICENSE"
 repository-code: "https://github.com/musharna/dyson-tree"
