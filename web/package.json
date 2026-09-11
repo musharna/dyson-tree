@@ -1,6 +1,0 @@
-{
-  "name": "dyson-tree-web",
-  "private": true,
-  "type": "module",
-  "_comment": "Present only so `node` treats web/*.js as ES modules (web/parity.mjs imports model.js). Browsers ignore it; <script type=\"module\"> already gets ESM. There is no build step and no dependency."
-}

@@ -6,10 +6,15 @@
 // Run: node web/parity.mjs [path/to/fixtures.json]
 
 import { readFileSync } from "node:fs";
+import { createRequire } from "node:module";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
-import {
+// model.js is a classic script (it must load from file:// in a browser, where
+// ES modules are refused), so node reaches it through require, not import.
+const require = createRequire(import.meta.url);
+const model = require("./model.js");
+const {
   adaptedOptimum,
   compensationIrradiance,
   crossoverDistanceFor,
@@ -22,7 +27,7 @@ import {
   organismRespiration,
   temperatureResponse,
   temperatureResponseGaussian,
-} from "./model.js";
+} = model;
 
 const here = dirname(fileURLToPath(import.meta.url));
 const fixturePath = process.argv[2]
@@ -50,8 +55,7 @@ const out = {
 };
 
 // Constants are re-read from the module rather than retyped here.
-const mod = await import("./model.js");
-for (const name of Object.keys(out.constants)) out.constants[name] = mod[name];
+for (const name of Object.keys(out.constants)) out.constants[name] = model[name];
 
 for (const [cls, kase] of Object.entries(fx.cases)) {
   const org = makeOrganism(kase.preset);
