@@ -17,6 +17,7 @@ from __future__ import annotations
 import csv
 import difflib
 import importlib.util
+import subprocess
 import sys
 from pathlib import Path
 
@@ -166,4 +167,55 @@ def test_candidates_csv_holds_the_vascular_rows_the_runner_excludes():
     carbon_bound = {r["omega"] for r in vascular if r["binding"] == "carbon"}
     assert carbon_bound == {"25", "30"}, (
         f"FINDINGS says vascular binds on carbon at omega 25 and 30; got {carbon_bound}"
+    )
+
+
+# --- provenance SHA reachability -----------------------------------------
+#
+# The 1.0.1 review found `experiments/q2_thermal/gates.csv` naming `a734813`, a
+# commit that had been amended away: reachable in one working clone's reflog and
+# in no clone anyone else would make. FINDINGS tells the reader in bold to
+# "reproduce from the commit the header names", so an unreachable SHA is the same
+# defect 1.0.1 exists to close, in a worse form -- 1.0.0's wrong SHA at least
+# resolved.
+#
+# The regenerate-exactly guards CANNOT see this: they exclude the `git_sha` line
+# by design, because it moves on every run. That exclusion is correct and is why
+# this needs its own check. The mechanism is that `git_sha()` records `HEAD` at
+# runtime, so regenerating a CSV and THEN amending or rebasing orphans the SHA.
+# Practical rule: regenerate the CSVs last, after the commit shape is settled.
+
+ALL_PROVENANCED_CSVS = sorted(
+    p.relative_to(REPO).as_posix() for p in REPO.glob("experiments/*/*.csv")
+)
+
+
+def git(*args: str) -> subprocess.CompletedProcess:
+    return subprocess.run(["git", *args], cwd=REPO, capture_output=True, text=True)
+
+
+@pytest.mark.parametrize("artifact", ALL_PROVENANCED_CSVS)
+def test_provenance_sha_is_a_real_reachable_commit(artifact):
+    """Every committed CSV's `git_sha` must name a commit that exists and is an
+    ancestor of HEAD -- i.e. one a fresh clone can actually check out."""
+    if git("rev-parse", "--git-dir").returncode != 0:
+        pytest.skip("not a git checkout, so reachability cannot be established")
+
+    header = [
+        ln
+        for ln in (REPO / artifact).read_text().splitlines()
+        if ln.startswith("# git_sha=")
+    ]
+    assert len(header) == 1, f"{artifact}: expected exactly one git_sha line"
+    sha = header[0].split("=", 1)[1].strip()
+
+    assert git("cat-file", "-e", f"{sha}^{{commit}}").returncode == 0, (
+        f"{artifact} names git_sha={sha[:8]}, which is not a commit object in "
+        f"this repository at all. Re-run its producer and commit."
+    )
+    assert git("merge-base", "--is-ancestor", sha, "HEAD").returncode == 0, (
+        f"{artifact} names git_sha={sha[:8]}, which exists locally but is NOT an "
+        f"ancestor of HEAD -- it was most likely amended or rebased away after "
+        f"the file was regenerated, so it does not exist in a fresh clone. "
+        f"Re-run its producer AFTER the commit shape is settled, then commit."
     )

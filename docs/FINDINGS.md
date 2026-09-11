@@ -10,29 +10,39 @@ prediction was wrong.
 specified, and its premise was falsified before it could be registered.** Of the
 registered predictions exactly one held — Q1's vascular crossover, judged as the
 repository judges them, at each class's registered default `k`. Q1's algal
-prediction missed its band, Q2b's prediction was falsified outright, and Q2's was
-never tested at all because Q2's own held-out gate failed and the runner refused
-to report. That is the headline, and it is the reason this repository is worth
+prediction missed its band, Q2b's prediction was falsified outright **for the
+algal class — the only class that run answered, and whether it generalises is
+open** (§1), and Q2's was never tested at all because Q2's own held-out gate
+failed and the runner refused to report. That is the headline, and it is the reason this repository is worth
 reading. A model that only ever confirmed its author would tell you nothing.
 
-**Every computed number below names the file it lives in and the command that
-produces it** — the three registered runners write theirs, and the figures this
-page reports that no runner emits (the Q2b candidate tables, the response at the
-thermal floor, the Q1 gate-reachability scan) are each written by a committed
-`tools/derive_*.py` script from committed inputs, checked by
-`tests/test_derived_csvs.py`. The exception is Q3, which was **answered
-analytically and has no runner**: its figures are read off a cited primary source
-or computed in the `tools/check_*.py` scripts, and its section names the
-documents that carry the working instead.
+**Every number this page reports as a result names the file it lives in and the
+command that produces it.** The three registered runners write theirs; the result
+figures no runner emits — the Q2b candidate tables, the response at the thermal
+floor, the Q1 gate-reachability scan — are each written to a committed CSV by a
+`tools/derive_*.py` script from committed inputs, and `tests/test_derived_csvs.py`
+checks that they still regenerate.
+
+Two kinds of number on this page are **not** in a CSV, and are marked here rather
+than left to look like an oversight:
+
+- **Q3's figures.** Q3 was answered analytically and has no runner. They are read
+  off a cited primary source or computed in the `tools/check_*.py` scripts, and
+  its section names the documents that carry the working.
+- **A few one-off diagnostics quoted inside an argument** rather than reported as
+  results — the vascular net carbon at home (−8.47), the crust-at-ratio-1
+  temperature (120.44 °C), the four Q2 miss ratios. Each names the model function
+  or the committed CSV it comes from at the point it is used, which is enough to
+  recompute it, but no committed file holds the number itself.
 
 ---
 
 ## What was falsified
 
-### 1. Carbon does not set the outer limit. Temperature does. (Q2b)
+### 1. Carbon does not set the outer limit. Temperature does — for the algal class. (Q2b)
 
 **Registered prediction:** for an organism whose photosynthetic optimum is
-*predicted from its own geometry* rather than fitted, carbon balance binds first —
+_predicted from its own geometry_ rather than fitted, carbon balance binds first —
 the organism runs out of light-limited carbon before anything else stops it.
 
 **Result: FALSIFIED.** Temperature binds at every width of the response curve
@@ -80,12 +90,12 @@ distance above is quoted rounded: at the literal 1.1945 AU the response is
   `experiments/q2b_adapted/RESULTS.md`
 - Command: `python3 experiments/q2b_adapted/run.py` (exits 0), then
   `python3 tools/derive_q2b_candidates.py`
-- Produced by the code at commit `c239801`, which is what the file's own
-  `git_sha` header now names — see _A note on the CSV provenance headers_ below
+- Produced by the code whose commit the file's own `git_sha` header names
+  (identical across every committed CSV) — see _A note on the CSV provenance headers_ below
   for the 1.0.0 header defect this replaced
 
 **Only one of the two organism classes was answered at all**, and the gate that
-decided which is *itself retired*. Q2b gated its adaptation premise per class by
+decided which is _itself retired_. Q2b gated its adaptation premise per class by
 comparing a model-predicted optimum against a measured one: the algal class
 "passed" (5.1612 °C predicted against 5.0–7.0 °C measured, Colesie et al. 2014),
 the vascular class failed by 28 K (57.8196 °C predicted against 29.4 °C measured,
@@ -94,11 +104,12 @@ Scafaro et al. 2023) and was excluded from everything downstream — it has no r
 
 **That gate could not have been informative either way**, and the reason is
 recorded in `docs/thermal_premise_retired_2026-09-03.md`: it compared a
-*vacuum-radiative* temperature against *Earth-thermodynamic* optima. Terrestrial
+_vacuum-radiative_ temperature against _Earth-thermodynamic_ optima. Terrestrial
 tissue temperature is set by radiation **plus** conduction, convection and
 evaporation — Earth's own blackbody equilibrium is −18 °C against a +15 °C mean
 surface, and that 33 K gap is the missing physics. Under honest geometry every
-class fails its window (crust mat at ratio 1 → 120.44 °C, the same crust
+class fails its window (`sim.thermal.equilibrium_temperature` at 1 AU: crust mat
+at ratio 1 → 120.44 °C, the same crust
 at ratio 2 → 57.82 °C, vascular lamina at ratio 2 → 57.82 °C); the single pass came
 from modelling a flat soil crust as a **sphere** (ratio 4 → 5.16 °C), the geometry
 that note disowns — a coincidence, not a signal. This is a design
@@ -141,7 +152,9 @@ it said it would do. And the three Ω where vascular still reports `temperature`
 are not evidence for temperature at all: at Ω ∈ {10, 15, 20} the vascular carbon
 candidate is not a number, because **net carbon is negative across the entire
 [0.5, 100] AU grid** — the organism never breaks even anywhere on the swept range.
-(Its net carbon at the 1 AU home is −8.47, but that figure is Ω-independent and so
+(Its net carbon at the 1 AU home is −8.47 — `Organism.net_carbon_adapted(1.0, 1.0)`
+on the prereg's vascular preset; no committed CSV holds it, because the class has
+no row in `sweep.csv` — but that figure is Ω-independent and so
 does not by itself distinguish these three Ω from the two where carbon does cross.) `classify_limit` records that as `nan`, and
 `min()` drops it. The prereg discloses this shape in advance
 (`experiments/q2b_adapted/prereg.yaml`, `curve_shape`). So of the five vascular
@@ -168,8 +181,8 @@ lands inside. Three of the six swept `k` values fall outside their band:
 
 - Lives in: `experiments/q1_crossover/crossover.csv`
 - Command: `python3 experiments/q1_crossover/run.py` (exits 0)
-- Produced by the code at commit `c239801`, which is what the file's own
-  `git_sha` header now names (see _A note on the CSV provenance headers_)
+- Produced by the code whose commit the file's own `git_sha` header names
+  (identical across every committed CSV) (see _A note on the CSV provenance headers_)
 
 ### 3. Q2 produced no answer, and the reason is the finding
 
@@ -197,12 +210,12 @@ quietly re-tuned until it passed.
 
 - Lives in: `experiments/q2_thermal/gates.csv` and `RESULTS.md`
 - Command: `python3 experiments/q2_thermal/run.py` (exits **2**, by design)
-- Produced by the code at commit `c239801`, which is what the file's own
-  `git_sha` header now names (see _A note on the CSV provenance headers_)
+- Produced by the code whose commit the file's own `git_sha` header names
+  (identical across every committed CSV) (see _A note on the CSV provenance headers_)
 
 ### 4. The wall is a spectral filter, not an attenuator — so the vessel is unbuilt (Q3)
 
-Q1, Q2 and Q2b all model photosynthesis at a *vacuum* equilibrium temperature.
+Q1, Q2 and Q2b all model photosynthesis at a _vacuum_ equilibrium temperature.
 Water's saturation pressure at those temperatures is 882 Pa (algal sphere, 5.16 °C)
 and 18 kPa (lamina, 57.82 °C) against ~0 ambient, so **there is no liquid phase** —
 every one of those questions silently assumed a containment vessel that was never
@@ -213,9 +226,9 @@ specification, and both changed what the earlier questions mean:
 
 **(a) The vessel sets the temperature; the organism does not.** This is the
 settled part, and the sub-result that answered it — "does a contained organism's
-temperature still follow `T_eq`?" — is *no*: the wall does.
+temperature still follow `T_eq`?" — is _no_: the wall does.
 
-The *formula* first given for it has since been superseded by this project's own
+The _formula_ first given for it has since been superseded by this project's own
 optics, and it is quoted here with that correction attached. For a
 **shortwave-transparent**, IR-opaque wall of `N` shells,
 `T_interior = (N + 1)^0.25 · T_eq`, with `sqrt(N + 1)` the distance restoring the
@@ -224,7 +237,8 @@ to 1.41421 AU. **But a pressure-bearing ice wall is not shortwave-transparent**:
 transmits only 16–23% of solar energy, because NIR is 53% of TSI and ice absorbs
 it. The correct form is `(1 + τ)^0.25 · T_eq`, and the familiar one is its τ = 1
 case (`docs/bio_grounding_2026-09-02.md` §13 S7). At the measured τ (0.26–0.34) one
-shell gives **21.8–26.5 °C, not 57.82 °C**.
+shell gives **21.8–26.5 °C, not 57.82 °C**. (From the unrounded τ = 0.2609–0.3429
+of `bio_grounding` §13; the rounded 0.26–0.34 printed here gives 21.72–26.29 °C.)
 
 The same correction reaches the degeneracy. "Adding one IR-opaque shell and
 halving `area_ratio` are the same operation, identical to 5.7 × 10⁻¹⁴ K" is **true
@@ -232,7 +246,7 @@ only at τ = 1** — at a measured τ the two differ by 31–36 K (§14). That a
 compared two expressions computing the same assumption. What survives is the
 qualitative point, and it is the one that matters here: `sim/thermal.py` defines
 `area_ratio` as pure geometry, so every registered `area_ratio` silently asserted
-*uncontained*.
+_uncontained_.
 
 **(b) A scalar attenuation coefficient for the wall is a category error.** Grounded
 against Warren & Brandt's 2008 primary ice optical-constants table, the PAR
@@ -244,7 +258,7 @@ the difference is the rounding in this line, not in the result. Producer:
 `tools/extract_ice_k.py`, which asserts its parse count — it needs the source
 table fetched first, per the curl in its header, as the table is third-party and
 not redistributed here. Working: `docs/bio_grounding_2026-09-02.md` §9.) An ice wall is a blue-pass filter that strips exactly the red
-band chlorophyll *a* uses. One number cannot express that, which is why **no vessel
+band chlorophyll _a_ uses. One number cannot express that, which is why **no vessel
 is modelled in this release** and why the explorer offers no wall-thickness input.
 
 The wall's load-bearing verdict — whether strength and transparency ever collide at
@@ -257,7 +271,7 @@ inside the registered pressure bracket.
 - Lives in: `docs/superpowers/specs/2026-09-04-q3-pressure-vessel-design.md` and
   `docs/bio_grounding_2026-09-02.md` §§9–12
 - Answered analytically; no runner
-- Release commit: `1d9cea5`
+- Answered at `1d9cea5` (the S5 commit); released in `v1.0.0` = `4d4d8a7`
 
 ---
 
@@ -273,7 +287,7 @@ passed for both classes: vascular compensation irradiance 6.9519 µmol m⁻² s�
 says so. The calibration gate constrains `r_d` at 1 AU, and r\* follows from `r_d`
 — so the two are not independent: some of each registered band was already decided
 before the sweep ran. `experiments/q1_crossover/RESULTS.md` works this out under
-*"How much of each prediction the gate had already decided"*, **but its numbers are
+_"How much of each prediction the gate had already decided"_, **but its numbers are
 pre-S5**, and unlike the crossovers they cannot be recovered by rescaling: the
 bands are fixed while the reachable interval shrank by 7.16%, which moves the
 percentages non-linearly. Recomputed against the release code:
@@ -307,10 +321,10 @@ still carries more information than the hit does.
 
 **A 1.16× error in the PAR fraction was found and corrected, and no verdict moved.**
 `PAR_FRACTION` was 0.45, an unsourced assumption that exceeds even the AM1.5G
-*surface* value; the measured AM0 400–700 nm fraction of TSI is **0.3879**. The
+_surface_ value; the measured AM0 400–700 nm fraction of TSI is **0.3879**. The
 correction (S5) applies unconditionally to Q1, Q2 and Q2b. Because r\* is a
-*distance* it scales as exactly `sqrt(0.3879/0.45) = 0.9284396`, while the
-compensation irradiance is an *irradiance* and does not depend on PAR at all — so
+_distance_ it scales as exactly `sqrt(0.3879/0.45) = 0.9284396`, while the
+compensation irradiance is an _irradiance_ and does not depend on PAR at all — so
 `calibration.csv` and both `gates.csv` are unchanged to the byte, every r\* moved
 by 7.16%, and **all six Q1 verdicts and all five Q2b verdicts stand as they were**.
 
@@ -344,18 +358,40 @@ tree it ran against. The other half of the header was already correct — the
 actually were (`af16830e…` is `sim/physiology.py` at `1d9cea5`, not at `fc6ba42`) —
 so the header was internally contradictory, and the md5s resolved it.
 
-For 1.0.1 all three runners were re-run at `c239801` under Python 3.13.2 with
-numpy 2.3.5 / scipy 1.16.3, and the regenerated CSVs committed. **The data came
-back byte-identical**: across all seven files the whole diff is two lines each,
-`git_sha` and `written`. The md5 lines did not move. The `git_sha` now names a
-commit whose code does produce the file, so **reproduce from the commit the header
-names**.
+For 1.0.1 all three runners were re-run under Python 3.13.2 with numpy 2.3.5 /
+scipy 1.16.3, and the regenerated CSVs committed. Every committed CSV now carries
+the **same** `git_sha`, naming the commit the runners actually executed at, so
+**reproduce from the commit the header names**.
 
-One residue is structural rather than repairable: a CSV cannot name the commit that
-contains it, because committing it changes that commit's SHA. `git_sha` names the
-code the runner _executed_ — the 1.0.1 branch point — and nothing under `sim/`
-changes between that commit and the release, so the named tree does reproduce the
-file.
+**The data came back byte-identical.** Against 1.0.0, the entire diff in every
+file is provenance:
+
+| files                                   | changed lines | which                              |
+| --------------------------------------- | ------------- | ---------------------------------- |
+| the three Q1 CSVs, and Q2's `gates.csv` | 2 each        | `git_sha`, `written`               |
+| the three Q2b CSVs                      | 3 each        | `git_sha`, `written`, `prereg_md5` |
+
+Not a data row among them. The Q2b files carry one extra line because
+`experiments/q2b_adapted/prereg.yaml` gained a **comment block** in this release
+(the fix for a citation pointing at an unshipped working note), which moves the
+file's md5 without changing a single registered value. `physiology_md5`,
+`organism_md5` and `thermal_md5` did not move anywhere.
+
+Two residues, stated rather than hidden:
+
+- **A CSV cannot name the commit that contains it**, because committing it changes
+  that commit's SHA. `git_sha` names the code the runner _executed_; nothing under
+  `sim/` changes between that commit and the release, so the named tree does
+  reproduce the file.
+- **That SHA has to stay reachable.** Regenerating a CSV and then amending or
+  rebasing the commit it named orphans it — the SHA resolves in the one working
+  clone and nowhere else, which is worse than naming the wrong commit. This
+  happened once during 1.0.1 and was caught by review, not by the suite: the
+  regenerate-exactly guards exclude the `git_sha` line by design, so they are
+  structurally blind to it. `tests/test_derived_csvs.py::test_provenance_sha_is_a_real_reachable_commit`
+  now asserts every committed CSV's `git_sha` is a commit object and an ancestor
+  of `HEAD`. The working rule: **regenerate the CSVs last, once the commit shape
+  is settled.**
 
 **The check behind that claim:** re-running all three runners regenerates every
 committed CSV with **byte-identical data** — only the provenance header (its
@@ -385,7 +421,7 @@ verbatim; the second and third are abridged, and the roadmap is the authority:
   routes are recorded in `docs/bio_grounding_2026-09-02.md` §8 so the next attempt
   starts elsewhere.
 - **CONDITIONAL on the pressure-vessel question — register the band in the quantity
-  the gate can check.** The algal gate needs a *lower* bound on `I_c`; with a
+  the gate can check.** The algal gate needs a _lower_ bound on `I_c`; with a
   unicellular organism (`leaf_mass_ratio = 1.0`) that floor is sufficient, because
   `r* = sqrt(C / I_c)` exactly and a floor on `I_c` becomes a ceiling on `r*`.
 

@@ -9,12 +9,16 @@ punch list from the post-ship review panel, verified by the coordinator against
 the released tree at `4d4d8a7`. Commands are pasted with their real output.
 
 **Branch:** `release/1.0.1-rc`, cut from `c239801` (= `origin/master`).
-**RC SHA:** `a734813`.
+**RC SHA:** the tip of `release/1.0.1-rc` — `git rev-parse --short release/1.0.1-rc`.
+Named that way rather than inline for the same reason `docs/RELEASE-1.0.md` gives:
+this file is part of the commit it would otherwise have to name. The content
+commits it covers are below.
 
 | commit    | contents                                                        |
 | --------- | --------------------------------------------------------------- |
 | `09a820a` | items 1–5, 10 — derived artifacts, scoped claims, re-run        |
-| `a734813` | items 6–9, 11–13 — README, licences, prereg citation, changelog |
+| `91bdb97` | items 6–9, 11–13 — README, licences, prereg citation, changelog |
+| (tip)     | this evidence log and the critic-pass record                    |
 
 ## The scope rule this release was held to
 
@@ -24,7 +28,7 @@ the released tree at `4d4d8a7`. Commands are pasted with their real output.
 > You MAY NOT change `sim/`, presets, constants, pre-registrations, or add inputs
 > to the explorer. **A fix changes what is SAID, never what was MEASURED.**
 
-**Held.** `git diff c239801..a734813 --stat -- sim/` is empty. No preset, constant
+**Held.** `git diff c239801..HEAD --stat -- sim/` is empty. No preset, constant
 or registered prediction was touched. The one pre-registration edit is a comment
 block in `experiments/q2b_adapted/prereg.yaml` (item 9), which the plan
 explicitly directs; no registered value in it changed.

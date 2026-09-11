@@ -4,8 +4,9 @@
 budget for one photosynthetic organism at a distance `r` from the Sun — light in,
 respiration out — registers what it expects before each run, and reports what
 happened. Three questions were registered and run; **exactly one of their
-predictions held.** One missed its band, one was falsified outright, and one was
-never tested because its own held-out gate failed. A fourth question was specified
+predictions held.** One missed its band, one was falsified outright — for the
+algal class, the only class that run answered, and whether it generalises is open
+— and one was never tested because its own held-out gate failed. A fourth question was specified
 and then falsified before registration: it asked for a single attenuation
 coefficient for a wall whose absorption spans a factor of 701 across PAR, which is
 a quantity that cannot exist. The falsifications are the result worth reading.

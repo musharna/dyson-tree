@@ -1,6 +1,6 @@
 [project]
 name = "dyson-tree"
-version = "1.0.0"
+version = "1.0.1"
 description = "Carbon-budget model for a photosynthetic organism under 1/r^2 insolation"
 requires-python = ">=3.13"
 # Versions in use when experiments/q1_crossover was run. The reported r* comes
