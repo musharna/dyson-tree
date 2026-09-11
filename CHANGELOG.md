@@ -5,6 +5,94 @@ at the 1.0.0 release and backfills one line per registered question.
 
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.0.1] — 2026-09-11
+
+A documentation and provenance release, from a post-ship review panel's findings.
+**No measured value changed.** `sim/`, every preset, every constant and every
+registered prediction are untouched; the committed experiment data is
+byte-identical to 1.0.0. What changed is what the repository _says_ about it.
+
+### Fixed
+
+- **CSV provenance headers named a commit whose code cannot produce them.** Every
+  header said `git_sha=fc6ba42`, whose `PAR_FRACTION` is still 0.45 and which
+  would produce 13.6851 AU rather than the committed 12.7058. All three runners
+  were re-run at the 1.0.1 branch point under Python 3.13.2 and the CSVs
+  re-committed: **the data came back byte-identical**, the whole diff being
+  `git_sha` and `written`, two lines per file. Documented in 1.0.0 as
+  unrepairable-within-scope; repaired here.
+- **Four sets of numbers in `docs/FINDINGS.md` had no committed producer.** The
+  Q2b temperature and light candidates (1.1945 / 70.04 AU) lived in no file —
+  `limits.csv` holds only the carbon candidate — and neither did the vascular
+  `classify_limit` table, the Gaussian response at the thermal floor, or the
+  gate-reachability scan. Each now has one; see _Added_ below.
+- **The Q2b falsification was stated unscoped** in `web/index.html`, this file and
+  `docs/thermal_premise_retired_2026-09-03.md`. It holds **for the algal class**,
+  the only class the run answered; the retired Gate B readmits vascular, where
+  carbon binds at Ω = 25 and 30 — where the registered prediction would have held.
+- **`docs/FINDINGS.md` said Q3 "was registered".** It was _specified_; its premise
+  was falsified before it could be registered, as the same page's headline says.
+- **"Missed by roughly a factor of two"** overstated all four of Q2's miss ratios
+  (1.24×, 1.52×, 1.65×, 1.78×). Now stated as 1.2–1.8× with the ratios, here and
+  in FINDINGS.
+- **Stale numbers far from their banner** now carry an inline
+  `⚠️ superseded → <value> (S5)` marker at the number itself: `docs/ROADMAP.md`'s
+  two Q1 crossovers, and in `experiments/q2b_adapted/RESULTS.md` the light limit,
+  the Q1 comparison value, and the whole pre-S5 `outer_au` column of its §4 table —
+  which its banner had not covered, naming only the light limit.
+- **`(N+1)^0.25 · T_eq` was quoted here without its τ = 1 qualifier.** The general
+  form is `(1 + τ)^0.25 · T_eq`; at a pressure-bearing ice wall's measured
+  τ = 0.26–0.34 one shell gives 21.8–26.5 °C, not 57.82 °C.
+- **The licence partition omitted `experiments/**/prereg.yaml`** in `README.md`,
+which `LICENSE-docs` includes.
+- **`docs/RELEASE-1.0.md` listed a defect that had already been fixed** before the
+  release flip (`README.md` referencing `_pm/`). Both occurrences are annotated.
+
+### Added
+
+- **`tools/derive_q2b_candidates.py`** → `experiments/q2b_adapted/candidates.csv`:
+  all three candidate distances per class and Ω, including the vascular rows Gate B
+  keeps out of `limits.csv`, labelled as such.
+- **`tools/derive_q2b_floor_response.py`** →
+  `experiments/q2b_adapted/floor_response.csv`: the Gaussian response and net
+  carbon at the thermal floor. Two rows on purpose — FINDINGS' +0.0197 holds at
+  the 1.1945 AU it prints, while the full-precision floor gives +0.019783
+  (0.0198 at 4 dp); the gap is rounding of the input distance.
+- **`tools/derive_q1_reachability.py`** →
+  `experiments/q1_crossover/reachability.csv`: the gate-reachability scan
+  (66.4143% / 43.2723% / [11.043318, 14.680400] AU / 43.654467 AU).
+- **`tools/check_q2b_curve_shape.py`** — reproduces the `curve_shape` table
+  registered in `q2b_adapted/prereg.yaml`, which had cited an internal working
+  note that is not in this repository. The existing tests cover those branches
+  with synthetic curves, so they pinned the selector, not the table.
+- **`tests/test_derived_csvs.py`** — regenerate-exactly guards for the three
+  derived CSVs, plus checks that each header names its producer and that no
+  source md5 has gone stale. 8 tests; 131 → 139.
+- **`README.md` now has a "Run it" block** — install, test and build, with the
+  version requirements stated: Python **3.13.2 exactly** (on any other 3.13.x
+  patch six tests fail on the `# python=` header line alone, with identical
+  data), Node ≥ 18 for the 9 parity tests, Playwright + Chromium for
+  `tools/smoke_page.py`, R 4.3.3 + ggplot2 4.0.2 for the figures. The design
+  history moved below the fold under "Design record".
+- **`docs/superpowers/plans/README.md`** — what those files are, and that the
+  tool names in them are the author's private tooling.
+- **`docs/RELEASE-1.0.1.md`** — this release's evidence log. `docs/RELEASE-1.0.md`
+  gains a banner saying it is an evidence log, not a findings document.
+
+### Changed
+
+- `docs/FINDINGS.md`'s rule "every number names the file it lives in and the
+  command that produces it" now says what is actually true: it holds for every
+  computed number, and Q3 — answered analytically, with no runner — is named as
+  the exception rather than left as a false universal.
+- The **factor of 701** for ice PAR absorption is **kept, and sourced**. It is
+  correct: it comes from the unrounded coefficients (700.69), not from dividing
+  the two 5-dp figures printed beside it (which give 703.5). FINDINGS now says so
+  and names `tools/extract_ice_k.py`.
+- `LICENSE` gains a one-line note pointing at `LICENSE-docs` for the
+  documentation partition; `CITATION.cff` declares both licences and is validated
+  against the CFF 1.2.0 schema.
+
 ## [1.0.0] — 2026-09-10
 
 ### Added
@@ -89,4 +177,5 @@ unconditionally to Q1, Q2 and Q2b. Every crossover distance scales by
 `sqrt(0.3879/0.45) = 0.9284396`; every compensation irradiance is unchanged
 (irradiances do not depend on the PAR fraction); **no verdict moved.**
 
+[1.0.1]: https://github.com/musharna/dyson-tree/compare/v1.0.0...v1.0.1
 [1.0.0]: https://github.com/musharna/dyson-tree/releases/tag/v1.0.0

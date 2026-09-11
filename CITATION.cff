@@ -11,9 +11,16 @@ authors:
   - given-names: Jaret
     family-names: Arnold
     orcid: "https://orcid.org/0009-0003-4055-5238"
-version: 1.0.0
+version: 1.0.1
 date-released: "2026-09-11"
-license: MIT
+# Dual-licensed by path: code is MIT; documents, figures, results and
+# pre-registrations are CC-BY-4.0. LICENSE-docs carries the exact partition.
+# `license-url` takes a single value in CFF 1.2.0, so it names the code licence
+# that matches `type: software`; the CC-BY-4.0 text is at
+# https://github.com/musharna/dyson-tree/blob/master/LICENSE-docs
+license:
+  - MIT
+  - CC-BY-4.0
 license-url: "https://github.com/musharna/dyson-tree/blob/master/LICENSE"
 repository-code: "https://github.com/musharna/dyson-tree"
 url: "https://musharna.github.io/dyson-tree/"

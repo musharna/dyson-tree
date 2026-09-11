@@ -32,7 +32,7 @@ documents that carry the working instead.
 ### 1. Carbon does not set the outer limit. Temperature does. (Q2b)
 
 **Registered prediction:** for an organism whose photosynthetic optimum is
-_predicted from its own geometry_ rather than fitted, carbon balance binds first —
+*predicted from its own geometry* rather than fitted, carbon balance binds first —
 the organism runs out of light-limited carbon before anything else stops it.
 
 **Result: FALSIFIED.** Temperature binds at every width of the response curve
@@ -85,7 +85,7 @@ distance above is quoted rounded: at the literal 1.1945 AU the response is
   for the 1.0.0 header defect this replaced
 
 **Only one of the two organism classes was answered at all**, and the gate that
-decided which is _itself retired_. Q2b gated its adaptation premise per class by
+decided which is *itself retired*. Q2b gated its adaptation premise per class by
 comparing a model-predicted optimum against a measured one: the algal class
 "passed" (5.1612 °C predicted against 5.0–7.0 °C measured, Colesie et al. 2014),
 the vascular class failed by 28 K (57.8196 °C predicted against 29.4 °C measured,
@@ -94,7 +94,7 @@ Scafaro et al. 2023) and was excluded from everything downstream — it has no r
 
 **That gate could not have been informative either way**, and the reason is
 recorded in `docs/thermal_premise_retired_2026-09-03.md`: it compared a
-_vacuum-radiative_ temperature against _Earth-thermodynamic_ optima. Terrestrial
+*vacuum-radiative* temperature against *Earth-thermodynamic* optima. Terrestrial
 tissue temperature is set by radiation **plus** conduction, convection and
 evaporation — Earth's own blackbody equilibrium is −18 °C against a +15 °C mean
 surface, and that 33 K gap is the missing physics. Under honest geometry every
@@ -202,7 +202,7 @@ quietly re-tuned until it passed.
 
 ### 4. The wall is a spectral filter, not an attenuator — so the vessel is unbuilt (Q3)
 
-Q1, Q2 and Q2b all model photosynthesis at a _vacuum_ equilibrium temperature.
+Q1, Q2 and Q2b all model photosynthesis at a *vacuum* equilibrium temperature.
 Water's saturation pressure at those temperatures is 882 Pa (algal sphere, 5.16 °C)
 and 18 kPa (lamina, 57.82 °C) against ~0 ambient, so **there is no liquid phase** —
 every one of those questions silently assumed a containment vessel that was never
@@ -213,9 +213,9 @@ specification, and both changed what the earlier questions mean:
 
 **(a) The vessel sets the temperature; the organism does not.** This is the
 settled part, and the sub-result that answered it — "does a contained organism's
-temperature still follow `T_eq`?" — is _no_: the wall does.
+temperature still follow `T_eq`?" — is *no*: the wall does.
 
-The _formula_ first given for it has since been superseded by this project's own
+The *formula* first given for it has since been superseded by this project's own
 optics, and it is quoted here with that correction attached. For a
 **shortwave-transparent**, IR-opaque wall of `N` shells,
 `T_interior = (N + 1)^0.25 · T_eq`, with `sqrt(N + 1)` the distance restoring the
@@ -232,7 +232,7 @@ only at τ = 1** — at a measured τ the two differ by 31–36 K (§14). That a
 compared two expressions computing the same assumption. What survives is the
 qualitative point, and it is the one that matters here: `sim/thermal.py` defines
 `area_ratio` as pure geometry, so every registered `area_ratio` silently asserted
-_uncontained_.
+*uncontained*.
 
 **(b) A scalar attenuation coefficient for the wall is a category error.** Grounded
 against Warren & Brandt's 2008 primary ice optical-constants table, the PAR
@@ -244,7 +244,7 @@ the difference is the rounding in this line, not in the result. Producer:
 `tools/extract_ice_k.py`, which asserts its parse count — it needs the source
 table fetched first, per the curl in its header, as the table is third-party and
 not redistributed here. Working: `docs/bio_grounding_2026-09-02.md` §9.) An ice wall is a blue-pass filter that strips exactly the red
-band chlorophyll _a_ uses. One number cannot express that, which is why **no vessel
+band chlorophyll *a* uses. One number cannot express that, which is why **no vessel
 is modelled in this release** and why the explorer offers no wall-thickness input.
 
 The wall's load-bearing verdict — whether strength and transparency ever collide at
@@ -273,7 +273,7 @@ passed for both classes: vascular compensation irradiance 6.9519 µmol m⁻² s�
 says so. The calibration gate constrains `r_d` at 1 AU, and r\* follows from `r_d`
 — so the two are not independent: some of each registered band was already decided
 before the sweep ran. `experiments/q1_crossover/RESULTS.md` works this out under
-_"How much of each prediction the gate had already decided"_, **but its numbers are
+*"How much of each prediction the gate had already decided"*, **but its numbers are
 pre-S5**, and unlike the crossovers they cannot be recovered by rescaling: the
 bands are fixed while the reachable interval shrank by 7.16%, which moves the
 percentages non-linearly. Recomputed against the release code:
@@ -307,10 +307,10 @@ still carries more information than the hit does.
 
 **A 1.16× error in the PAR fraction was found and corrected, and no verdict moved.**
 `PAR_FRACTION` was 0.45, an unsourced assumption that exceeds even the AM1.5G
-_surface_ value; the measured AM0 400–700 nm fraction of TSI is **0.3879**. The
+*surface* value; the measured AM0 400–700 nm fraction of TSI is **0.3879**. The
 correction (S5) applies unconditionally to Q1, Q2 and Q2b. Because r\* is a
-_distance_ it scales as exactly `sqrt(0.3879/0.45) = 0.9284396`, while the
-compensation irradiance is an _irradiance_ and does not depend on PAR at all — so
+*distance* it scales as exactly `sqrt(0.3879/0.45) = 0.9284396`, while the
+compensation irradiance is an *irradiance* and does not depend on PAR at all — so
 `calibration.csv` and both `gates.csv` are unchanged to the byte, every r\* moved
 by 7.16%, and **all six Q1 verdicts and all five Q2b verdicts stand as they were**.
 
@@ -385,7 +385,7 @@ verbatim; the second and third are abridged, and the roadmap is the authority:
   routes are recorded in `docs/bio_grounding_2026-09-02.md` §8 so the next attempt
   starts elsewhere.
 - **CONDITIONAL on the pressure-vessel question — register the band in the quantity
-  the gate can check.** The algal gate needs a _lower_ bound on `I_c`; with a
+  the gate can check.** The algal gate needs a *lower* bound on `I_c`; with a
   unicellular organism (`leaf_mass_ratio = 1.0`) that floor is sufficient, because
   `r* = sqrt(C / I_c)` exactly and a floor on `I_c` becomes a ceiling on `r*`.
 
@@ -403,18 +403,26 @@ wall thickness, and it is untouched. The frozen experiments stay frozen.
 ```bash
 git clone https://github.com/musharna/dyson-tree && cd dyson-tree
 python3 -m venv .venv && . .venv/bin/activate
-pip install -e '.[dev]'          # python >= 3.13; numpy 2.3.5, scipy 1.16.3, PyYAML 6.0.3
-python -m pytest -q              # 131 passed
+pip install -e '.[dev]'          # python 3.13.2 exactly; numpy 2.3.5, scipy 1.16.3, PyYAML 6.0.3
+python -m pytest -q              # 139 passed
 
 python3 experiments/q1_crossover/run.py    # exits 0
 python3 experiments/q2_thermal/run.py      # exits 2 -- the gate fails, by design
 python3 experiments/q2b_adapted/run.py     # exits 0
+python3 tools/derive_q2b_candidates.py     # the two classify_limit tables
+python3 tools/derive_q2b_floor_response.py # the response at the thermal floor
+python3 tools/derive_q1_reachability.py    # the gate-reachability scan
 git status --porcelain experiments/        # headers move; `git diff` on the data rows is empty
 
 python3 tools/make_fixtures.py   # regenerate web/fixtures.json from the Python model
 tools/build_site.sh              # build the published page into site/
 python3 tools/smoke_page.py      # headless browser checks (needs playwright + chromium)
 ```
+
+**Python 3.13.2 exactly**, not just 3.13: the committed CSVs record the
+interpreter in their provenance header, and the regenerate-exactly guards diff
+every header line except `git_sha` and `written` — so on any other 3.13.x patch
+release six tests fail on the `# python=` line alone, with identical data.
 
 The browser explorer at <https://musharna.github.io/dyson-tree/> runs a port of the
 same model (`web/model.js`). It is pinned to the Python by `web/fixtures.json`

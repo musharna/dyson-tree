@@ -16,13 +16,79 @@ a quantity that cannot exist. The falsifications are the result worth reading.
   crossovers, marked as predictions rather than results.
 - **Read the findings:** **[`docs/FINDINGS.md`](docs/FINDINGS.md)** — falsifications
   first, each with its number, the file it lives in, and the command that produces it.
-- `docs/ROADMAP.md` stays canonical for "what phase, what's next";
-  `docs/RELEASE-1.0.md` is the release evidence log.
 
 Licence: code (`sim/ tools/ tests/ web/ experiments/**/*.py`) is **MIT**;
-documents, figures and results (`docs/**`, `experiments/**/{RESULTS.md,*.csv,figures}`)
-are **CC-BY-4.0**. See `LICENSE`, `LICENSE-docs`, `docs/THIRD-PARTY.md` and
-`CITATION.cff`.
+documents, figures, results and pre-registrations (`docs/**`,
+`experiments/**/{RESULTS.md,prereg.yaml,*.csv,figures}`) are **CC-BY-4.0**. See
+`LICENSE`, `LICENSE-docs`, `docs/THIRD-PARTY.md` and `CITATION.cff`.
+
+## Run it
+
+```bash
+git clone https://github.com/musharna/dyson-tree && cd dyson-tree
+python3 -m venv .venv && . .venv/bin/activate
+pip install -e '.[dev]'
+python -m pytest -q          # 139 passed
+tools/build_site.sh          # build the published page into site/
+```
+
+**Python 3.13.2 exactly**, not just 3.13. The committed CSVs carry a provenance
+header that records the interpreter, and the regenerate-exactly guards diff every
+header line except `git_sha` and `written` — so on any other 3.13.x patch release
+**six tests fail on the `# python=` line alone**, with identical data. That is the
+guard working as designed, not a broken checkout; the failure message shows a
+one-line diff.
+
+Optional, for the parts beyond the test suite:
+
+| For                                        | You need                    |
+| ------------------------------------------ | --------------------------- |
+| the 9 JS parity tests (`test_parity_js`)   | **Node ≥ 18**               |
+| `python3 tools/smoke_page.py` (147 checks) | **Playwright + Chromium**   |
+| the figures (`plot.R`)                     | **R 4.3.3 + ggplot2 4.0.2** |
+
+Then the registered runs and the derived tables:
+
+```bash
+python3 experiments/q1_crossover/run.py    # exits 0
+python3 experiments/q2_thermal/run.py      # exits 2 -- the gate fails, by design
+python3 experiments/q2b_adapted/run.py     # exits 0
+python3 tools/derive_q2b_candidates.py     # the two classify_limit tables
+python3 tools/derive_q2b_floor_response.py # the response at the thermal floor
+python3 tools/derive_q1_reachability.py    # the gate-reachability scan
+git status --porcelain experiments/        # headers move; the data rows do not
+```
+
+Every registered question ships a pre-registration written before its runner, a
+calibration gate that must pass before any result is reported, and CSVs carrying a
+provenance header (git sha, source md5s, numeric-stack versions).
+`tests/test_runner.py::test_committed_csvs_regenerate_exactly` re-runs the
+experiment and diffs it against what is committed, so the record cannot drift away
+from the code that claims to produce it. `tests/test_derived_csvs.py` does the same
+for the `tools/derive_*.py` tables.
+
+## Layout
+
+    docs/         ROADMAP.md is canonical for "what phase, what's next";
+                  FINDINGS.md is the result; dated design notes live here too
+    sim/          the model itself
+    experiments/  one directory per registered question: prereg.yaml (written
+                  before the run), run.py, RESULTS.md and the committed CSVs
+    tests/        guards; every claim the model makes should have one
+    tools/        probes, derivations, one-off measurement scripts
+    web/          the static explorer (no build step, no CDN, no dependency)
+
+`docs/ROADMAP.md` stays canonical for "what phase, what's next";
+`docs/RELEASE-1.0.md` is the release evidence log and
+`docs/RELEASE-1.0.1.md` the one for this release.
+
+---
+
+# Design record
+
+Everything below is the design history — the brief this was built against and the
+decisions taken along the way. It is kept because the reasoning is the point, but
+nothing below is needed to run the code or read the result.
 
 ## The brief, as filed
 
@@ -72,25 +138,6 @@ order:
   prediction lands inside its registered band (`RESULTS.md` records `a_max` as
   the second such parameter, and the one the algal gate constrains least).
 
-Every registered question ships a pre-registration written before its runner,
-a calibration gate that must pass before any result is reported, and CSVs
-carrying a provenance header (git sha, source md5s, numeric-stack versions).
-`tests/test_runner.py::test_committed_csvs_regenerate_exactly` re-runs the
-experiment and diffs it against what is committed, so the record cannot drift
-away from the code that claims to produce it.
-
 The prior-art question was checked on 2026-09-01 —
 `docs/prior_art_2026-09-01.md`, re-run on the biology rather than only the
 name — and is no longer open.
-
-## Layout
-
-Layout:
-
-    docs/         ROADMAP.md is canonical for "what phase, what's next";
-                  pre-registrations and results live here, dated
-    sim/          the model itself
-    experiments/  runners that ask one registered question each
-    tests/        guards; every claim the model makes should have one
-    tools/        probes, gradients, one-off measurement scripts
-    _scratch/     untracked working area

@@ -1,3 +1,9 @@
+NOTE -- this MIT licence covers the CODE only: sim/, tools/, tests/, web/ and
+experiments/**/*.py. The documents, figures, results and pre-registrations
+(docs/**, experiments/**/RESULTS.md, experiments/**/prereg.yaml,
+experiments/**/*.csv, experiments/**/figures/**) are licensed CC-BY-4.0. See
+LICENSE-docs, which carries the exact partition.
+
 MIT License
 
 Copyright (c) 2026 Jaret Arnold

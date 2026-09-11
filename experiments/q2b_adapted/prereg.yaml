@@ -73,7 +73,17 @@ sweep:
 
 # Measured in Step 5 BEFORE this file was written, via the exact command in
 # experiments/q2b_adapted/../.superpowers task-3-brief.md Step 5 (also verbatim
-# in task-3-report.md). NOT assumed to match Q2's linear-ramp shape
+# in task-3-report.md).
+#   (Those two are internal working notes and are NOT shipped in this repository,
+#   so that citation cannot be followed by a reader. Added in 1.0.1: the
+#   measurement below is reproduced from committed code by
+#       python3 tools/check_q2b_curve_shape.py
+#   which recomputes the sign structure for every (class, omega) exactly as
+#   outer_carbon_crossover does, and compares it against this block. That script
+#   only reports -- nothing registered in this file is changed by it. The
+#   existing tests in tests/test_q2b_runner.py cover the same branches with
+#   SYNTHETIC curves, so they pin the selector's behaviour, not this table.)
+# NOT assumed to match Q2's linear-ramp shape
 # [(-1,1),(1,-1)], and it does NOT match for every case:
 #
 #   algal:    every omega in {10,15,20,25,30} -> [(-1, 1), (1, -1)]

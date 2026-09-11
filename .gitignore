@@ -8,3 +8,9 @@ site/
 # See docs/THIRD-PARTY.md for the source addresses and their terms.
 ASTMG173.csv
 iop2008.dat
+
+# Build artifacts of Python packaging. A `pip download` run from the repo root
+# will otherwise drop wheels here, where `git add -A` picks them up.
+*.whl
+*.tar.gz
+.venv/
