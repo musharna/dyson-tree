@@ -1,5 +1,17 @@
 # Q1 results — 2026-09-02
 
+> ⚠️ **SUPERSEDED NUMBERS, SAME VERDICTS (2026-09-06, S5).** `PAR_FRACTION` was
+> corrected from an unsourced 0.45 to the measured AM0 value 0.3879, so every
+> crossover in this file is 1.0770x too large. Multiply by
+> `sqrt(0.3879/0.45) = 0.928487`: 19.3537 -> 17.9688, **13.6851 -> 12.7058**,
+> 9.6769 -> 8.9844, 95.1233 -> 88.3162, **67.2623 -> 62.4490**, 47.5616 ->
+> 44.1581. The compensation irradiances (6.9519, 0.4918) do NOT move — `I_c` is
+> an irradiance and is PAR-independent — and **no `inside` verdict changes**.
+> `crossover.csv` in this directory is current; this prose is not, and is
+> bannered rather than rewritten per the project's convention. See
+> `docs/bio_grounding_2026-09-02.md` §20 and `docs/FINDINGS.md`.
+
+
 Provenance (matches the header of the committed CSVs):
 git_sha=54740719e96900b1165970e1182b090689014f9a,
 physiology_md5=adacb668ea4f79b428ca0155381da220,

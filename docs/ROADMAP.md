@@ -1,5 +1,17 @@
 # Dyson tree — ROADMAP
 
+> ✅ **SHIPPED 1.0 — see [`docs/FINDINGS.md`](FINDINGS.md).** Everything below
+> "Checklist" that is unchecked is OPEN. The release candidate is the branch
+> `release/1.0-rc`; its exact SHA, and the evidence for every stage of the
+> release, are in [`docs/RELEASE-1.0.md`](RELEASE-1.0.md). The SHA is named there
+> rather than here because this banner is itself part of the commit it would have
+> to name.
+>
+> ⚠️ The summary paragraph below quotes the PRE-S5 Q1 crossovers (13.69 and
+> 67.26 AU). The current values are 12.7058 and 62.4490 AU — every r\* scales by
+> `sqrt(0.3879/0.45) = 0.928487` and no verdict changes. Superseded text is
+> bannered, not rewritten.
+
 **Canonical for "what phase, what's next".** If a later document supersedes this
 one, banner this file and redirect from it in the same commit — a superseding
 roadmap that nobody discovers is worse than no roadmap.

@@ -1,5 +1,15 @@
 # Q2b: what limits range from the Sun for an organism whose optimum is PREDICTED, not fitted?
 
+> ⚠️ **ONE SUPERSEDED NUMBER, NO VERDICT CHANGE (2026-09-06, S5).** The stdout
+> pasted in section 1 is from a run before `PAR_FRACTION` was corrected from
+> 0.45 to the measured 0.3879. In it the light limit reads **75.434 AU**; it is
+> now **70.036 AU**. Light was never binding — the temperature floor at
+> 1.1945 AU binds at every omega — so no row of `limits.csv` and no verdict in
+> this file changes. `limits.csv`, `gates.csv` and `sweep.csv` in this directory
+> are current and regenerate byte-identically. Superseded text is bannered, not
+> rewritten. See `docs/bio_grounding_2026-09-02.md` §20 and `docs/FINDINGS.md`.
+
+
 ## 1. Registered question
 
 From `prereg.yaml` (registered 2026-09-02, spec

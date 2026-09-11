@@ -283,3 +283,88 @@ confirmation that the shipped page displays the S5-corrected model.
    suite was rewritten whole and now runs **79** assertions.
 
 **Stage 3 DONE:** clean-checkout proof and smoke pass recorded above.
+
+## Stage 4 — write-up
+
+`docs/FINDINGS.md` (falsifications first), `README.md` rewritten at the top for a
+stranger, and banners added where superseded text lives.
+
+### The numbers check — and what it found
+
+Every FINDINGS number was taken from the committed CSV, not from prose. That
+matters, because **the prose and the CSVs had diverged**: the S5 correction
+regenerated the CSVs but the write-ups around them were never updated.
+
+```
+$ python3 experiments/q1_crossover/run.py; python3 experiments/q2_thermal/run.py; \
+  python3 experiments/q2b_adapted/run.py
+$ for f in $(git status --porcelain experiments/ | awk '{print $2}'); do
+    diff <(git show HEAD:$f | grep -v '^#') <(grep -v '^#' $f); done
+experiments/q1_crossover/calibration.csv   DATA IDENTICAL (only provenance header moved)
+experiments/q1_crossover/crossover.csv     DATA IDENTICAL (only provenance header moved)
+experiments/q1_crossover/sweep.csv         DATA IDENTICAL (only provenance header moved)
+experiments/q2_thermal/gates.csv           DATA IDENTICAL (only provenance header moved)
+experiments/q2b_adapted/gates.csv          DATA IDENTICAL (only provenance header moved)
+experiments/q2b_adapted/limits.csv         DATA IDENTICAL (only provenance header moved)
+experiments/q2b_adapted/sweep.csv          DATA IDENTICAL (only provenance header moved)
+```
+
+So the CSVs are current; three pieces of committed prose are not. Per this
+repository's convention — banner superseded claims, never rewrite them — each got
+a banner naming the old value, the new one, and the fact that no verdict moves:
+
+| file | stale claim | current |
+| --- | --- | --- |
+| `experiments/q1_crossover/RESULTS.md` | 13.6851 / 67.2623 AU (all six r\*) | 12.7058 / 62.4490 AU (× 0.928487) |
+| `experiments/q2b_adapted/RESULTS.md` | pasted stdout, light limit 75.434 AU | 70.036 AU; light never binding |
+| `docs/ROADMAP.md` | summary quotes 13.69 / 67.26 AU | bannered at the top |
+
+The regenerated CSVs were reverted (`git checkout -- experiments/`) so the
+committed provenance headers stay as they were.
+
+### Two claims corrected before shipping
+
+1. **The Q2b gate framing.** The draft reported the vascular class as "failing by
+   28 K" with the shipped RESULTS.md explanation (a flat lamina runs hotter than a
+   real leaf). `docs/thermal_premise_retired_2026-09-03.md` — which the plan
+   requires be read before writing anything about temperature — supersedes that:
+   Gate B compared a **vacuum-radiative** temperature against
+   **Earth-thermodynamic** optima and could not have been informative either way,
+   and the single algal pass came from modelling a flat soil crust as a sphere.
+   FINDINGS now reports the gate as retired, and states explicitly that the Q2b
+   falsification is untouched by that retirement (it compared two quantities both
+   computed inside the model).
+2. **The headline count.** The draft said "four questions were registered; three
+   of four predictions were falsified". Q3 was never registered — it has a spec,
+   no prereg — and Q2's prediction was never tested, because its gate failed
+   first. Corrected in both FINDINGS and README to: three registered and run,
+   exactly one prediction held, one missed, one falsified, one never tested.
+
+### Citations
+
+```
+$ grep -rhoE '10\.[0-9]{4,9}/[^ )>\]"]+' docs README.md | sed 's/[.,;:]*$//' | sort -u > docs/dois.txt
+69 DOIs
+$ ghostcite --format doi --json docs/dois.txt     # ghostcite 0.5.2
+"summary": {"total": 69, "with_doi": 69, "findings": 2,
+            "retraction_source": "Retraction Watch snapshot 2026-07-14 (71059 rows)"}
+```
+
+**Zero retracted, zero unresolvable** — the blocker conditions. Both findings are
+tier `U`, "DOI not in CrossRef but resolves at doi.org (registered elsewhere)":
+`10.5061/dryad.j9kd51cgr` (a Dryad dataset) and `10.5281/zenodo.21908199` (a
+Zenodo deposit). Both are DataCite registrations, which CrossRef does not hold, and
+both resolve. Run on the DOI list rather than a converted bib, per the 2026-09-03
+audit where bib conversion manufactured 45 false failures.
+
+Headline sources traced to where they are grounded in this repository:
+Kopp & Lean 2011 (TSI 1360.8), Warren & Brandt 2008 (ice absorption 0.00074–0.52061
+/m, the ×701 spread, `bio_grounding` §9), ASTM G173 (PAR fraction 0.3879 vs the
+0.4297 AM1.5G surface value, §12), Colesie et al. 2014 (algal optimum 5–7 °C,
+`q2b_adapted/prereg.yaml`), Scafaro et al. 2023 (29.4 °C, verified verbatim in §11
+S4), Pointing et al. 2015 (algal floor 254.65 K, `sim/organism.py:160`),
+Craine & Reich 2005 and Richardson 1983 (the Q1 calibration gates,
+`q1_crossover/prereg.yaml`).
+
+**Stage 4 DONE:** FINDINGS numbers match the CSVs they cite (the check is above),
+ghostcite clean, README rewritten.

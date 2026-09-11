@@ -1,15 +1,28 @@
 # Dyson tree
 
-A sim-zoo design track. **Loop A exists and has produced one measured number.**
-Scaffolded 2026-09-01; the design was run on 2026-09-02
-(`docs/superpowers/specs/2026-09-02-q1-carbon-crossover-design.md`), and a
-carbon-budget model — loop A, light-only, tissue temperature fixed — lives
-under `sim/`. Q1 is registered and run: the vascular default-k prediction held
-at 13.69 AU, the algal default-k prediction failed at 67.26 AU against
-[35, 55]. Read the result and its caveats in
-**`experiments/q1_crossover/RESULTS.md`**; `docs/ROADMAP.md` stays canonical for
-"what phase, what's next". Q2 (heating cost) is declared, not built. Tracked as
-task #10.
+**Can a tree grow in space?** This repository builds the smallest honest carbon
+budget for one photosynthetic organism at a distance `r` from the Sun — light in,
+respiration out — registers what it expects before each run, and reports what
+happened. Three questions were registered and run; **exactly one of their
+predictions held.** One missed its band, one was falsified outright, and one was
+never tested because its own held-out gate failed. A fourth question was specified
+and then falsified before registration: it asked for a single attenuation
+coefficient for a wall whose absorption spans a factor of 701 across PAR, which is
+a quantity that cannot exist. The falsifications are the result worth reading.
+
+- **Explore the model in your browser:** <https://musharna.github.io/dyson-tree/>
+  — pick a photosystem class, a distance and a half-saturation constant, and watch
+  net carbon cross zero. The pre-registered bands are drawn beside the measured
+  crossovers, marked as predictions rather than results.
+- **Read the findings:** **[`docs/FINDINGS.md`](docs/FINDINGS.md)** — falsifications
+  first, each with its number, the file it lives in, and the command that produces it.
+- `docs/ROADMAP.md` stays canonical for "what phase, what's next";
+  `docs/RELEASE-1.0.md` is the release evidence log.
+
+Licence: code (`sim/ tools/ tests/ web/ experiments/**/*.py`) is **MIT**;
+documents, figures and results (`docs/**`, `experiments/**/{RESULTS.md,*.csv,figures}`)
+are **CC-BY-4.0**. See `LICENSE`, `LICENSE-docs`, `docs/THIRD-PARTY.md` and
+`CITATION.cff`.
 
 ## The brief, as filed
 
