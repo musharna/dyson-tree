@@ -18,6 +18,13 @@ for f in index.html model.js app.js; do
   cp "web/$f" "site/$f"
 done
 
+# The published page is the copy most readers see, and CC-BY requires the
+# attribution to travel with the work. Ship both licence texts beside it.
+for f in LICENSE LICENSE-docs; do
+  test -f "$f" || { echo "missing $f" >&2; exit 1; }
+  cp "$f" "site/$f"
+done
+
 # Pages runs Jekyll unless told not to; .nojekyll also stops it dropping any
 # future underscore-prefixed file.
 touch site/.nojekyll

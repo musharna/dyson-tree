@@ -9,8 +9,14 @@
 >
 > ⚠️ The summary paragraph below quotes the PRE-S5 Q1 crossovers (13.69 and
 > 67.26 AU). The current values are 12.7058 and 62.4490 AU — every r\* scales by
-> `sqrt(0.3879/0.45) = 0.928487` and no verdict changes. Superseded text is
+> `sqrt(0.3879/0.45) = 0.9284396` and no verdict changes. Superseded text is
 > bannered, not rewritten.
+>
+> ⚠️ The scale factor is stated as **0.928487** at the 2026-09-06 entry below and in
+> `bio_grounding` §20. That is `sqrt(0.38793993851109/0.45)` — the factor implied by
+> the full-precision MEASUREMENT. The code registers `PAR_FRACTION = 0.3879`, so the
+> factor that actually reproduces the six committed `r*` is **0.9284396**; 0.928487
+> reproduces none of them at 4 dp. The entries below are left as written.
 
 **Canonical for "what phase, what's next".** If a later document supersedes this
 one, banner this file and redirect from it in the same commit — a superseding

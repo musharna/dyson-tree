@@ -70,7 +70,7 @@ unreachable before the sweep ran.
 
 `PAR_FRACTION` 0.45 → 0.3879 (measured AM0 400–700 nm fraction of TSI). Applies
 unconditionally to Q1, Q2 and Q2b. Every crossover distance scales by
-`sqrt(0.3879/0.45) = 0.928487`; every compensation irradiance is unchanged
+`sqrt(0.3879/0.45) = 0.9284396`; every compensation irradiance is unchanged
 (irradiances do not depend on the PAR fraction); **no verdict moved.**
 
 [1.0.0]: https://github.com/musharna/dyson-tree/releases/tag/v1.0.0

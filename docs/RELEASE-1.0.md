@@ -315,7 +315,7 @@ a banner naming the old value, the new one, and the fact that no verdict moves:
 
 | file | stale claim | current |
 | --- | --- | --- |
-| `experiments/q1_crossover/RESULTS.md` | 13.6851 / 67.2623 AU (all six r\*) | 12.7058 / 62.4490 AU (× 0.928487) |
+| `experiments/q1_crossover/RESULTS.md` | 13.6851 / 67.2623 AU (all six r\*) | 12.7058 / 62.4490 AU (× 0.9284396) |
 | `experiments/q2b_adapted/RESULTS.md` | pasted stdout, light limit 75.434 AU | 70.036 AU; light never binding |
 | `docs/ROADMAP.md` | summary quotes 13.69 / 67.26 AU | bannered at the top |
 
@@ -470,3 +470,126 @@ $ tools/build_site.sh && python3 tools/smoke_page.py
 ```
 
 **Stage 5 DONE:** files exist, sweep recorded clean, every path hit dispositioned.
+
+## Stage 6 — critic gate
+
+One fresh subagent, served `site/` and `docs/FINDINGS.md`, told to find defects
+rather than approve, with Playwright available and explicitly warned not to treat
+`tools/smoke_page.py` passing as evidence. It rendered 18 preset × k × slider
+states plus a 390 px viewport, traced every FINDINGS number to its source file,
+and ran the runners itself.
+
+**Round 1: nine non-waivable findings. Every one was independently re-verified
+here before being acted on, and all nine reproduced.** Seven were claims that
+their own cited sources did not support — which is exactly the category the gate
+exists for, and not one of them was visible to any test in the suite.
+
+| # | finding | disposition |
+| --- | --- | --- |
+| 1 | Page displayed "1.000 AU" while evaluating **0.99987 AU**; `T_eq` and PAR beside it were computed there, disagreeing with the repo's own published `T_eq` at 1 AU in the second decimal | **FIXED** in `web/app.js` |
+| 2 | `sqrt(0.3879/0.45) = 0.928487` is arithmetically false | **FIXED** → 0.9284396 |
+| 3 | The reachability percentages in "What holds" are pre-S5 and do not rescale | **FIXED** — recomputed |
+| 4 | "the rate is zero past 1.1945 AU" — Q2b's Gaussian has no floor | **FIXED** — rewritten |
+| 5 | "the falsification is not affected" — retiring Gate B readmits vascular, where carbon binds at 2 of 5 Ω | **FIXED** — scope narrowed |
+| 6 | The Gate-B *pass* was listed among the classes that fail their window | **FIXED** |
+| 7 | `T_interior = (N+1)^0.25·T_eq` presented as standing; §13 S7 marks its premise falsified | **FIXED** — τ correction attached |
+| 8 | The published `site/` named no copyright holder | **FIXED** |
+| 9 | CSV headers name a commit whose code cannot produce them | **DOCUMENTED + escalated** |
+
+### The three that mattered most
+
+**#1 — a wrong number on the page that 79 passing assertions could not see.**
+`rToSlider(1.0)` rounds to slider position 1308, and `sliderToR(1308)` is
+0.9998727 AU, which `toFixed(3)` prints as `1.000`. Every readout was then
+evaluated at 0.99987: `T_eq` 330.99 K where the fixtures, and both committed
+`gates.csv` files, say 330.97 K at 1 AU. An earlier comment in `app.js` claimed to
+have fixed this — it had fixed only the **label**. `sliderToR` now quantises to the
+displayed precision, so the distance shown is the distance used (and
+`sliderToR(max)` stops returning 100.00000000000004).
+
+My smoke suite missed it because it checked `#out-xover` and `#out-ic` against
+fixtures — neither of which depends on the slider — and checked nothing else
+against anything. It now recomputes PAR and `T_eq` from the fixture constants **at
+the distance the page displays**, at the default, after a slider move, at the
+maximum, and for both presets. Seen to fail: against the pre-fix page those checks
+produce
+
+```
+FAIL  default: PAR 2412.91 must match 2412.2942, the value at the DISPLAYED distance 1.0
+FAIL  default: T_eq 330.99 must match 330.9696, the value at the DISPLAYED distance 1.0
+FAIL  vascular T_eq at 1 AU is 330.99, fixtures say 330.96962819710996
+FAIL  algal T_eq at 1 AU is 278.33, fixtures (and both gates.csv) say 278.31117390880445
+```
+
+The suite is now **107 assertions**, up from 79.
+
+**#5 — the strongest finding, because it narrows a headline.** FINDINGS claimed
+the Q2b falsification was untouched by Gate B's retirement. Running Q2b's own
+`classify_limit` on the excluded vascular class:
+
+```
+vascular omega=10  temperature=1.5581 light=12.7058 carbon=nan     -> temperature
+vascular omega=15  temperature=1.5581 light=12.7058 carbon=nan     -> temperature
+vascular omega=20  temperature=1.5581 light=12.7058 carbon=nan     -> temperature
+vascular omega=25  temperature=1.5581 light=12.7058 carbon=1.2060  -> carbon
+vascular omega=30  temperature=1.5581 light=12.7058 carbon=1.3920  -> carbon
+```
+
+The registered prediction **would have held** for vascular at Ω = 25 and 30. The
+claim is now "stands for the algal class; whether it generalises is open". Going
+further than the critic did: the three `nan` rows are not evidence for temperature
+either — vascular net carbon is negative across the **entire** grid at those Ω
+(−8.47 at its own 1 AU home), which the prereg discloses in advance under
+`curve_shape`. So of five vascular rows, two say carbon and three describe an
+organism that is never viable.
+
+**#3 — numbers that could not be repaired by the correction they needed.** The
+gate-reachability percentages were pre-S5, and unlike the crossovers they do not
+rescale: the registered bands are fixed while the reachable interval shrank 7.16%.
+Recomputed at the release code (control: the scan reproduces 12.7058 and 62.4490
+exactly): vascular 96.2% → **66.4%**, algal floor 47.02 → **43.66 AU**,
+unreachable share 60.1% → **43.3%**. The reading softens — "close to forced"
+becomes "substantially pre-decided" — and does not reverse. `RESULTS.md` carries a
+banner saying so.
+
+### #9 — documented, not repaired, and why
+
+Every committed CSV header's `git_sha` names `fc6ba42`, whose `sim/physiology.py`
+still has `PAR_FRACTION = 0.45` and would produce 13.6851 AU rather than the
+12.7058 in the file: the runners were re-run with the S5 edit in the working tree
+while `HEAD` was at the parent commit. The `*_md5` lines in the same header are
+correct and identify `1d9cea5`. Repairing it means re-running frozen experiments,
+which this plan's scope forbids, so FINDINGS now carries *A note on the CSV
+provenance headers* saying which half to trust and to reproduce from `1d9cea5` or
+later. **Coordinator: the clean fix is to re-run and re-commit the CSVs at the
+release commit — data is byte-identical, only the header moves — but that is the
+owner's call, not an executor's.**
+
+### Scale-factor discrepancy left in place
+
+`docs/ROADMAP.md` (2026-09-06 entry) and `bio_grounding` §20 state the factor as
+0.928487, which is `sqrt(0.38793993851109/0.45)` — the full-precision
+*measurement*. The code registers `PAR_FRACTION = 0.3879`, so the factor that
+reproduces the six committed `r*` is 0.9284396; 0.928487 reproduces none of them at
+4 dp. Those entries are earlier records and are bannered, not rewritten, per the
+repository's convention; the banner at the top of `ROADMAP.md` names the
+discrepancy explicitly.
+
+### Waivable — survivors, listed
+
+1. Crossover labels crowd the hatched band's dashed edge in the algal view. No two
+   label boxes overlap and the styles remain distinct (red bold text and solid dots
+   against grey hatching), so it is legible; left as is.
+2. Plot text is ~4 px at 390 px width. The page reflows correctly with no
+   horizontal overflow; the plot is not readable on a phone.
+3. `README.md` references `_pm/` and three private Claude skills — repo-external
+   references a public reader cannot resolve. README was outside the reviewed set.
+4. The pre-registrations were edited after their runs (the S5 `par_fraction`
+   line), disclosed in-file and mechanically forced by the runner's
+   `assert_assumptions_match`. Flagged for the owner; changes no registered
+   prediction.
+5. The Pages workflow cannot fire from `release/1.0-rc` — it triggers on `master`.
+   Expected: the coordinator's merge is what triggers it.
+
+**Re-verified after every fix: 131 tests pass, 107 smoke assertions pass, site
+rebuilds clean.**

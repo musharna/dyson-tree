@@ -63,18 +63,22 @@
   // 10000 steps so the default 1 AU lands on 1.000, not 1.001.
   var SLIDER_MAX = 10000;
 
+  // The result is QUANTISED to the precision it is displayed at (3 dp). Without
+  // this the slider's default position is 0.99987 AU while the label reads
+  // "1.000 AU", and every readout beside it -- T_eq, PAR irradiance -- is
+  // computed at 0.99987. A reader comparing 330.99 K against the repository's
+  // own 330.97 K at 1 AU would be right to call the page wrong. Quantising is
+  // also what keeps sliderToR(SLIDER_MAX) from returning 100.00000000000004.
+  var R_DP = 3;
   function sliderToR(v) {
     var t = Number(v) / SLIDER_MAX;
-    return Math.exp(Math.log(R_MIN) + t * (Math.log(R_MAX) - Math.log(R_MIN)));
+    var r = Math.exp(Math.log(R_MIN) + t * (Math.log(R_MAX) - Math.log(R_MIN)));
+    var q = Math.pow(10, R_DP);
+    return Math.min(R_MAX, Math.max(R_MIN, Math.round(r * q) / q));
   }
   function rToSlider(r) {
     var t = (Math.log(r) - Math.log(R_MIN)) / (Math.log(R_MAX) - Math.log(R_MIN));
     return Math.round(t * SLIDER_MAX);
-  }
-
-  function fmt(x, dp) {
-    if (x === null || x === undefined || !isFinite(x)) return "—";
-    return x.toFixed(dp === undefined ? 4 : dp);
   }
 
   function state() {
@@ -275,12 +279,12 @@
   function render() {
     var s = state();
 
-    els.rlabel.textContent = s.r.toFixed(3) + " AU";
+    els.rlabel.textContent = s.r.toFixed(R_DP) + " AU";
 
     var xover = M.crossoverDistanceFor(s.org, s.k, R_MIN, R_MAX, N_GRID);
     var inBand = xover !== null && xover >= s.reg.band_au[0] && xover <= s.reg.band_au[1];
 
-    els.outR.textContent = s.r.toFixed(3) + " AU";
+    els.outR.textContent = s.r.toFixed(R_DP) + " AU";
     els.outI.textContent = M.irradiance(s.r).toFixed(2) + " µmol photons m⁻² s⁻¹";
     var net = M.netCarbon(s.org, s.r, s.k);
     els.outNet.textContent =
@@ -288,7 +292,6 @@
     var teq = M.equilibriumTemperature(s.r, s.org.area_ratio, s.org.emissivity, s.org.albedo);
     els.outTeq.textContent = teq.toFixed(2) + " K (" + (teq - 273.15).toFixed(2) + " °C)";
 
-    els.outXover.id = "out-xover";
     if (xover === null) {
       els.outXover.textContent = "no crossover in range (0.5–100 AU)";
     } else {

@@ -141,11 +141,59 @@ def exercise(page, label: str) -> None:
 
     check("inside" in page.locator("#out-band").inner_text(), f"[{label}] vascular k=100 reported inside its band")
 
+    # The distance the page DISPLAYS must be the distance it EVALUATED. The
+    # slider maps an integer position through a log scale, so the default
+    # position landed at 0.99987 AU while the label said "1.000 AU" -- and
+    # T_eq and the irradiance beside it were computed at 0.99987, disagreeing
+    # with this repository's own published T_eq at 1 AU in the second decimal.
+    # Nothing here caught it: the earlier version of this file checked only
+    # #out-xover and #out-ic, and neither depends on the slider.
+    consts = FIXTURES["constants"]
+
+    def expect_at(r_au, area_ratio):
+        par = consts["TSI_W_M2"] / (r_au * r_au) * consts["PAR_FRACTION"] * consts["PHOTONS_PER_J"]
+        s_flux = consts["TSI_W_M2"] / (r_au * r_au)
+        t_eq = (s_flux / (area_ratio * 1.0 * consts["SIGMA_W_M2_K4"])) ** 0.25
+        return par, t_eq
+
+    def check_readouts_agree_with_displayed_distance(tag, area_ratio):
+        r_shown = number_in(page.locator("#out-r").inner_text())
+        par_shown = number_in(page.locator("#out-i").inner_text())
+        teq_shown = number_in(page.locator("#out-teq").inner_text())
+        par_want, teq_want = expect_at(r_shown, area_ratio)
+        check(
+            abs(par_shown - par_want) <= 5e-3,
+            f"[{label}] {tag}: PAR {par_shown} must match {par_want:.4f}, the value at the "
+            f"DISPLAYED distance {r_shown}",
+        )
+        check(
+            abs(teq_shown - teq_want) <= 5e-3,
+            f"[{label}] {tag}: T_eq {teq_shown} must match {teq_want:.4f}, the value at the "
+            f"DISPLAYED distance {r_shown}",
+        )
+
+    check_readouts_agree_with_displayed_distance("default", 2.0)
+
+    # ...and at the default the distance must be exactly 1 AU, where this
+    # repository publishes T_eq in two gates.csv files and in the fixtures.
+    r_default = number_in(page.locator("#out-r").inner_text())
+    check(r_default == 1.0, f"[{label}] the default distance is exactly 1.000 AU, got {r_default}")
+    teq_default = number_in(page.locator("#out-teq").inner_text())
+    teq_ref = FIXTURES["cases"]["vascular"]["adapted_t_opt_home_1au"]
+    check(
+        abs(teq_default - teq_ref) <= 5e-3,
+        f"[{label}] vascular T_eq at 1 AU is {teq_default}, fixtures say {teq_ref}",
+    )
+
     panel = page.locator("aside.isnot")
     check(panel.is_visible(), f"[{label}] 'What this is / is not' panel is visible")
     ptext = panel.inner_text()
     for phrase in ("pressure vessel", "spectral wall", "category error", "falsified"):
         check(phrase in ptext, f"[{label}] limitations panel mentions '{phrase}'")
+
+    body_all = page.locator("body").inner_text()
+    check("Jaret Arnold" in body_all, f"[{label}] the page names its copyright holder")
+    check("MIT" in body_all and "CC BY 4.0" in body_all, f"[{label}] the page states both licences")
 
     legend = page.locator(".legend").inner_text()
     check(
@@ -177,6 +225,12 @@ def exercise(page, label: str) -> None:
     check(before_marker != after_marker, f"[{label}] slider moves the plot marker ({before_marker} -> {after_marker})")
     net_far = number_in(page.locator("#out-net").inner_text())
     check(net_far < 0, f"[{label}] far from the Sun net carbon is negative, got {net_far}")
+    check_readouts_agree_with_displayed_distance("slider moved", 2.0)
+    page.locator("#rslider").fill("10000")
+    page.locator("#rslider").dispatch_event("input")
+    r_max_shown = number_in(page.locator("#out-r").inner_text())
+    check(r_max_shown == 100.0, f"[{label}] the slider maximum is exactly 100.000 AU, got {r_max_shown}")
+    check_readouts_agree_with_displayed_distance("slider at maximum", 2.0)
     check_plot_geometry(page, label + " vascular, slider moved")
     page.locator("#rslider").fill("1308")
     page.locator("#rslider").dispatch_event("input")
@@ -199,6 +253,14 @@ def exercise(page, label: str) -> None:
         f"[{label}] algal k=20 is reported OUTSIDE its pre-registered band",
     )
     check(page.locator("#plot path").count() >= 1, f"[{label}] algal curve is drawn")
+    check_readouts_agree_with_displayed_distance("algal", 4.0)
+    algal_teq = number_in(page.locator("#out-teq").inner_text())
+    algal_teq_ref = FIXTURES["cases"]["algal"]["adapted_t_opt_home_1au"]
+    check(
+        abs(algal_teq - algal_teq_ref) <= 5e-3,
+        f"[{label}] algal T_eq at 1 AU is {algal_teq}, fixtures (and both gates.csv) say "
+        f"{algal_teq_ref}",
+    )
     check_plot_geometry(page, label + " algal")
 
     # -- a non-default k still agrees with the fixture --

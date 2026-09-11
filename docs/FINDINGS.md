@@ -8,7 +8,8 @@ prediction was wrong.
 
 **Three questions were registered and run (Q1, Q2, Q2b); a fourth (Q3) was
 specified, and its premise was falsified before it could be registered.** Of the
-registered predictions exactly one held — Q1's vascular crossover. Q1's algal
+registered predictions exactly one held — Q1's vascular crossover, judged as the
+repository judges them, at each class's registered default `k`. Q1's algal
 prediction missed its band, Q2b's prediction was falsified outright, and Q2's was
 never tested at all because Q2's own held-out gate failed and the runner refused
 to report. That is the headline, and it is the reason this repository is worth
@@ -30,24 +31,40 @@ the organism runs out of light-limited carbon before anything else stops it.
 **Result: FALSIFIED.** Temperature binds at every width of the response curve
 that was swept:
 
-| Ω (K) | temperature limit | light limit | carbon limit | binding |
-| --- | --- | --- | --- | --- |
-| 10 | 1.1945 AU | 70.04 AU | 1.2119 AU | **temperature** |
-| 15 | 1.1945 AU | 70.04 AU | 1.3794 AU | **temperature** |
-| 20 | 1.1945 AU | 70.04 AU | 1.6178 AU | **temperature** |
-| 25 | 1.1945 AU | 70.04 AU | 1.9718 AU | **temperature** |
-| 30 | 1.1945 AU | 70.04 AU | 2.5289 AU | **temperature** |
+| class | Ω (K) | temperature candidate | light candidate | carbon candidate | binding |
+| --- | --- | --- | --- | --- | --- |
+| algal | 10 | 1.1945 AU | 70.04 AU | 1.2119 AU | **temperature** |
+| algal | 15 | 1.1945 AU | 70.04 AU | 1.3794 AU | **temperature** |
+| algal | 20 | 1.1945 AU | 70.04 AU | 1.6178 AU | **temperature** |
+| algal | 25 | 1.1945 AU | 70.04 AU | 1.9718 AU | **temperature** |
+| algal | 30 | 1.1945 AU | 70.04 AU | 2.5289 AU | **temperature** |
 
-The temperature limit is a hard floor at **1.1945 AU**: past it the organism's
-equilibrium temperature falls below the algal photosynthesis floor (254.65 K, Pointing et al. 2015) and
-the rate is zero regardless of how much light is left. Carbon never gets the
-chance to bind, and light — the constraint the whole project started from — is
-outside by a factor of nearly sixty.
+Every row is the **algal** class — the only class the run answered. Why, and what
+that costs the claim, is two subsections down.
+
+These are three **separately computed candidate distances**, and the run reports
+whichever is smallest. The temperature candidate is a fixed **1.1945 AU** — the
+distance at which equilibrium temperature reaches the algal floor (254.65 K,
+Pointing et al. 2015). It depends only on geometry and `t_min`, never on Ω or on
+the response curve, which is why it is identical down the column. It is tighter
+than the carbon crossing at every Ω, and light — the constraint the whole project
+started from — is outside by a factor of nearly sixty.
+
+**What this does not say.** It does not say the modelled rate switches off past
+1.1945 AU. Q2b's carbon path (`Organism.net_carbon_adapted`) uses the Gaussian
+response, whose own docstring is explicit that *"there is no t_min here: the
+Gaussian approaches zero asymptotically rather than switching off at a floor"* —
+at 1.1945 AU and Ω = 10 the response is 0.0037, not 0, and net carbon is still
++0.0197. Carbon does cross zero, at the 1.2119 AU in the table. The finding is a
+comparison of candidate distances, not a cut-off: the temperature limit simply
+arrives first. `experiments/q2b_adapted/RESULTS.md` states this carefully and is
+the authority if this summary and it ever disagree.
 
 - Lives in: `experiments/q2b_adapted/limits.csv`, written up in
   `experiments/q2b_adapted/RESULTS.md`
 - Command: `python3 experiments/q2b_adapted/run.py` (exits 0)
-- Commit: `1d9cea5`
+- Produced by the code at commit `1d9cea5` — see *A note on the CSV provenance
+  headers* below, which explains why the header inside the file names `fc6ba42`
 
 **Only one of the two organism classes was answered at all**, and the gate that
 decided which is *itself retired*. Q2b gated its adaptation premise per class by
@@ -63,17 +80,47 @@ recorded in `docs/thermal_premise_retired_2026-09-03.md`: it compared a
 tissue temperature is set by radiation **plus** conduction, convection and
 evaporation — Earth's own blackbody equilibrium is −18 °C against a +15 °C mean
 surface, and that 33 K gap is the missing physics. Under honest geometry every
-class fails its window (crust mat at ratio 1 → 120.44 °C, sphere at ratio 4 →
-5.16 °C, lamina at ratio 2 → 57.82 °C); the single pass came from modelling a flat
-soil crust as a sphere, which was a coincidence, not a signal. This is a design
+class fails its window (crust mat at ratio 1 → 120.44 °C, the same crust
+at ratio 2 → 57.82 °C, vascular lamina at ratio 2 → 57.82 °C); the single pass came
+from modelling a flat soil crust as a **sphere** (ratio 4 → 5.16 °C), the geometry
+that note disowns — a coincidence, not a signal. This is a design
 error in Q2b's spec, not a property of the organisms — and it supersedes the
 "a flat lamina runs hotter than a real leaf" explanation still printed in
 `experiments/q2b_adapted/RESULTS.md`.
 
-**The falsification above is not affected by any of that.** It compared the
-thermal floor against the carbon crossing, both computed inside the model, and
-temperature won at every Ω regardless of whether Gate B meant anything. What is
-retired is the gate, not the result.
+**How far the falsification survives that retirement — stated precisely, because
+the answer is not "entirely".** Within the algal class it is untouched: it
+compared the thermal floor against the carbon crossing, both computed inside the
+model, and temperature won at every Ω whether or not Gate B meant anything.
+
+**But the retired gate is what made the result a clean sweep.** Running Q2b's own
+`classify_limit` on the vascular class — the class Gate B excluded — gives:
+
+| Ω | temperature | light | carbon | binding |
+| --- | --- | --- | --- | --- |
+| 10 | 1.5581 | 12.7058 | *no crossing in window* | temperature |
+| 15 | 1.5581 | 12.7058 | *no crossing in window* | temperature |
+| 20 | 1.5581 | 12.7058 | *no crossing in window* | temperature |
+| 25 | 1.5581 | 12.7058 | **1.2060** | **carbon** |
+| 30 | 1.5581 | 12.7058 | **1.3920** | **carbon** |
+
+So the registered prediction — carbon binds — **would have held for vascular at
+Ω = 25 and Ω = 30.** "Temperature binds at every Ω" is true of the class that was
+answered, and the gate that excluded the other class has since been retired as
+uninformative. Read plainly: **the falsification stands for the algal class, and
+whether it generalises is open.**
+
+Two things keep that from being a quiet retraction. The exclusion was registered
+in advance — the prereg carries `expect: fail` for vascular — so the run did what
+it said it would do. And the three Ω where vascular still reports `temperature`
+are not evidence for temperature at all: at Ω ∈ {10, 15, 20} the vascular carbon
+candidate is not a number, because **net carbon is negative across the entire
+[0.5, 100] AU grid** — the organism never breaks even anywhere, including at its
+1 AU home (net carbon there is −8.47). `classify_limit` records that as `nan`, and
+`min()` drops it. The prereg discloses this shape in advance
+(`experiments/q2b_adapted/prereg.yaml`, `curve_shape`). So of the five vascular
+rows, two say carbon binds and three describe an organism that is never viable —
+neither group supports "temperature binds".
 
 ### 2. The algal range prediction missed by 7.45 AU, in the wrong direction (Q1)
 
@@ -95,7 +142,8 @@ lands inside. Three of the six swept `k` values fall outside their band:
 
 - Lives in: `experiments/q1_crossover/crossover.csv`
 - Command: `python3 experiments/q1_crossover/run.py` (exits 0)
-- Commit: `1d9cea5`
+- Produced by the code at commit `1d9cea5` (the header inside the file names
+  `fc6ba42`; see *A note on the CSV provenance headers*)
 
 ### 3. Q2 produced no answer, and the reason is the finding
 
@@ -120,7 +168,8 @@ quietly re-tuned until it passed.
 
 - Lives in: `experiments/q2_thermal/gates.csv` and `RESULTS.md`
 - Command: `python3 experiments/q2_thermal/run.py` (exits **2**, by design)
-- Commit: `1d9cea5`
+- Produced by the code at commit `1d9cea5` (the header inside the file names
+  `fc6ba42`; see *A note on the CSV provenance headers*)
 
 ### 4. The wall is a spectral filter, not an attenuator — so the vessel is unbuilt (Q3)
 
@@ -131,14 +180,28 @@ every one of those questions silently assumed a containment vessel that was neve
 modelled. Q3 was registered to design it. Two results came out of it, and both
 changed what the earlier questions mean:
 
-**(a) The vessel sets the temperature; the organism does not.** For a
-shortwave-transparent, IR-opaque wall of `N` shells,
-`T_interior = (N + 1)^0.25 · T_eq`, and the distance restoring the bare optimum is
-`sqrt(N + 1)`. One shell takes the algal sphere from 5.16 °C to 57.82 °C; 1.0 AU
-becomes 1.41421 AU. This also exposes a degeneracy: **adding one IR-opaque shell
-and halving `area_ratio` are the same operation** (identical to 5.7 × 10⁻¹⁴ K), yet
-`sim/thermal.py` defines `area_ratio` as pure geometry — so every registered
-`area_ratio` also silently asserted *uncontained*.
+**(a) The vessel sets the temperature; the organism does not.** This is the
+settled part, and the sub-result that answered it — "does a contained organism's
+temperature still follow `T_eq`?" — is *no*: the wall does.
+
+The *formula* first given for it has since been superseded by this project's own
+optics, and it is quoted here with that correction attached. For a
+**shortwave-transparent**, IR-opaque wall of `N` shells,
+`T_interior = (N + 1)^0.25 · T_eq`, with `sqrt(N + 1)` the distance restoring the
+bare optimum — one shell taking the algal sphere from 5.16 °C to 57.82 °C, 1.0 AU
+to 1.41421 AU. **But a pressure-bearing ice wall is not shortwave-transparent**: it
+transmits only 16–23% of solar energy, because NIR is 53% of TSI and ice absorbs
+it. The correct form is `(1 + τ)^0.25 · T_eq`, and the familiar one is its τ = 1
+case (`docs/bio_grounding_2026-09-02.md` §13 S7). At the measured τ (0.26–0.34) one
+shell gives **21.8–26.5 °C, not 57.82 °C**.
+
+The same correction reaches the degeneracy. "Adding one IR-opaque shell and
+halving `area_ratio` are the same operation, identical to 5.7 × 10⁻¹⁴ K" is **true
+only at τ = 1** — at a measured τ the two differ by 31–36 K (§14). That agreement
+compared two expressions computing the same assumption. What survives is the
+qualitative point, and it is the one that matters here: `sim/thermal.py` defines
+`area_ratio` as pure geometry, so every registered `area_ratio` silently asserted
+*uncontained*.
 
 **(b) A scalar attenuation coefficient for the wall is a category error.** Grounded
 against Warren & Brandt's 2008 primary ice optical-constants table, the PAR
@@ -157,7 +220,7 @@ inside the registered pressure bracket.
 - Lives in: `docs/superpowers/specs/2026-09-04-q3-pressure-vessel-design.md` and
   `docs/bio_grounding_2026-09-02.md` §§9–12
 - Answered analytically; no runner
-- Commit: `1d9cea5`
+- Release commit: `1d9cea5`
 
 ---
 
@@ -171,21 +234,37 @@ passed for both classes: vascular compensation irradiance 6.9519 µmol m⁻² s�
 
 **That hit carries less information than the algal miss does**, and the repository
 says so. The calibration gate constrains `r_d` at 1 AU, and r\* follows from `r_d`
-— so the two are not independent. Scanning `r_d` across the gate-admissible range,
-**96.2% of it produces an r\* inside [12, 22]**: the vascular "hit" was close to
-forced before the sweep ran. On the algal side, no gate-passing `r_d` can put r\*
-below 47.02 AU, so 60.1% of the registered [35, 55] band was unreachable. The full
-analysis is in `experiments/q1_crossover/RESULTS.md` under *"How much of each
-prediction the gate had already decided"*.
+— so the two are not independent: some of each registered band was already decided
+before the sweep ran. `experiments/q1_crossover/RESULTS.md` works this out under
+*"How much of each prediction the gate had already decided"*, **but its numbers are
+pre-S5**, and unlike the crossovers they cannot be recovered by rescaling: the
+bands are fixed while the reachable interval shrank by 7.16%, which moves the
+percentages non-linearly. Recomputed against the release code:
+
+| | RESULTS.md (pre-S5) | release code |
+| --- | --- | --- |
+| vascular reachable r\* | [11.89, 15.81] AU | **[11.04, 14.68] AU** |
+| share of gate-admissible `r_d` giving r\* inside [12, 22] | 96.2% | **66.4%** |
+| algal floor on r\* | 47.02 AU | **43.66 AU** |
+| share of [35, 55] unreachable | 60.1% | **43.3%** |
+
+The reading softens but does not reverse. Two-thirds of the gate-admissible
+vascular range still lands inside the registered band, so the vascular hit remains
+substantially pre-decided — it is no longer "close to forced". On the algal side
+**43.3% of the registered band was unreachable before the sweep ran**, so the miss
+still carries more information than the hit does. (Scan: `r_d` over the
+gate-admissible interval, `crossover_distance_for(n_grid=200)`, release constants.
+Control: the scan reproduces r\*(`r_d`=0.65, k=100) = 12.7058 and
+r\*(`r_d`=0.24, k=20) = 62.4490, matching `crossover.csv` exactly.)
 
 **A 1.16× error in the PAR fraction was found and corrected, and no verdict moved.**
 `PAR_FRACTION` was 0.45, an unsourced assumption that exceeds even the AM1.5G
 *surface* value; the measured AM0 400–700 nm fraction of TSI is **0.3879**. The
 correction (S5) applies unconditionally to Q1, Q2 and Q2b. Because r\* is a
-*distance* it scales as exactly `sqrt(0.3879/0.45) = 0.928487`, while the
+*distance* it scales as exactly `sqrt(0.3879/0.45) = 0.9284396`, while the
 compensation irradiance is an *irradiance* and does not depend on PAR at all — so
 `calibration.csv` and both `gates.csv` are unchanged to the byte, every r\* moved
-by 7.15%, and **all six Q1 verdicts and all five Q2b verdicts stand as they were**.
+by 7.16%, and **all six Q1 verdicts and all five Q2b verdicts stand as they were**.
 
 ---
 
@@ -197,10 +276,30 @@ superseded claims instead of editing them away:
 
 - `experiments/q1_crossover/RESULTS.md` quotes the pre-S5 crossovers
   (13.6851 / 19.3537 / 9.6769 / 95.1233 / 67.2623 / 47.5616 AU). Multiply any of
-  them by 0.928487 to get the current value. No verdict in that table changes.
+  them by 0.9284396 to get the current value (the last digit can differ by one:
+  the pre-S5 figures are themselves rounded to 4 dp). No verdict in that table changes.
 - `experiments/q2b_adapted/RESULTS.md` pastes a pre-S5 run's stdout, in which the
   light limit reads 75.434 AU; it is now 70.036 AU. It was never binding either way.
 - `docs/ROADMAP.md`'s summary paragraph quotes 13.69 and 67.26 AU.
+
+### A note on the CSV provenance headers
+
+Every committed CSV carries a provenance header, and **its `git_sha` line names a
+commit whose code cannot produce the file**. `crossover.csv` says
+`git_sha=fc6ba42…`, but `git show fc6ba42:sim/physiology.py` still has
+`PAR_FRACTION = 0.45` and would produce 13.6851 AU, not the 12.7058 in the file.
+The cause: the runners were re-run with the S5 edit in the working tree while
+`HEAD` was still at the parent commit, and `git_sha()` records `HEAD`, not the
+tree it ran against.
+
+**The other half of the same header is correct and is the half to trust.** The
+`physiology_md5`, `organism_md5` and `prereg_md5` lines describe the files as they
+actually were: `af16830e…` is `sim/physiology.py` at `1d9cea5`, not at `fc6ba42`.
+So the header is internally contradictory, and the md5s resolve it.
+
+Reproduce from **`1d9cea5` or later**, not from the `git_sha` the header names.
+This is recorded rather than repaired: correcting it means re-running the frozen
+experiments, which is a decision for the repository owner, not for a release.
 
 **The check behind that claim:** re-running all three runners at the release commit
 regenerates every committed CSV with **byte-identical data** — only the provenance
@@ -213,7 +312,8 @@ against what is committed. The commands are in *Reproduce* below.
 
 ## Still open
 
-Verbatim from the unchecked items in `docs/ROADMAP.md`'s checklist:
+From the unchecked items in `docs/ROADMAP.md`'s checklist. The first is quoted
+verbatim; the second and third are abridged, and the roadmap is the authority:
 
 - 🔴 **NEXT QUESTION — the pressure vessel, promoted from "out of scope" to
   PRECONDITION (2026-09-03).** *"An organism at free radiative equilibrium in

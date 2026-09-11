@@ -3,10 +3,21 @@
 > ⚠️ **SUPERSEDED NUMBERS, SAME VERDICTS (2026-09-06, S5).** `PAR_FRACTION` was
 > corrected from an unsourced 0.45 to the measured AM0 value 0.3879, so every
 > crossover in this file is 1.0770x too large. Multiply by
-> `sqrt(0.3879/0.45) = 0.928487`: 19.3537 -> 17.9688, **13.6851 -> 12.7058**,
+> `sqrt(0.3879/0.45) = 0.9284396`: 19.3537 -> 17.9688, **13.6851 -> 12.7058**,
 > 9.6769 -> 8.9844, 95.1233 -> 88.3162, **67.2623 -> 62.4490**, 47.5616 ->
 > 44.1581. The compensation irradiances (6.9519, 0.4918) do NOT move — `I_c` is
 > an irradiance and is PAR-independent — and **no `inside` verdict changes**.
+>
+> ⚠️ **The section "How much of each prediction the gate had already decided" is
+> also pre-S5, and its percentages do NOT rescale.** The registered bands are
+> fixed while the reachable interval shrank 7.16%, so the change is non-linear.
+> Recomputed at the release code: vascular reachable r\* [11.89, 15.81] ->
+> **[11.04, 14.68] AU** and the share giving an r\* inside [12, 22] falls
+> **96.2% -> 66.4%**; the algal floor 47.02 -> **43.66 AU** and the unreachable
+> share of [35, 55] falls **60.1% -> 43.3%**. The reading softens — the vascular
+> hit is substantially pre-decided rather than close to forced — but does not
+> reverse. See `docs/FINDINGS.md`, "What holds".
+>
 > `crossover.csv` in this directory is current; this prose is not, and is
 > bannered rather than rewritten per the project's convention. See
 > `docs/bio_grounding_2026-09-02.md` §20 and `docs/FINDINGS.md`.
