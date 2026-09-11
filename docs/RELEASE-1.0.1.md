@@ -283,16 +283,18 @@ same reason, as at 1.0.0 (`docs/RELEASE-1.0.md:363`).
 ### Secrets and machine paths — clean
 
 ```
-$ gitleaks git --redact -v .        # 101 commits scanned, no leaks found
+$ gitleaks git --redact -v .        # 104 commits scanned, no leaks found
 $ gitleaks dir --redact -v site/    # no leaks found
 $ git grep -n -I -E "/home/|-home-|a2b32|mjarnold|C:\\Users" -- .
-docs/superpowers/specs/2026-09-11-v1.0.1-plan.md:93   (the acceptance rule quoting those literals)
+docs/superpowers/specs/2026-09-11-v1.0.1-plan.md:93   (the acceptance rule, quoting those literals)
+docs/RELEASE-1.0.1.md:288,290                         (this very code block, quoting them again)
 $ grep -rn -E "/home/|-home-|a2b32|mjarnold" site/
 (no output)
 ```
 
-The only hit is the plan file quoting the patterns as its own rule text. No
-machine path, no account name, in the tree or in the built site.
+Both hits are documents quoting the patterns as text — the rule that forbids
+them, and this transcript of checking it. No machine path and no account name
+appears as a path, in the tree or in the built site.
 
 ## The fresh-critic pass
 
