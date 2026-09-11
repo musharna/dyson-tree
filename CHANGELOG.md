@@ -62,9 +62,11 @@ tuned to make it pass; Q2b was registered as a successor instead.
 
 `experiments/q1_crossover/`. Vascular held at 12.7058 AU inside [12, 22];
 algal failed at 62.4490 AU against [35, 55]. `RESULTS.md` also records how much
-of each prediction the calibration gate had already decided: 96.2% of the
-gate-admissible range produces a vascular hit, and 60.1% of the algal band was
-unreachable before the sweep ran.
+of each prediction the calibration gate had already decided. Those percentages
+are pre-S5 and do not rescale (the bands are fixed while the reachable interval
+shrank 7.16%); recomputed at the release code, **66.4%** of the gate-admissible
+vascular range produces a hit and **43.3%** of the algal band was unreachable
+before the sweep ran. See `docs/FINDINGS.md`, "What holds".
 
 ### S5 — PAR fraction corrected — 2026-09-06
 

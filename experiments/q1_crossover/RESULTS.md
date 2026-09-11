@@ -13,7 +13,7 @@
 > fixed while the reachable interval shrank 7.16%, so the change is non-linear.
 > Recomputed at the release code: vascular reachable r\* [11.89, 15.81] ->
 > **[11.04, 14.68] AU** and the share giving an r\* inside [12, 22] falls
-> **96.2% -> 66.4%**; the algal floor 47.02 -> **43.66 AU** and the unreachable
+> **96.2% -> 66.4%**; the algal floor 47.02 -> **43.65 AU** and the unreachable
 > share of [35, 55] falls **60.1% -> 43.3%**. The reading softens — the vascular
 > hit is substantially pre-decided rather than close to forced — but does not
 > reverse. See `docs/FINDINGS.md`, "What holds".

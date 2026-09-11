@@ -28,7 +28,8 @@ roadmap that nobody discovers is worse than no roadmap.
 > RETIRED as a category error (it compared a vacuum-radiative temperature against
 > Earth-thermodynamic optima), and the vapour-pressure argument in that note makes
 > the long-deferred PRESSURE VESSEL a precondition for the whole modelling line
-> rather than a later extension. Q2b's falsification is unaffected. Nothing is
+> rather than a later extension. Q2b's falsification is unaffected — ⚠️ **within the
+> ALGAL class only; see the banner above and `docs/FINDINGS.md`.** Nothing is
 > retracted; the reading changes.
 
 **Loop A exists and has produced one measured number; Q2 is registered and run,

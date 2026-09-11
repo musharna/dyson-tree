@@ -88,6 +88,14 @@ their pre-registrations frozen. What changes is the reading:
   correct; the temperature it holds fixed is unattainable without containment.
 - **Q2** registered a gate that failed and reported no limits. That failure stands, and the
   grounding that followed it (`docs/bio_grounding_2026-09-02.md` §4d) stands.
+> ⚠️ **NARROWED 2026-09-10 (release 1.0).** The bullet below says the Q2b
+> falsification is unaffected by this note. That is true **within the algal
+> class**, which is the only class Q2b answered — but retiring Gate B readmits the
+> vascular class, and running Q2b's own `classify_limit` there gives `carbon` as
+> the binding limit at Ω = 25 and Ω = 30, where the registered prediction would
+> have HELD. The falsification stands for algal; whether it generalises is open.
+> Superseded text is bannered, not rewritten. See `docs/FINDINGS.md`.
+
 - **Q2b** registered a prediction that was falsified. **The falsification itself is not
   affected by this note** — it compared the thermal floor against the carbon crossing, both
   computed inside the model, and `temperature` won at every Ω regardless of whether Gate B

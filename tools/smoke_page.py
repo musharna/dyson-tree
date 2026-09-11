@@ -156,11 +156,47 @@ def exercise(page, label: str) -> None:
         t_eq = (s_flux / (area_ratio * 1.0 * consts["SIGMA_W_M2_K4"])) ** 0.25
         return par, t_eq
 
-    def check_readouts_agree_with_displayed_distance(tag, area_ratio):
+    def net_carbon_at(r_au, preset, k):
+        """Closed form of Organism.net_carbon, from the fixture's own preset."""
+        i = consts["TSI_W_M2"] / (r_au * r_au) * consts["PAR_FRACTION"] * consts["PHOTONS_PER_J"]
+        gross = preset["a_max"] * i / (i + k)
+        return gross - preset["r_d"] / preset["leaf_mass_ratio"]
+
+    def check_readouts_agree_with_displayed_distance(tag, cls):
+        preset = FIXTURES["cases"][cls]["preset"]
+        area_ratio = preset["area_ratio"]
+        k = float(page.locator("#kselect").input_value())
         r_shown = number_in(page.locator("#out-r").inner_text())
         par_shown = number_in(page.locator("#out-i").inner_text())
         teq_shown = number_in(page.locator("#out-teq").inner_text())
         par_want, teq_want = expect_at(r_shown, area_ratio)
+
+        # The slider's own label must agree with the readout it drives. Without
+        # this, hard-coding #rlabel to a constant leaves every assertion green
+        # while the control lies at every position.
+        check(
+            page.locator("#rlabel").inner_text().strip() == page.locator("#out-r").inner_text().strip(),
+            f"[{label}] {tag}: slider label {page.locator('#rlabel').inner_text()!r} must match "
+            f"the readout {page.locator('#out-r').inner_text()!r}",
+        )
+
+        # Net carbon, recomputed from the fixture preset rather than trusted.
+        net_shown = number_in(page.locator("#out-net").inner_text())
+        net_want = net_carbon_at(r_shown, preset, k)
+        check(
+            abs(net_shown - net_want) <= 5e-4,
+            f"[{label}] {tag}: net carbon {net_shown} must match {net_want:.4f} at the "
+            f"displayed distance {r_shown}, k={k:g}",
+        )
+
+        # I_c depends on the SELECTED k, so it is re-checked on every view rather
+        # than once for the default.
+        ic_shown = number_in(page.locator("#out-ic").inner_text())
+        ic_want = k * preset["r_d"] / (preset["a_max"] - preset["r_d"])
+        check(
+            abs(ic_shown - ic_want) <= 5e-4,
+            f"[{label}] {tag}: I_c {ic_shown} must match {ic_want:.4f} for {cls} k={k:g}",
+        )
         check(
             abs(par_shown - par_want) <= 5e-3,
             f"[{label}] {tag}: PAR {par_shown} must match {par_want:.4f}, the value at the "
@@ -172,7 +208,23 @@ def exercise(page, label: str) -> None:
             f"DISPLAYED distance {r_shown}",
         )
 
-    check_readouts_agree_with_displayed_distance("default", 2.0)
+    check_readouts_agree_with_displayed_distance("default", "vascular")
+
+    # The marked point must sit where the axis says that distance is. At exactly
+    # 1.000 AU the marker's x must equal the x of the "1" tick label -- a
+    # cross-check inside the page, so a marker drawn at the wrong distance
+    # cannot pass by merely having moved.
+    marker_cx = float(page.locator("#marker").get_attribute("cx"))
+    tick_x = page.eval_on_selector_all(
+        "#plot text",
+        """els => { const t = els.find(e => e.textContent === "1");
+                    return t ? Number(t.getAttribute("x")) : null; }""",
+    )
+    check(
+        tick_x is not None and abs(marker_cx - tick_x) <= 0.5,
+        f"[{label}] at 1.000 AU the plot marker (x={marker_cx}) sits on the '1' tick "
+        f"(x={tick_x})",
+    )
 
     # ...and at the default the distance must be exactly 1 AU, where this
     # repository publishes T_eq in two gates.csv files and in the fixtures.
@@ -194,6 +246,16 @@ def exercise(page, label: str) -> None:
     body_all = page.locator("body").inner_text()
     check("Jaret Arnold" in body_all, f"[{label}] the page names its copyright holder")
     check("MIT" in body_all and "CC BY 4.0" in body_all, f"[{label}] the page states both licences")
+
+    # ...and the licence links must RESOLVE. Naming a licence the reader cannot
+    # open is the same defect as not naming one: dropping the copy step from
+    # tools/build_site.sh ships two 404s and is otherwise invisible.
+    for sel, want in (('a[href="./LICENSE"]', "MIT License"),
+                      ('a[href="./LICENSE-docs"]', "Creative Commons")):
+        href = page.locator(sel).first.get_attribute("href")
+        target = (SITE / href.replace("./", "")).resolve()
+        ok = target.is_file() and want in target.read_text()
+        check(ok, f"[{label}] {href} resolves inside site/ and is the {want} text")
 
     legend = page.locator(".legend").inner_text()
     check(
@@ -225,12 +287,12 @@ def exercise(page, label: str) -> None:
     check(before_marker != after_marker, f"[{label}] slider moves the plot marker ({before_marker} -> {after_marker})")
     net_far = number_in(page.locator("#out-net").inner_text())
     check(net_far < 0, f"[{label}] far from the Sun net carbon is negative, got {net_far}")
-    check_readouts_agree_with_displayed_distance("slider moved", 2.0)
+    check_readouts_agree_with_displayed_distance("slider moved", "vascular")
     page.locator("#rslider").fill("10000")
     page.locator("#rslider").dispatch_event("input")
     r_max_shown = number_in(page.locator("#out-r").inner_text())
     check(r_max_shown == 100.0, f"[{label}] the slider maximum is exactly 100.000 AU, got {r_max_shown}")
-    check_readouts_agree_with_displayed_distance("slider at maximum", 2.0)
+    check_readouts_agree_with_displayed_distance("slider at maximum", "vascular")
     check_plot_geometry(page, label + " vascular, slider moved")
     page.locator("#rslider").fill("1308")
     page.locator("#rslider").dispatch_event("input")
@@ -253,7 +315,7 @@ def exercise(page, label: str) -> None:
         f"[{label}] algal k=20 is reported OUTSIDE its pre-registered band",
     )
     check(page.locator("#plot path").count() >= 1, f"[{label}] algal curve is drawn")
-    check_readouts_agree_with_displayed_distance("algal", 4.0)
+    check_readouts_agree_with_displayed_distance("algal", "algal")
     algal_teq = number_in(page.locator("#out-teq").inner_text())
     algal_teq_ref = FIXTURES["cases"]["algal"]["adapted_t_opt_home_1au"]
     check(
@@ -275,6 +337,7 @@ def exercise(page, label: str) -> None:
         "inside" in page.locator("#out-band").inner_text(),
         f"[{label}] algal k=40 is reported inside the band (the one k that was)",
     )
+    check_readouts_agree_with_displayed_distance("algal k=40", "algal")
 
     page.select_option("#preset", "vascular")
     check(page.locator("#plot path").count() >= 1, f"[{label}] vascular curve is drawn")

@@ -547,7 +547,7 @@ organism that is never viable.
 gate-reachability percentages were pre-S5, and unlike the crossovers they do not
 rescale: the registered bands are fixed while the reachable interval shrank 7.16%.
 Recomputed at the release code (control: the scan reproduces 12.7058 and 62.4490
-exactly): vascular 96.2% → **66.4%**, algal floor 47.02 → **43.66 AU**,
+exactly): vascular 96.2% → **66.4%**, algal floor 47.02 → **43.65 AU**,
 unreachable share 60.1% → **43.3%**. The reading softens — "close to forced"
 becomes "substantially pre-decided" — and does not reverse. `RESULTS.md` carries a
 banner saying so.
@@ -593,3 +593,74 @@ discrepancy explicitly.
 
 **Re-verified after every fix: 131 tests pass, 107 smoke assertions pass, site
 rebuilds clean.**
+
+### Round 2 — scoped re-review
+
+A second fresh subagent re-verified each of the nine fixes independently and
+hunted for regressions, including by mutation-testing the page.
+
+**All nine landed** (one partial — see below). It confirmed the round-1 numbers by
+recomputing them: the vascular `classify_limit` table digit for digit, the
+Gaussian response 0.003697 and net carbon +0.019725 at 1.1945 AU, the τ figures
+against `bio_grounding` §§13–14 and `tools/check_area_ratio_degeneracy.py`
+(−31.37/−33.72/−36.05 K), and the md5 asymmetry behind finding 9. It also checked
+that the quantisation fix is load-bearing rather than cosmetic: reverting it in a
+scratch copy reproduces the original bug and fails 12 assertions.
+
+**Two new non-waivable findings, both mine, both the same class as round 1 —
+a correction applied in one document and not in its neighbours:**
+
+1. **`CHANGELOG.md` still published the pre-S5 reachability percentages** (96.2%,
+   60.1%) that round 1's finding 3 had corrected in FINDINGS. A release changelog
+   contradicting the release's own findings document. **FIXED**, with the
+   recomputed figures and a pointer.
+2. **The over-strong falsification-scope claim survived in two other documents.**
+   `docs/thermal_premise_retired_2026-09-03.md` ("The falsification itself is not
+   affected by this note") and `docs/ROADMAP.md` ("Q2b's falsification is
+   unaffected") — and FINDINGS cites the first as its authority for Gate B's
+   retirement while contradicting it. **FIXED** by bannering both, per the
+   repository's convention; neither is rewritten.
+
+**One wrong digit in a round-1 fix.** The algal reachability floor was stated as
+43.66 AU. It is **43.65** — 43.654467, confirmed analytically, not by scanning: at
+the gate ceiling `I_c = 1.0`, `r_d = 10/21`, and
+`r* = sqrt(irradiance(1 AU) / I*)`. My value came from a `linspace` scan whose grid
+never landed on the endpoint. Corrected in all three files. The derived 43.3% is
+unaffected (43.272% from the exact floor).
+
+**Five surviving mutants — checks that could not fail — all now closed.** The
+re-review built each mutation and confirmed the suite stayed green:
+
+| mutation | before | after |
+| --- | --- | --- |
+| `#rlabel` hard-coded to "0.500 AU" (the slider's own label lies) | 107 pass | **10 fail** |
+| plot marker drawn at twice the distance | 107 pass | **2 fail** |
+| displayed net carbon doubled | 107 pass | **10 fail** |
+| `I_c` always computed at k=100 | 107 pass | **4 fail** |
+| licence copy removed from `build_site.sh` (page ships two 404s) | 107 pass | **4 fail** |
+
+The gaps were the same shape each time: an assertion that something *changed*
+rather than that it changed *to the right value*, or a value checked once for one
+view and never re-checked after the controls moved. The suite now recomputes net
+carbon and `I_c` from the fixture preset on every view, requires the slider label
+to equal the readout it drives, pins the marker to the "1" axis tick at exactly
+1.000 AU, and opens both licence files to confirm they are the texts they claim.
+**147 assertions, up from 107, up from 79.**
+
+**Waived, with reasons:**
+
+- The quantisation creates small plateaus at the near end of the slider — 8881
+  distinct distances over 10001 positions, longest run 4, where one step is finer
+  than the display grid. That is the price of "the distance shown is the distance
+  used"; it is now stated in the `app.js` comment rather than left to be
+  rediscovered.
+- The "net carbon at 1 AU is −8.47" datum is Ω-independent and so does not
+  discriminate the three Ω it was offered for. The claim it supported is
+  separately true and verified; the sentence now says so.
+- The page's FINDINGS link points at `master`, where `docs/FINDINGS.md` does not
+  exist until this branch merges. It resolves on merge — flagged in the handoff.
+- Plot text at 390 px, README's references to a private sibling project, and the
+  post-run prereg edit: carried over from round 1, unchanged.
+
+**Final state: 131 tests, 147 smoke assertions, 14 tools green, zero non-waivable
+findings outstanding.**

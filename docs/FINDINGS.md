@@ -115,8 +115,9 @@ in advance — the prereg carries `expect: fail` for vascular — so the run did
 it said it would do. And the three Ω where vascular still reports `temperature`
 are not evidence for temperature at all: at Ω ∈ {10, 15, 20} the vascular carbon
 candidate is not a number, because **net carbon is negative across the entire
-[0.5, 100] AU grid** — the organism never breaks even anywhere, including at its
-1 AU home (net carbon there is −8.47). `classify_limit` records that as `nan`, and
+[0.5, 100] AU grid** — the organism never breaks even anywhere on the swept range.
+(Its net carbon at the 1 AU home is −8.47, but that figure is Ω-independent and so
+does not by itself distinguish these three Ω from the two where carbon does cross.) `classify_limit` records that as `nan`, and
 `min()` drops it. The prereg discloses this shape in advance
 (`experiments/q2b_adapted/prereg.yaml`, `curve_shape`). So of the five vascular
 rows, two say carbon binds and three describe an organism that is never viable —
@@ -245,7 +246,7 @@ percentages non-linearly. Recomputed against the release code:
 | --- | --- | --- |
 | vascular reachable r\* | [11.89, 15.81] AU | **[11.04, 14.68] AU** |
 | share of gate-admissible `r_d` giving r\* inside [12, 22] | 96.2% | **66.4%** |
-| algal floor on r\* | 47.02 AU | **43.66 AU** |
+| algal floor on r\* | 47.02 AU | **43.65 AU** |
 | share of [35, 55] unreachable | 60.1% | **43.3%** |
 
 The reading softens but does not reverse. Two-thirds of the gate-admissible

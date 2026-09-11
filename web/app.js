@@ -69,6 +69,13 @@
   // computed at 0.99987. A reader comparing 330.99 K against the repository's
   // own 330.97 K at 1 AU would be right to call the page wrong. Quantising is
   // also what keeps sliderToR(SLIDER_MAX) from returning 100.00000000000004.
+  //
+  // The cost, stated rather than hidden: quantising creates small plateaus at
+  // the near end, where one slider step (2.6e-4 AU near 0.5 AU) is finer than
+  // the 1e-3 AU display grid. Over the 10001 positions there are 8881 distinct
+  // distances and the longest run of identical values is 4. That is the price
+  // of "the distance shown is the distance used", and it is the right trade:
+  // a repeated value is visible and harmless, a hidden mismatch is neither.
   var R_DP = 3;
   function sliderToR(v) {
     var t = Number(v) / SLIDER_MAX;
