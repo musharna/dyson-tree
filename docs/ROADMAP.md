@@ -18,6 +18,11 @@
 > factor that actually reproduces the six committed `r*` is **0.9284396**; 0.928487
 > reproduces none of them at 4 dp. The entries below are left as written.
 
+> 🎯 **NORTHSTAR SET 2026-09-12: the vessel, and watching it fail.** Design spec at
+> [`docs/superpowers/specs/2026-09-12-northstar-design.md`](superpowers/specs/2026-09-12-northstar-design.md)
+> (Q4 + a designed vessel that bursts/freezes/starves/goes dark on the page). It supersedes the
+> modelling direction of the q3 vessel spec; this roadmap is bannered fully when M1 starts.
+
 **Canonical for "what phase, what's next".** If a later document supersedes this
 one, banner this file and redirect from it in the same commit — a superseding
 roadmap that nobody discovers is worse than no roadmap.
