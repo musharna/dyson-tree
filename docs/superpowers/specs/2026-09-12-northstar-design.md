@@ -1,22 +1,25 @@
 # Northstar design: the vessel, and watching it fail
 
-> Drafted 2026-09-12 against `release/1.0.1-rc` (HEAD `7ed4414`). Every claim about
-> current code carries a `file:line`. Nothing here edits a frozen pre-registration.
+> Revised 2026-09-12 after an llm-panel audit (impaired: codex/astra unavailable); findings in the coordinator's memory memo `northstar_panel_audit_2026-09-12.md`.
+
+> Drafted 2026-09-12 against `release/1.0.1-rc` (`7ed4414`); revised against `master`
+> (`08fac2e`). Every claim about current code carries a `file:line`. Nothing here edits
+> a frozen pre-registration.
 > Supersedes the modelling direction of `2026-09-04-q3-pressure-vessel-design.md`
 > (whose four correction banners are the input to §3 below); does not supersede
 > `docs/ROADMAP.md`, which must be bannered to point here in the same commit that
-> starts M1. §§1-10 are Act One (Q4, the vessel, watching it fail); §11 is the story
+> starts M1a. §§1-10 are Act One (Q4, the vessel, watching it fail); §11 is the story
 > order after Q4 as the user set it on 2026-09-12, and §7 defers to it by chapter.
 
 ## 1. Northstar
 
 A visitor sees a cross-section of a sealed, transparent sphere with a green organism
 inside it, at a distance from the Sun they can drag, and the sphere is either alive or
-it is bursting, freezing, starving, or going dark under its own wall. They change one
-input (radius, wall, pressure, distance, organism) and the picture changes state,
-with the number that killed it printed beside the wound. Nothing on the page is
-authored: every failure is an inequality between two quantities the repository already
-grounds, and the visitor can read both sides.
+it is bursting, freezing, boiling dry, starving, or going dark under its own wall. They
+change one input (radius, wall, pressure, distance, organism) and the picture changes
+state, with the number that killed it printed beside the wound. Nothing is authored:
+every failure is an inequality between quantities the repository grounds, or one
+declared and disclosed as such, and the visitor can read both sides.
 
 ## 2. What exists today that this reuses
 
@@ -24,53 +27,54 @@ What is true now: the live page is an uncontained organism at a fixed tissue
 temperature (`web/index.html:128-132`), with a class dropdown, a `k` dropdown and a
 log-spaced distance slider (`web/index.html:77-91`, `web/app.js:62-89`), driving one
 net-carbon curve (`web/app.js:114-284`). The page itself says "No pressure vessel" and
-"No spectral wall" (`web/index.html:130-135`). The model has no tree: `sim/organism.py`
-is a frozen dataclass of 11 scalars (`sim/organism.py:27-40`) with two presets
-(`sim/organism.py:163-173`).
+"No spectral wall" (`web/index.html:130-135`). The model has no tree: `Organism` is a
+frozen dataclass of 11 numeric fields plus `cls` (`sim/organism.py:27-40`), two presets
+(`:163-173`).
 
 Reused as-is, no edits:
 
 - **Light in.** `irradiance(r_au)` is `TSI / r² × PAR_FRACTION × PHOTONS_PER_J`
   (`sim/physiology.py:22-30`), TSI 1360.8 (`:14`), PAR fraction 0.3879 measured AM0
-  (`:16`). `gross_assimilation(i, a_max, k)` (`:33-43`), `respiration(r_d, t)` with
-  Q10 (`:46-54`).
+  (`:16`). `gross_assimilation(i, a_max, k)` (`:33-43`), `respiration(r_d, t)`, Q10 (`:46-54`).
 - **Thermal core.** `equilibrium_temperature(r_au, area_ratio, emissivity, albedo)`
-  (`sim/thermal.py:20-46`; `area_ratio` is pure geometry, `:28-30`).
+  (`sim/thermal.py:20-46`; `area_ratio` is pure geometry, `:28-30`);
   `temperature_response_gaussian(t, t_opt, omega)` (`:65-86`), the June 2004 form.
-- **Organism.** `Organism` fields incl. `t_opt` "declared assumption, not grounded"
-  (`sim/organism.py:37`), `omega` "DECLARED ASSUMPTION" (`:40`), `albedo`/`emissivity`
-  declared (`:38-39`). `compensation_irradiance` (`:126-135`). `net_carbon`,
-  `net_carbon_at_equilibrium`, `net_carbon_adapted` stay untouched (`:80-123`); each
-  guards a committed record.
+- **Organism.** `Organism` fields incl. `area_ratio` (2.0 lamina default, `:35`; ALGAL
+  declares 4.0, `:170`), `t_opt` "declared assumption, not grounded" (`:37`), `omega`
+  "DECLARED ASSUMPTION" (`:40`), `emissivity`/`albedo` declared (`:38-39`).
+  `compensation_irradiance(org)` is evaluated at `t_set` = 293 K (`:126-135`, via
+  `leaf_respiration` `:70-72`): no temperature argument, no distance term. `net_carbon`,
+  `net_carbon_at_equilibrium`, `net_carbon_adapted` stay untouched (`:80-123`).
 - **The r slider.** `R_MIN 0.5`, `R_MAX 100` AU (`web/app.js:29-30`); quantised to 3 dp
-  so "the distance shown is the distance used" (`web/app.js:66-85`). Kept verbatim.
+  so "the distance shown is the distance used" (`:66-85`). Kept verbatim.
 - **Parity.** `web/model.js` is a classic script exporting `DysonModel` for the browser
   and `module.exports` for node (`web/model.js:9-13, 267-271`); each function names its
   `sim/` lines (`:22, :32, :59`). `tests/test_parity_js.py` fails rather than skips
-  without node (`:33-38`), pins fixtures to the md5 of each `sim/*.py`
-  (`:82-99`), and runs 9 tests incl. crossovers against the committed CSV (`:155`).
+  without node (`:33-38`), pins fixtures to the md5 of each `sim/*.py` (`:82-99`), and
+  runs 9 tests incl. crossovers against the committed CSV (`:155`).
   Fixtures come only from `sim/` public functions (`tools/make_fixtures.py:2-7`).
 - **Site build and rail.** `tools/build_site.sh` copies an allowlist of three files
-  (`:16-19`) and refuses remote assets (`:36-40`). `pages.yml` pins python 3.13.2
-  (`:36`), runs pytest incl. parity before upload (`:43-45`), then `build_site.sh`
-  (`:47`). `pyproject.toml:24-25` discovers `sim*` and `experiments*` only, so a new
-  `sim/vessel.py` and `experiments/q4_vessel/` are packaged without edits; `web/` is
-  not a package and stays that way. CSV `git_sha` must be a reachable ancestor of HEAD
-  (`tests/test_derived_csvs.py:198-221`): regenerate CSVs and fixtures last, never
-  amend after. That guard needs the ancestors present in CI: `origin/master` (632d8ba,
-  one commit past this branch) sets `fetch-depth: 0` on the checkout (`pages.yml:34`
-  there); this branch does not yet have it. M1 starts from `origin/master`.
+  (`:16-19`) and refuses remote assets (`:36-40`). `pages.yml` on master checks out with
+  `fetch-depth: 0` (`:34`), pins python 3.13.2 (`:42`), runs pytest incl. parity before
+  upload (`:45-51`), then `build_site.sh` (`:52-53`). `pyproject.toml:24-25` discovers
+  `sim*` and `experiments*` only, so `sim/vessel.py` and `experiments/q4_vessel/` are
+  packaged without edits; `web/` is not a package. CSV `git_sha` must be a reachable
+  ancestor of HEAD (`tests/test_derived_csvs.py:198-221`): regenerate CSVs and fixtures
+  last, never amend after. M1a starts from `master`.
 - **Vessel arithmetic already computed in `tools/`, not in `sim/`:** Buck saturation
   pressure (`tools/check_greenhouse_transparency.py:99-100`), solar-weighted wall
   transmission `tau_sw(t)` (`:94-96`), the damped fixed point `p -> t -> tau -> T ->
 p_sat` (`:120-130`), and the PAR photon fraction behind a wall
-  (`tools/size_par_filter.py:177-195`). M1 moves these into `sim/` with tests; the
-  tools become positive controls, not sources.
+  (`tools/size_par_filter.py:177-195`). The tools open `iop2008.dat` and `ASTMG173.csv`
+  (`tools/extract_ice_k.py:10`, `check_greenhouse_transparency.py:38`), gitignored
+  (`.gitignore:9-10`) and absent from this checkout, so today they cannot run. M1a moves
+  the arithmetic into `sim/` with tests; the tools become positive controls, not sources.
 
 ## 3. The vessel model
 
-What would be true: one sphere, one wall, one organism inside, four inequalities. The
-arithmetic below has no new physics; every symbol is already grounded in this repo.
+What would be true: one sphere, one wall, one organism inside, five inequalities. The
+arithmetic below has no new physics; every symbol is already grounded in this repo or
+is declared and disclosed as an input.
 
 **Geometry and load.** Thin-wall sphere of internal radius `R` (m), wall thickness `t`
 (m), internal pressure `p` (Pa) against ~0 ambient. Hoop stress
@@ -81,12 +85,13 @@ The wall that just holds `p` is `t_min = p·R / (2·sigma)`.
 `e^-3952` (q3 spec `:168-171`). The only clear material with both a grounded strength
 and grounded optics is pure water ice: tensile `sigma` **0.7 to 3.1 MPa** (Petrovic
 2003 via Hirata 2022, `bio_grounding` §10 `:613-615`, grounded at one remove) and
-absorption `k(lambda) = 4·pi·m_im/lambda` from Warren & Brandt 2008 (`§9:519-537`).
-The wood MOR **80 MPa median** (§7 `:456-462`) is NOT a wall input: pairing wood
-strength with ice optics is the ~53x error §10 records (`:596-608`), and the rule
-"a pair of grounded inputs must describe the same object" (`:689-690`) is a test in M1,
-not a comment. Wood remains available only as a labelled counterfactual with its own
-`k`, which is UNGROUNDED, needs a source, and so is not on the page.
+absorption `k(lambda) = 4·pi·m_im/lambda` from Warren & Brandt 2008 (`§9:519-537`);
+`sigma` is a page input, default 0.7 MPa (the weak end), swept in Q4. The wood MOR
+**80 MPa median** (§7 `:456-462`) is NOT a wall input:
+pairing wood strength with ice optics is the ~53x error §10 records (`:596-608`), and
+the rule "a pair of grounded inputs must describe the same object" (`:689-690`) is a
+test in M1a, not a comment. Wood remains only a labelled counterfactual with its own
+`k`, UNGROUNDED, needs a source, and so is not on the page.
 
 **Spectral wall, not a scalar.** `k` spans 0.00074 /m at 400 nm to 0.52061 /m at
 700 nm, a factor of 701 (`§9:532-540`). Transmission through thickness `t` is
@@ -98,238 +103,284 @@ not a comment. Wood remains available only as a labelled counterfactual with its
   on what the organism can use, stated as such on the page.
 - `tau_sw(t) = ∫₂₈₀⁴⁰⁰⁰ tau(λ,t)·E(λ) dλ / ∫ E dλ`, solar-energy-weighted
   (`check_greenhouse_transparency.py:94-96`). NIR carries 53% of TSI and ice absorbs
-  it (`§13:1021-1025`), so a pressure wall passes 16 to 23% of solar energy.
+  it (`§13:1021-1025`): at `p*` and R = 10 km a pressure wall passes 26 to 34% of solar
+  energy (`tau` 0.2609 to 0.3429, `§13:1054-1058`); the 16 to 23% (`§13:1034`) belongs
+  to the withdrawn 18 kPa walls.
 
 **The coupling that closes S2.** Today `irradiance(r)` feeds an unfiltered scalar to an
 organism the vessel finding requires to sit behind a blue-pass wall
-(`docs/FINDINGS.md:428-433`). The closure is one line:
-`I_wall(r, t) = irradiance(r) · f_photon(t)`, fed to `gross_assimilation` in a new
+(`docs/FINDINGS.md:428-433`). The closure is one line: `I_wall(r, t) = (1 - albedo) ·
+irradiance(r) · f_photon(t)`, fed to `gross_assimilation` in a new
 `Organism.net_carbon_contained` placed BESIDE the three existing paths, which do not
 change. `1/r²` stays inside `irradiance` (`sim/physiology.py:29`); the wall factor is
-distance-independent by construction, which is what makes the two separable on the
-page.
+distance-independent by construction, which keeps the two separable on the page;
+`(1 - albedo)` enters linearly, as on the absorbed side of `equilibrium_temperature`
+(`sim/thermal.py:46`).
 
-**Contained temperature.** `T_int = (1 + tau_sw(t))^0.25 · T_eq(r, 4, eps, albedo)`
-(`§13:1040-1046`; the `(N+1)^0.25` form is its `tau = 1` case). The shell sits at
-`T_shell = T_eq` exactly, independent of `tau` (`§17:1459-1460`).
+**Contained temperature.** `T_int = (1 + tau_sw(t))^0.25 · T_eq(r, area_ratio, eps,
+albedo)` (`§13:1040-1046`; the `(N+1)^0.25` form is its `tau = 1` case), `area_ratio`
+read from the organism (`sim/organism.py:35`; ALGAL 4.0 `:170`), never a literal 4. The
+shell sits at `T_shell = T_eq` exactly, independent of `tau` (`§17:1459-1460`).
 
 **Vapour pressure at the contained temperature.** Buck: `p_sat(T_C) = 611.21 ·
-exp((18.678 - T_C/234.5)·(T_C/(257.14 + T_C)))`
-(`tools/check_greenhouse_transparency.py:99-100`); gate points 611.657 Pa at 273.16 K
-and 882 Pa at 5.16 °C (q3 spec `:217-220`).
+exp((18.678 - T_C/234.5)·(T_C/(257.14 + T_C)))` (`check_greenhouse_transparency.py:99-100`);
+it returns 611.654 Pa at 273.16 K and 882.22 Pa at 5.16 °C against the gate points
+611.657 and 882 Pa (q3 spec `:217-220`), so Gate C carries a tolerance (§6).
 
-**Self-consistent pressure.** `p* = p_sat(T_int(t(p*)))`, solved by the damped
-iteration at `:120-130`. At 1 AU, R = 10 km: 3.453 / 3.002 / 2.607 kPa for sigma 3.1 /
-1.5 / 0.7 MPa (`§13:1054-1058`). The page shows `p*` beside whatever `p` the player
-sets.
+**Self-consistent pressure, a function.** `p*(r, R, sigma) = p_sat(T_int(t_min(p*)))`,
+solved by the damped iteration at `:120-130`. At 1 AU and R = 10 km it is 3.453 /
+3.002 / 2.607 kPa for sigma 3.1 / 1.5 / 0.7 MPa (`§13:1054-1058`); as `R -> 0`,
+`tau_sw -> 1` and `p*` rises to S1's 18.02 kPa ceiling (`§13:1060-1062`); at the page
+default (1 km, 1.10 AU) it is another number, printed live beside the player's `p`.
 
 **The roadmap's closed form, and why it is a control here.**
-`R_max = 2·sigma·|ln tau_min| / (k·p)` (`docs/ROADMAP.md:140`, q3 spec `:139`):
-`sigma` tensile strength (Pa), `p` internal pressure (Pa), `k` a single absorption
-coefficient (1/m), `tau_min` the smallest acceptable transmission. It follows from
-`t = pR/(2σ)` and `tau = e^{-kt}`. Its two defects are named in the repo: `k` is not a
-scalar (`§9:539`) and `tau_min` is author-declared, "NOT GROUNDED" (q3 spec `:166`).
-In this design both disappear: `k` becomes the integral above, and `tau_min` becomes
-`I_c / irradiance(r)` with `I_c` the organism's own compensation irradiance
-(`sim/organism.py:126-135`), so the threshold is the organism's, not the author's.
-The closed form survives as a unit-test control: at monochromatic `k = 0.38623` and
-`tau_min = 0.01` the spectral code must reproduce 21.41 / 11.91 / 6.40 km
-(`§13:1073-1077`).
+`R_max = 2·sigma·|ln tau_min| / (k·p)` (`docs/ROADMAP.md:145`, q3 spec `:139`) follows
+from `t = pR/(2σ)` and `tau = e^{-kt}` with a scalar `k` and an acceptable `tau_min`.
+Its two defects are named in the repo: `k` is not a scalar (`§9:539`) and `tau_min` is
+author-declared, "NOT GROUNDED" (q3 spec `:166`). Here `k` becomes the integral above;
+`tau_min` does not vanish, it becomes the declared floor `f_floor` of OPAQUE (§4),
+disclosed and swept. The closed form survives as a unit-test control: at monochromatic
+`k = 0.38623` and `tau_min = 0.01` the spectral code must reproduce 21.41 / 11.91 /
+6.40 km (`§13:1073-1077`).
 
-**Declared assumptions, four, all exposed as inputs:** `t_opt` and `omega` (organism,
-`sim/organism.py:37,40`); `albedo` and `emissivity` (vessel, `:38-39`). Albedo is not
-cosmetic: at 1 AU the shell melts at albedo 0 and freezes at 0.0721 (`§17:1501-1502`).
-If `albedo > 0` the same factor must scale `I_wall`, since Beer-Lambert as used models
-absorption only and is consistent with `albedo = 0` (`§17:1505-1509`). Dust: the
-magnitude is ungroundable but the direction is pinned downward on `tau`, `T_int`, `p*`
-(`§15:1287-1297`); the page carries a `dust floor` toggle {none, 0.0087, 0.0548 /m}
-labelled DECLARED, and Q4 registers on `none` with the others as sensitivity arms.
+**Declared assumptions, five, all exposed as inputs:** `t_opt` and `omega`
+(`sim/organism.py:37,40`); `albedo` and `emissivity` (also `Organism` fields, `:38-39`,
+read here as the shell's); `f_floor` (§4). Albedo is not cosmetic: at 1 AU the shell
+melts at albedo 0 and freezes at 0.0721 (`§17:1501-1502`); if `albedo > 0` the same
+`(1 - albedo)` scales `I_wall`, since Beer-Lambert models absorption only and is
+consistent with `albedo = 0` (`§17:1505-1509`). Dust: magnitude ungroundable, direction
+pinned downward on `tau`, `T_int`, `p*` (`§15:1287-1297`); the page carries a `dust
+floor` toggle {none, 0.0087, 0.0548 /m} labelled DECLARED; Q4 registers on `none`.
 
-## 4. The four failure modes, as arithmetic
+## 4. The failure modes, as arithmetic
 
-Each is an inequality evaluated from the inputs. The page prints both sides. There is
-no `if failure_type == ...` authored anywhere; `classify_failure` returns the set of
-violated inequalities and the first one in load order names the picture.
+Each is an inequality evaluated from the inputs; the page prints both sides. There is
+no `if failure_type == ...` anywhere; `classify_failure` returns the set of violated
+inequalities and the first in load order names the picture. Four compare grounded
+quantities; OPAQUE compares one to a declared floor and says so on its line.
 
 **BURST.** `p·R/(2t) > sigma(T_shell)`. `sigma` is Petrovic's 0.7 to 3.1 MPa while the
 shell is solid, and 0 when `T_shell = T_eq(r) > 273.15 K`, because the wall is then
 water, not ice (`§17:1465-1471`: at 1 AU, albedo 0, the coldest part of the wall is
-5.16 °C). So BURST has two doors and one inequality: too much pressure for the wall you
-built, or a distance so close the wall is not a solid. The inner edge of the habitable
-annulus, 1.0381 AU at albedo 0 (`§17:1480-1486`), falls out of `sigma(T_shell) = 0`,
-not from a stored number.
+5.16 °C). Two doors, one inequality: too much pressure for the wall you built, or a
+distance so close the wall is not a solid. The annulus's inner edge, 1.0381 AU at
+albedo 0 (`§17:1480-1486`), falls out of `sigma(T_shell) = 0`, not a stored number.
 
-**FREEZE.** Liquid water requires `273.15 K < T_int` and `p >= p_sat(T_int)`. The
-first fails outward: `T_int = (1+tau_sw)^0.25 · T_eq(r)` drops below melting at
-1.14 to 1.20 AU depending on `tau_sw` (`§17:1480-1484`). The second fails when the
-player holds less than `p*`: the water boils off at the contained temperature. Both
-are the same readout, "no liquid phase", with the violated side printed. FREEZE is what
-promoted the vessel to a precondition (`docs/thermal_premise_retired_2026-09-03.md:46-60`).
+**FREEZE.** `T_int < 273.15 K`. `T_int = (1+tau_sw)^0.25 · T_eq(r)` drops below melting
+outward: at R = 10 km the edge is 1.17 to 1.20 AU across the three sigmas (§6), 1.468 AU
+in the `tau = 1` limit of a vanishing wall. The interior frosts. FREEZE is what promoted
+the vessel to a precondition (`docs/thermal_premise_retired_2026-09-03.md:46-60`).
+
+**BOIL.** `p < p_sat(T_int)`. The player holds less than the vapour pressure at the
+contained temperature and the water leaves as gas. Same family as FREEZE (no liquid
+phase), but its own line, its own cue (the interior dries, no frost) and its own door,
+the `p` slider.
 
 **STARVE.** `net_carbon_contained(r, t) < 0`, where gross is
 `gross_assimilation(I_wall, a_max, k) · temperature_response_gaussian(T_int, t_opt,
-omega)` and respiration is `respiration(r_d, T_int) / leaf_mass_ratio`. This is the
-Q2b path (`sim/organism.py:102-123`) with `T_eq` replaced by `T_int` and `irradiance`
-replaced by `I_wall`. Because `f_photon` is a photon count that over-credits the
-surviving blue band (`§12:959-963`), STARVE fires later than it should; the page says
-so under the readout.
+omega)` and respiration is `respiration(r_d, T_int) / leaf_mass_ratio`: a new path
+beside `net_carbon_adapted` (`sim/organism.py:102-123`), with `T_eq` replaced by
+`T_int`, `irradiance` by `I_wall`, and `t_opt` a declared field, not `adapted_optimum`.
+Because `f_photon` is a photon count that over-credits the surviving blue band
+(`§12:959-963`), STARVE fires later than it should; the page says so under the readout.
+At the defaults it is far from firing: ALGAL's `I_c` is 0.492 µmol
+(`compensation_irradiance`, `:126-135`) against 1993.6 µmol at 1.10 AU, 2.5e-4. There
+is no `I_c(T_int)` in the repo; a temperature-consistent threshold is algebraically the
+STARVE line itself, not a second inequality.
 
-**CRUSH / OPAQUE.** The wall that holds `p` at radius `R` is `t_min = pR/(2σ)`, rising
-linearly in `R`; `f_photon(t_min)` falls with it. At the radius where
-`irradiance(r)·f_photon(t_min(R)) < I_c(T_int)` the vessel is too thick to feed what
-it contains, and no thinner wall holds. This is the bind the roadmap sweeps at 0.93 to
-4.10 km against an assumed 10 km (`docs/ROADMAP.md:182`; `§11:750`), computed with a
-red-band scalar `k` and the since-withdrawn 18 kPa. Nobody has run it with the spectral
-wall at `p*`; §12's table (`:928-938`) says the photon count at 10 km is 24 to 44%, so
-the spectral answer is expected to sit well above the red-band one. That expectation
-is what Q4 registers, in §6.
+**OPAQUE.** `f_photon(t_min(R)) < f_floor`, a predicate on the wall alone: `t_min =
+pR/(2σ)` rises linearly in `R` and the photon fraction falls with it. `f_floor` is
+DECLARED, default 0.25, printed on its line as "declared floor" with the reason beside
+it: 24.3% is the thickest pressure wall the repo has sized (71.4 m, 10 kPa, 0.7 MPa,
+`§12:935`); Q4 registers on 0.25 and reports {0.10, 0.50} as sensitivity arms. This is
+the bind the roadmap sweeps at 0.93 to 4.10 km against an assumed 10 km
+(`docs/ROADMAP.md:187`; `§11:750`), computed with a red-band scalar `k` and the
+since-withdrawn 18 kPa. §12's table (`:928-938`) gives 24 to 44% at 10 km on its 10 kPa
+rows (`:933-935`), so at `p*` (2.6 to 3.5 kPa, thinner walls) the spectral wall is
+expected to bind well above the red-band radius; §6 registers that.
 
 ## 5. The player loop, one screen
 
-What the visitor sees: left, a cross-section; right, six inputs and one verdict panel.
-The existing curve and its readouts move below, unchanged, as "the uncontained model".
+What the visitor sees: left, a cross-section; right, seven inputs and one verdict
+panel. The existing curve and readouts move below, unchanged, as "the uncontained model".
+
+**Goal on the glass.** Q4's question is printed on the page: at the current `r` and
+`sigma`, the live `R_window` (the largest `R` at which every line HOLDS) is drawn beside
+the registered floor from `prereg.yaml`, provisional until M4 labels it HELD or FAILED.
+The visitor's job is to find the largest sphere that lives.
 
 **Inputs** (all sliders, values printed; defaults in brackets): vessel radius `R`
-[1 km, log 10 m to 100 km]; wall thickness `t` [auto = `t_min`, or manual]; internal
-pressure `p` [auto = `p*`, or manual]; distance `r` [1.10 AU, the existing slider];
-organism class [algal]; wall material [ice, the only grounded option]. Under a
-"declared assumptions" disclosure: `albedo` [0.0], `emissivity` [1.0], `t_opt`
-[298.15 K], `omega` [20 K], dust floor [none]. Auto modes are the self-consistent
-design; manual is how the visitor over- or under-builds.
+[1 km, log 10 m to 100 km]; wall thickness `t` [auto = `t_min`, or manual, log 0.01 m
+to 1 km]; internal pressure `p` [auto = `p*`, or manual]; distance `r` [1.10 AU, the
+existing slider]; ice tensile strength `sigma` [0.7 MPa; 0.7, 1.5, 3.1]; organism class
+[algal]; wall material [ice, the only grounded option]. Under a "declared assumptions"
+disclosure: `albedo` [0.0], `emissivity` [1.0], `t_opt` [298.15 K], `omega` [20 K],
+`f_floor` [0.25], dust floor [none]. Auto is the self-consistent design; manual over- or under-builds.
 
 **The picture.** An SVG cross-section: outer circle radius ∝ `R + t`, inner circle
-∝ `R`, wall band drawn at its true thickness ratio `t/R` (clamped to a visible
-minimum with the clamp labelled). Interior fill hue from the transmitted PAR spectrum
-(blue-shift as `t` grows: `tau(λ,t)` sampled at 31 PAR rows), brightness from
-`f_photon`. Organism: a green disc whose saturation is `net_carbon_contained / a_max`,
-grey at zero. State overlays, each keyed to its inequality: BURST draws the wall
-fractured with `p·R/2t` vs `sigma` printed at the break; FREEZE frosts the interior
-with `T_int` vs 273.15 K; STARVE fades the disc with `net` vs 0; OPAQUE darkens the
-interior with `I_wall` vs `I_c`. No text-transform anywhere (`web/index.html:29-33`).
+∝ `R`, wall band at its true ratio `t/R` (clamped to a visible minimum, clamp labelled).
+Interior hue from the transmitted PAR spectrum (blue-shift as `t` grows: `tau(λ,t)` at
+31 PAR rows), brightness from `f_photon`. Organism: a green disc whose saturation is
+`net_carbon_contained / a_max`, grey at zero. Overlays, each keyed to its inequality:
+BURST fractures the wall with `p·R/2t` vs `sigma` at the break; FREEZE frosts the
+interior with `T_int` vs 273.15 K; BOIL dries it with `p` vs `p_sat(T_int)`; STARVE
+fades the disc with `net` vs 0; OPAQUE darkens the interior with `f_photon` vs `f_floor`
+(labelled declared). No text-transform anywhere (`web/index.html:29-33`).
 
-**The readout panel.** One line per inequality, both sides as numbers with units, and
-the word HOLDS or VIOLATED. Below: `p*` and `t_min` for the current design, and the
-distance window `[r_melt, r_freeze]` for the current wall.
+**The readout panel.** One line per inequality, both sides as numbers with units, HOLDS
+or VIOLATED. Below: `p*`, `t_min`, the window `[r_melt, r_freeze]` for the current wall,
+and the live `R_window` against the registered floor.
 
-**The first 60 seconds.** Load: alive, at 1.10 AU, 1 km, ice, auto wall and pressure;
-the panel reads four HOLDS. Drag `r` inward: at 1.038 AU the wall line turns to water
-and BURST fires with `sigma = 0`. Drag outward: at ~1.18 AU the interior frosts. Drag
-`R` up at 1.10 AU: the wall band thickens, the interior goes blue then dark, the disc
-greys, STARVE then OPAQUE. Push `p` above `p*`: BURST. The visitor has now seen all
-four deaths from four gestures and every one had a number on it.
+**The first 60 seconds**, at the defaults (1 km, 1.10 AU, 0.7 MPa, auto wall and
+pressure). Load: alive; five HOLDS. Drag `r` inward: at 1.038 AU the wall line turns to
+water and BURST fires with `sigma = 0`. Drag outward: the interior frosts at the edge
+`model.js` prints for this wall; at 1 km the wall is under a metre, `tau_sw` is near the
+0.5086 of a 0.625 m wall (`§13:1030`), and the repo's tables put that edge between 1.20
+and 1.28 AU, so the page prints the computed value, not a figure from this spec. Push
+`p` above `p*`: BURST. Pull `p` below `p_sat`: BOIL. Set `t` manual and thicken it: the
+interior goes blue, then OPAQUE at the declared floor, then FREEZE once `tau_sw` falls
+under 0.1227 (past 128.7 m at 1.10 AU, where §13 still shows 0.1598). Raising `R` alone
+at 1.10 AU does not kill inside the slider: `R_window` there is above 100 km (§6), which
+is why it is printed. STARVE is the one line no gesture reaches at the defaults (§4); it
+stays a HOLD and the sweep asks whether any registered `(r, R, sigma)` reaches it.
 
 ## 6. Pre-registration Q4
 
 **Question.** At self-consistent pressure `p*` and a spectral ice wall, is there ANY
-radius `R` at which the vessel is simultaneously strong enough to hold liquid water and
-clear enough to pass compensation-point PAR, and at what distance `r` does that window
-close?
+radius `R` at which the vessel is strong enough to hold liquid water and clear enough
+to pass the declared photon floor, and at what distance `r` does that window close?
 
-**Quantities.** For each `r` on the registered grid and each `sigma` in {0.7, 1.5,
-3.1} MPa, `R_window(r)` = the largest `R` at which all four inequalities of §4 hold with
-`p = p*(r, R)` and `t = t_min`. `r_close` = the largest `r` with `R_window > 0`;
-`binding(r)` = the inequality that closes it, as Q2b's `classify_limit` names its
-binding limit.
+**Quantities.** For each `r` on the registered grid, each `sigma` in {0.7, 1.5,
+3.1} MPa, and `R` on a log grid from 10 m to 1000 km (wider than the page slider, so
+closure can be found): `R_window(r, sigma)` = the largest `R` at which all five
+inequalities of §4 hold with `p = p*(r, R, sigma)` and `t = t_min`; `r_close(R, sigma)`
+= the largest `r` with the window open at that fixed `R`; `binding` = the inequality
+that closes it, named by `classify_failure`. A window edge is a curve, so each
+registration fixes one axis at a declared value. The registered numbers are COMPUTED
+by M1a's code and written into `prereg.yaml` before the sweep, per Q1's rule (q3 spec
+`:189-190`); the figures below are provisional readings, not the registration. An empty
+window at every `r` would falsify both and be the headline finding.
 
-**Registered predictions, in quantities the gates can check** (`docs/ROADMAP.md:482-500`).
-Gate A pins `T_eq` (q3 spec `:211-212`), so a band in `r_close` is a band Gate A
-reaches directly: the outer edge is `T_int = 273.15 K`, pressure-free. The provisional
-band is the envelope of the repo's own annulus table, 1.1446 to 1.2030 AU at albedo 0
-(`§17:1480-1484`), widened by the dust arms downward and by no author choice upward:
-**`r_close ∈ [1.10, 1.21] AU`, `binding(r_close) = FREEZE`, for algal at albedo 0.**
-Second prediction, in `R`: **`R_window(1.10 AU) >= 6 km at sigma = 0.7 MPa`**, i.e.
-the spectral wall does not bind below the red-band 6.40 km (`§13:1077`); this one is
-reached by Gate B (optics) and is the sensitive one. The registered numbers are
-COMPUTED by M1's code and written into `prereg.yaml` before the sweep, per Q1's rule
-(q3 spec `:189-190`); the figures above are provisional readings of existing tables and
-are not the registration.
+**Registered prediction 1, in `r` at fixed `R = 10 km`, dust none, albedo 0, algal:**
+**`r_close(10 km, sigma) ∈ [1.16, 1.21] AU` for every sigma, `binding = FREEZE`.**
+Provisional reading: the edge is `(1 + tau_sw)^0.25 · T_eq(r) = 273.15 K`; with §13's
+1 AU / 10 km walls (`tau` 0.2609 / 0.3013 / 0.3429, `:1054-1058`) and `T_eq(1 AU, 4) =
+278.311 K` that is 1.166 / 1.184 / 1.203 AU. The 1.1446 AU row (`§17:1482`) is the
+strong-dust arm (`§15:1291`), excluded by "dust none", not a widening. The band is in
+the quantity Gate A pins and can lose: `p*` falls with `r`, the wall thins outward, and
+a computed edge past 1.21 AU, or a binding other than FREEZE, fails it. **The page must
+also show the `R -> 0` limit: `tau_sw -> 1` and the edge is 1.468 AU (`(1.18921 ·
+278.311 / 273.15)²`); STARVE there is still +1.98 µmol.** That is the family's ceiling,
+not the registration.
 
-**What falsifies.** `r_close` outside the band; `binding` at `r_close` being STARVE or
-OPAQUE rather than FREEZE; `R_window(1.10 AU)` below 6 km at any grounded sigma;
-or an empty window at every `r`, which would be the headline finding.
+**Registered prediction 2, in `R` at fixed `r = 1.10 AU`, `sigma = 0.7 MPa`, dust none,
+`f_floor = 0.25`:** **`R_window ∈ [60, 300] km`, `binding = OPAQUE`.** Provisional
+reading: FREEZE at 1.10 AU (`T_eq = 265.36 K`) needs `tau_sw < 0.1227`, past the §13
+table's 128.7 m (`tau` 0.1598, `:1032`), and at `p = 611.65 Pa` that wall is `R = 2σt/p
+= 295 km`; the 0.25 floor is crossed near 70 m (`§12:935`), which at the 1.10 AU
+pressure (`p_sat` near 0.8 kPa) is `R` of order 120 km. The red-band closed form,
+6.40 km at 1 AU (`§13:1077`), sits far below. This loses three ways: `R_window` below
+60 km (at or below the 6.40 km control would mean the spectral wall binds harder than
+the scalar it corrects), above 300 km (FREEZE first), or `binding` named STARVE, BURST
+or FREEZE. `f_floor` 0.10 and 0.50 are reported, not registered.
 
-**What the gates may constrain.** Gate A: `T_eq(1 AU, sphere) ∈ [275, 282] K`. Gate B:
-Beer-Lambert with the extracted `k` reproduces a measured transmission through a
-stated thickness of ice: UNGROUNDED, needs a source (q3 spec `:213-216` names the gate
-without one). Gate C: Buck at 273.16 K and 5.16 °C. The gates constrain optics and
-vapour pressure only; they do not touch `sigma`, `albedo`, `t_opt`, `omega`, which are
-swept or declared and disclosed. A gate that fails blocks the sweep and exits 2, as Q2
-did (`docs/FINDINGS.md:206-209`).
+**Gates the registration rests on: A and C.** Gate A: `T_eq(1 AU, sphere) ∈ [275, 282]
+K` (q3 spec `:211-212`). Gate C: `saturation_pressure` gives 611.657 Pa at 273.16 K
+within atol 0.01 Pa (Buck: 611.654) and 882 Pa at 5.16 °C within atol 0.5 Pa (Buck:
+882.22) (q3 spec `:217-220`). Gate B as the q3 spec wrote it (`:213-216`, a measured
+transmission through a stated thickness of ice) has no source in the repo and cannot
+fail; it is demoted to a unit test (`transmission_spectrum` at one `k` equals
+`exp(-k·t)`; the committed `k(λ)` table's md5 equals `tools/extract_ice_k.py`'s output
+when its input is present) and nothing is registered on it. The gates touch the
+radiative core and vapour pressure only, not `sigma`, `albedo`, `t_opt`, `omega`,
+`f_floor`, which are swept or declared. A failing gate blocks the sweep and exits 2, as
+Q2 did (`docs/FINDINGS.md:206-209`).
 
 **Declared, explicit:** `t_opt = 298.15 K`, `omega = 20 K`, `albedo = 0`,
-`emissivity = 1`, dust `none`; `R_ORGANISM` is no longer assumed at 10 km, it is swept.
+`emissivity = 1`, `f_floor = 0.25`, dust `none`; `R_ORGANISM` is swept, not assumed,
+and prediction 1 names 10 km only as its fixed point.
 
 ## 7. Non-goals for this arc
 
-- Colony loop (B): needs A's budget trusted first (`docs/ROADMAP.md:113-116`).
+- Colony loop (B): needs A's budget trusted first (`docs/ROADMAP.md:118-121`).
 - Growth over time: one design, evaluated; a tick would need a mass budget nobody has.
-  Stays out until §11 chapter 3 needs a tick to integrate carbon over an orbit.
-- Orbit mechanics: DEFERRED to §11 chapter 3, not excluded. In this arc `r` is a
-  slider; chapter 3 replaces it with (perihelion, aphelion, period).
+  Stays out until §11 chapter 3 integrates carbon over an orbit.
+- Orbit mechanics: DEFERRED to §11 chapter 3, which replaces the `r` slider with
+  (perihelion, aphelion, period).
 - 3D: the cross-section carries every quantity; a third dimension is decoration.
-- Elements budget: DEFERRED to §11 chapter 6. Spine item 1 is ungrounded for K
-  (`docs/ROADMAP.md:90-93`); in this arc it would enter as a fifth authored constraint.
+- Elements budget: DEFERRED to §11 chapter 6; spine item 1 is ungrounded for K
+  (`docs/ROADMAP.md:95-98`) and would enter here as a sixth authored constraint.
 - Wood or pigmented walls: `k` for wood is UNGROUNDED; the §10 pairing rule forbids it.
-- Scattering magnitude: direction pinned only (`§15:1293-1297`); shipped as a toggle.
+  Scattering magnitude: direction pinned only (`§15:1293-1297`); shipped as a toggle.
 - Chlorophyll action spectrum: not grounded; inventing one manufactures S2's defect.
-- Buckling, creep, conduction, shell stacking: q3 spec `:227-241` keeps them out.
+- A temperature-consistent compensation irradiance: it is the STARVE line (§4).
+  Buckling, creep, conduction, shell stacking: q3 spec `:227-241` keeps them out.
 
 ## 8. Milestones
 
-- **M1 (M): the numbers.** `sim/vessel.py` (`wall_thickness`, `hoop_stress`,
+- **M1a (M): the numbers, in Python.** First item, since nothing below runs without
+  it: the derived `k(λ)` table (31 PAR rows plus a coarse NIR grid to 4000 nm)
+  committed under `sim/` with `tools/extract_ice_k.py` as producer and a provenance
+  header naming the Warren & Brandt file (§10 Q1; the inputs are gitignored and absent,
+  `.gitignore:9-10`). Then `sim/vessel.py` (`wall_thickness`, `hoop_stress`,
   `transmission_spectrum`, `par_photon_fraction`, `solar_transmission`,
   `saturation_pressure`, `contained_temperature`, `self_consistent_pressure`,
   `classify_failure`), `Organism.net_carbon_contained` beside the existing paths, the
-  §10 same-object test, the closed-form control, ported to `web/model.js` with new
-  fixture cases and parity tests, `experiments/q4_vessel/prereg.yaml` registered.
-  Acceptance: on the live page a stranger opens the console and
-  `DysonModel.classifyFailure(...)` at the prereg's example inputs returns the set the
-  prereg prints; `tests/test_parity_js.py` covers it.
-- **M2 (M): the verdict.** The six inputs and the readout panel, no picture.
-  Acceptance: at defaults the panel shows four HOLDS; dragging `r` past the registered
-  `r_close` flips exactly one line to VIOLATED and it is FREEZE.
+  §10 same-object test, the closed-form control (21.41 / 11.91 / 6.40 km), Gate C with
+  its atol, the Gate B unit test, and `experiments/q4_vessel/prereg.yaml` with both
+  predictions computed and written. Acceptance: `pytest` green with the new tests;
+  `prereg.yaml` names two bands and two bindings the sweep has not been run against.
+- **M1b (M): the numbers, in the browser.** The port to `web/model.js` with new
+  fixture cases and parity tests. Acceptance: on the live page a stranger opens the
+  console and `DysonModel.classifyFailure(...)` at the prereg's example inputs returns
+  the set the prereg prints; `tests/test_parity_js.py` covers it.
+- **M2 (M): the verdict.** The seven inputs and the readout panel, no picture.
+  Acceptance: at defaults five HOLDS; dragging `r` past the registered `r_close` (at
+  `R` = 10 km) flips exactly one line to VIOLATED and it is FREEZE.
 - **M3 (L): the picture.** The cross-section, driven only by `model.js` outputs.
   Acceptance: the drawn wall band's pixel thickness divided by the inner radius equals
   `t/R` from the readout to 2 dp, and `smoke_page.py` measures it from the DOM.
 - **M4 (M): the run.** `run.py`, `RESULTS.md`, `sweep.csv` with provenance headers,
   FINDINGS §5, the `r_close` band drawn hatched as Q1's is (`web/app.js:118-119`).
-  Acceptance: the page shows the hatched prediction beside the measured `r_close`
+  Acceptance: the page shows the hatched prediction beside the measured `r_close`,
   labelled HELD or FAILED, and the README's opening paragraph counts four questions.
 
 ## 9. Risks: three ways this becomes another parameter plotter
 
 1. **The verdict becomes a label on a curve.** Guard: M2 ships before any plot; the
-   verdict panel has no x-axis; `classify_failure` is the only source of the words
-   BURST/FREEZE/STARVE/OPAQUE and a test asserts they appear nowhere else in `web/`.
-2. **Author-chosen thresholds creep back in** (`tau_min`, a safety factor, a "viable"
-   pressure). Guard: `sim/vessel.py` may contain no numeric threshold except 273.15,
-   611.657 and sourced material constants; a test greps for literals and every one must
-   carry a `# source:` on its line.
+   panel has no x-axis; `classify_failure` is the only source of the words
+   BURST/FREEZE/BOIL/STARVE/OPAQUE and a test asserts they appear nowhere else in `web/`.
+2. **Author-chosen thresholds creep back in** (a safety factor, a "viable" pressure).
+   Guard: `sim/vessel.py` may contain no numeric threshold except 273.15, 611.657 and
+   sourced material constants; a test greps for literals and every one must carry a
+   `# source:` on its line. `f_floor` is not a literal there: it is an argument with no
+   default, supplied by the page and by `prereg.yaml`.
 3. **The picture corrects the label, not the value** (the 1.0 lesson: a page that read
    1.000 AU and evaluated 0.99987). Guard: every drawn geometry is read back from the
-   DOM by `smoke_page.py` against `fixtures.json`, and M3 passes only through an
-   independent visual critic, not the author's read.
+   DOM by `smoke_page.py` against `fixtures.json`; M3 passes only through an independent
+   visual critic, not the author's read.
 
-## 10. Open questions for the user
+## 10. Answered 2026-09-12
 
-1. The wall optics need `k(λ)` on the page, and the page must work from `file://` with
-   no fetch. The repo's rule is that Warren & Brandt's table is "not redistributed here"
-   (`docs/FINDINGS.md:259-261`). Commit a derived 31-row PAR + coarse NIR `k` table under
-   `sim/` with its extraction script as provenance? Recommended: yes, it is a derived
-   quantity with the producer committed (`tools/extract_ice_k.py`).
-2. First load: alive at 1.10 AU (recommended, so the first gesture is a death the
-   visitor caused) or at 1 AU, where the wall is already water?
-3. `p` and `t`: player-set with `p*` and `t_min` shown (recommended, it is the only way
-   BURST is reachable by hand) or always self-consistent?
+1. **Commit a derived `k(λ)` table? Yes.** The page must work from `file://` with no
+   fetch, and Warren & Brandt's table is "not redistributed here"
+   (`docs/FINDINGS.md:259-261`). A 31-row PAR plus coarse NIR table is a derived
+   quantity with its producer committed (`tools/extract_ice_k.py`); the producer's
+   inputs are gitignored and absent (`.gitignore:9-10`), so the derived table is the
+   only thing that can run in CI. M1a's first item, P0.
+2. **First load: alive at 1.10 AU.** The first gesture is then a death the visitor
+   caused; at 1 AU the wall is already water and the page opens on a corpse.
+3. **`p` and `t`: player-set, with `p*` and `t_min` shown.** The only way BURST and
+   BOIL are reachable by hand; auto mode is the self-consistent default.
 
 ## 11. The story after Q4
 
-Story order set by the user on 2026-09-12. §§1-10 are Act One. Each chapter adds one
-registered question (chapter 6 adds three), phrased so a gate can check it, and reuses
-the four inequalities of §4. Sizes: S < 1 week, M 1-3 weeks, L > 3 weeks. "UNGROUNDED,
-needs a source" means the number stays off the page until `bio_grounding` carries it.
+Story order set by the user on 2026-09-12. §§1-10 are Act One. Each chapter after the
+first adds one registered question (chapter 6 adds two), phrased so a gate can check it,
+and reuses §4. Sizes: S < 1 week, M 1-3 weeks, L > 3 weeks. "UNGROUNDED, needs a
+source" means the number stays off the page until grounded.
 
-### Chapter 1. The scale ladder: who needs a vessel at all
+### Chapter 1. The scale ladder: who needs a vessel at all (display, not registered)
 
 **Seen.** The Q4 sphere shrinks on a log ladder from 100 km to 10 µm with a seed, a
 lichen thallus, a tardigrade and a plant cell drawn beside it at true scale. At the
@@ -338,20 +389,13 @@ the large end it is metres of ice. Dyson's original drawing (foliage outside in 
 habitat inside) tops the ladder with each leaf redrawn as a sealed vessel at leaf scale,
 the only reading under which it holds air.
 
-**Question.** At what internal radius `R_free` does `t_min = p·R/(2·sigma)` first exceed
-the wall a cell or cuticle supplies for free, for `p` in {0.5, 1} MPa turgor against a
-cell wall and `p*` against ice, and does `R_free` fall below the smallest `R` the Q4
-page draws?
-
-**Inputs and anchors.** Ladder class {cell, seed, lichen, tardigrade, leaf, Q4 vessel},
-each with an "own wall" thickness and strength. The same hoop equation (§3; q3 spec
-`:133`) at every rung. Cell turgor 0.5-1 MPa, cell-wall strength, cuticle thickness, and
-vacuum survival of seeds, lichens and tardigrades: all UNGROUNDED, needs a source
-(chapter 4's EXPOSE papers are the natural anchor). Size S.
-
-**Variant, lichen as the grounded organism class.** Lichen survived 18 months on EXPOSE;
-once sourced it is the one rung with a measured, not declared, desiccation tolerance.
-UNGROUNDED until sourced.
+**Status.** Display only, no registered question: every anchor it needs (cell turgor
+0.5-1 MPa, cell-wall strength, cuticle thickness, vacuum survival of seeds, lichens and
+tardigrades) is UNGROUNDED, needs a source, and a question with zero grounded anchors
+cannot be registered. The ladder draws the hoop equation (§3; q3 spec `:133`) at every
+rung with own-wall numbers labelled DECLARED. If chapter 4's EXPOSE papers ground the
+lichen rung, "at what `R_free` does `t_min` first exceed the wall a cell supplies for
+free" can be registered then. Size S.
 
 ### Chapter 2. Mirror leaves and stacked shells (Act 2: moving the window outward)
 
@@ -362,28 +406,30 @@ which combination keeps the interior liquid and the disc green, and at what ring
 the disc greys because no PAR survives the stack.
 
 **Question.** For `r` in {2, 5} AU and `sigma` in {0.7, 1.5, 3.1} MPa, what is the
-smallest (shell count `N`, mirror ratio `M`) pair under which all four inequalities of
-§4 hold at `p = p*`, and what `N_dark(r)` first drives `I_wall` below `I_c` with `M` at
-its mass-feasible maximum?
+smallest (shell count `N`, mirror ratio `M`) pair under which all five inequalities of
+§4 hold at `p = p*`, and what `N_dark(r)` first drives `f_photon^N` below `f_floor`
+with `M` at its mass-feasible maximum?
 
 **Inputs and anchors.** Mirror ratio `M` [1, log to 10^4]; shell count `N` [0 to 5];
 mirror areal mass (declared) charged into the hoop load of the wall carrying it.
-Compensation irradiance scales `1/r²` (`sim/physiology.py:25-29`;
-`sim/organism.py:126-135`), so 5 AU needs 25x and 40 AU 1,600x; `I_wall = M ·
+Incident PAR scales `1/r²` (`sim/physiology.py:29`); the compensation irradiance does
+not move with `r` (`sim/organism.py:126-135` has no distance term), so 5 AU needs 25x
+the mirror and 40 AU 1,600x to restore the 1 AU flux; `I_wall = M · (1 - albedo) ·
 irradiance(r) · f_photon(t)` extends §3's closure. Shells: `bio_grounding` §14
-`:1150-1158` puts one extra IR-opaque shell at +31 to +36 K at measured `tau`, and
-`:1195-1200` shows the stack saturating (5.16, 21.8, 25.7, 26.7 °C at `tau = 0.26`)
-since each shell passes a quarter of what reaches it; PAR loss goes as `f_photon(t)^N`.
+`:1149-1158` puts one real shell at 21.8 to 26.5 °C against the uncontained 5.16 °C,
++16.6 to +21.3 K per shell at measured `tau`; the +31 to +36 K there (`:1158`) is the
+GAP between a real shell and the halved-`area_ratio` identity, not a shell's warming.
+`:1196-1200` shows the stack saturating (5.16, 21.8, 25.7, 26.7 °C at `tau = 0.26`),
+each shell passing a quarter of what reaches it; PAR loss goes as `f_photon(t)^N`.
 Mirror areal mass and reflectance: UNGROUNDED, needs a source. Both sliders feed the
-same four inequalities; no new failure word is authored. Size M.
+same inequalities; no new failure word is authored. Size M.
 
-**Variant, comet as vessel.** Grow inside the comet: crust is the wall, thickness is free,
+**Variant, comet as vessel.** Grow inside the comet: crust is the wall, thickness free,
 transparency the only constraint, the trunk a light pipe from a surface window. BURST
-drops out and OPAQUE is the whole game. Light-pipe loss per metre: UNGROUNDED, needs a
-source.
+drops out, OPAQUE is the whole game. Light-pipe loss per metre: UNGROUNDED, needs a source.
 
 **Variant, how many trees make a Dyson sphere.** Leaf area to intercept 1% of solar
-output, printed as a count of Q4 vessels at the current `R`. A flourish from TSI
+output, as a count of Q4 vessels at the current `R`. A flourish from TSI
 (`sim/physiology.py:14`) and `4·pi·r²`; no registered question.
 
 ### Chapter 3. The orbit is the calendar
@@ -395,28 +441,29 @@ integral is positive after one lap, even though the instant readout says FREEZE 
 of the year.
 
 **Question.** For the Q4 default vessel, which `(q, Q)` pairs on a registered grid give
-`∫ net_carbon_contained(r(t), t_wall) dt >= 0` over one period, and does the closing
-`Q` exceed the fixed-`r` `r_close` band of §6 by more than the dormancy respiration
-fraction accounts for?
+`∫ net_carbon_contained(r(t), t_wall) dt >= 0` over one period, with respiration times a
+dormancy fraction `d = 0.10` whenever `T_int < 273.15 K`, and does the closing `Q`
+exceed the fixed-`r` `r_close` band of §6 by more than `d` accounts for?
 
-**Inputs and anchors.** `q`, `Q` (AU); a dormancy respiration fraction applied when
-`T_int < 273.15 K` [declared, disclosed]; a tick, the first in the repo. `r(t)` from
-Kepler's equation, stateless; the integrand is §4 STARVE per tick with `1/r²` inside
-`irradiance` (`sim/physiology.py:29`). Dormancy through aphelion (resurrection plants,
-seed dormancy) is the biology; the dormant respiration rate is UNGROUNDED, needs a
-source. §7 defers growth-over-time and orbit mechanics here.
+**Inputs and anchors.** `q`, `Q` (AU); the dormancy fraction `d`, FROZEN at 0.10 for
+the registration, DECLARED on the page, 0.05 and 0.20 reported as sensitivity arms; a
+tick, the first in the repo. `r(t)` from Kepler's equation, stateless; the integrand is
+§4 STARVE per tick with `1/r²` inside `irradiance` (`sim/physiology.py:29`). Dormancy
+through aphelion (resurrection plants, seed dormancy) is the biology; the dormant rate
+is UNGROUNDED, needs a source, which is why `d` is frozen and disclosed rather than
+fitted. §7 defers growth-over-time and orbit mechanics here.
 
-**Variant, albedo as an evolvable trait.** §17 `:1497-1501` has the shell melting at
-albedo 0 and freezing at 0.0721 at 1 AU. Instead of declaring it, let albedo respond to
-`T_shell` over the orbit (frost forms, frost sublimes) so the sphere self-regulates or
-runs away; the same `(1-a)^0.25` factor scales `I_wall` per §3. Size L.
+**Variant, albedo as an evolvable trait.** §17 `:1497-1502` has the shell melting at
+albedo 0 and freezing at 0.0721 at 1 AU. Let albedo respond to `T_shell` over the orbit
+(frost forms, frost sublimes) so the sphere self-regulates or runs away; the same
+`(1 - albedo)` factor scales `I_wall` per §3. Size L.
 
 ### Chapter 4. The seed as the spaceship (Act 3)
 
 **Seen.** A pod on the outer wall dehisces and seeds drift off the comet at walking
-pace, since escape velocity from a ~1e12 kg body is ~1 m/s. A transit bar counts
-centuries to the next comet at Oort-cloud spacing while a DNA-damage meter climbs and an
-ice-coat slider slows it. Arrival draws germination or a dead seed with the dose printed.
+pace (escape velocity from a ~1e12 kg body is ~1 m/s). A transit bar counts centuries to
+the next comet at Oort-cloud spacing while a DNA-damage meter climbs and an ice-coat
+slider slows it. Arrival draws germination or a dead seed with the dose printed.
 
 **Question.** At a registered transit time of centuries and the measured vacuum plus
 radiation damage rate, what ice-coat thickness `d_coat` holds accumulated DNA damage
@@ -427,15 +474,15 @@ below the germination-loss threshold, and does any `d_coat` under 1 m do it?
 after 558 days outside the ISS on EXPOSE-E: Tepfer and Leach 2017, Astrobiology,
 10.1089/ast.2015.1457; Tepfer, Zalar and Leach 2012, 10.1089/ast.2011.0744; both: verify
 via CrossRef before citing in-repo. Escape velocity ~1 m/s from `sqrt(2GM/R)` at ~1e12
-kg, comet mass UNGROUNDED, needs a source. Dose attenuation in ice and the
-damage-to-viability curve: UNGROUNDED, needs a source. Size M.
+kg, comet mass UNGROUNDED, needs a source; so are dose attenuation in ice and the
+damage-to-viability curve. Size M.
 
 ### Chapter 5. Seed bootstrapping, and what the seed carries
 
 **Seen.** A seed lands on bare ice with its carbon reserve drawn as a shrinking bar. It
 absorbs sunlight, melts a pocket (334 kJ/kg latent heat) and starts the first wall; the
-bar drains as it builds. Either the vessel closes before the bar empties and the Q4 page
-appears, or the bar hits zero and the seedling frosts over.
+bar drains as it builds. Either the vessel closes first and the Q4 page appears, or the
+bar hits zero and the seedling frosts over.
 
 **Question.** Is there a seed reserve mass `m_seed` for which the startup budget closes
 (absorbed sunlight over the startup time melts the water the first `t_min` wall needs
@@ -445,103 +492,108 @@ before the reserve is spent), and what is the smallest such `m_seed` at 1.10 AU?
 of fusion 334 kJ/kg; `irradiance(r)` (`sim/physiology.py:22-30`); `t_min` and `p*` from
 §3. Seed reserve carbon per mass and startup respiration: UNGROUNDED, needs a source.
 Alongside, a grounding table (not a mechanic) of carried traits: UV screens (Tepfer's
-UV-screen mutants did WORSE than wild type; from the same two papers, verify via
-CrossRef), DNA repair, desiccation proteins, anti-freeze coat, each row
-source-or-UNGROUNDED. The lichen variant of chapter 1 may sit here instead. Size M.
+UV-screen mutants did WORSE than wild type; same two papers, verify via CrossRef), DNA
+repair, desiccation proteins, anti-freeze coat, each row source-or-UNGROUNDED. Size M.
 
-### Chapter 6. Element budget, air per person, gravitropism
+### Chapter 6. Element budget and air per person
 
-**Seen.** Three panels. A mass slider grows the tree against a ~1e12 kg comet and one
+**Seen.** Two panels. A mass slider grows the tree against a ~1e12 kg comet and one
 element bar empties first with its name printed. A head count at 1 AU and 5 AU shows the
-leaf area each person needs behind the wall's `f_photon`, Dyson's stated purpose. A
-gravitropism panel stays greyed: "gated on NASA GeneLab".
+leaf area each person needs behind the wall's `f_photon`, Dyson's stated purpose.
 
 **Questions.** (a) With the comet's element fractions, which element runs out first and
 at what tree mass `m_limit`, as a fraction of comet mass? (b) What leaf area per human
 `A_air(r, t)` balances one person's O2 demand at 1 AU and 5 AU behind `f_photon(t)`, and
-by what factor does the wall raise it? (c) No mechanic and no registered question for
-gravitropism until GeneLab measurements set the architecture (`docs/ROADMAP.md:110-112`).
+by what factor does the wall raise it?
 
+**Non-goal.** Gravitropism: no panel, no mechanic and no registered question until NASA
+GeneLab measurements set the architecture (`docs/ROADMAP.md:110-112`).
 **Inputs and anchors.** Tree mass; head count; element table. Spine item 1: comet
 organic-C-rich ~50% by mass, Ca-depleted, P present, K unmeasured
-(`docs/ROADMAP.md:94-98`; `docs/prior_art_2026-09-01.md` §3); K is UNGROUNDED, needs a
-source. Human O2 demand and tissue stoichiometry: UNGROUNDED, needs a source. Comet mass
-~1e12 kg: UNGROUNDED, needs a source. Size M.
+(`docs/ROADMAP.md:95-98`; `docs/prior_art_2026-09-01.md` §3). K, human O2 demand, tissue
+stoichiometry and the ~1e12 kg comet mass: all UNGROUNDED, needs a source. Size M.
 
 ### Cards inside Q4's page
 
 Two static cards under the readout panel, no new inputs.
-
-- **Shield.** The `p*` wall is already 5.6 to 18.6 m of ice at the swept sigmas; about
-  1 m of water stops most solar protons, so shielding may come free with the pressure
+- **Shield.** The `p*` wall at 1 AU and 10 km is 5.6 to 18.6 m of ice (`§13:1054-1058`);
+  about 1 m of water stops most solar protons, so shielding may come free with the
   wall. The 1 m figure is UNGROUNDED, needs a source; the thickness is §3's `t_min`.
-- **Treeship falsified.** Photon pressure ~9 µN/m² at 1 AU on a km² leaf gives ~9 N; on
-  a ~1e12 kg comet that is ~1e-14 m/s². It does not fly, by ~14 orders of magnitude. The
-  only propulsion a plant has is shading one side of its comet to bias outgassing, and
-  that is speculative. Photon pressure is TSI/c (`sim/physiology.py:14`); comet mass
-  UNGROUNDED, needs a source.
+- **Treeship falsified.** Absorbed photon pressure at 1 AU is TSI/c = 1360.8 / 2.998e8
+  = 4.54 µN/m² (`sim/physiology.py:14`). On 1 km² of leaf, 4.5 N; on a ~1e12 kg comet,
+  4.5e-12 m/s², nine orders below the Sun's 5.9e-3 m/s² pull at 1 AU, and a year of it
+  is 1.4e-4 m/s against a ~1 m/s escape velocity. It does not fly. The only propulsion
+  a plant has is shading one side of its comet to bias outgassing, and that is
+  speculative. Comet mass UNGROUNDED, needs a source.
 
 ## 12. The speculative tier: a gene deck and a material table
 
 User ruling 2026-09-12: the story may step into science fiction, on one condition that
 keeps the model honest. **A card moves an input. A card never moves an inequality.**
-The four failures of §4 stay the judge; what the visitor chooses is what the organism
-is made of and what it stole from whom.
+The five failures of §4 stay the judge; the visitor chooses what the organism is made of.
 
 **Seen.** Beside the design inputs, a deck. Each card names an organism, the trait,
-the input it moves, its cost, and a coloured anchor badge: MEASURED (a number with a
-source in this repo), DEMONSTRATED (done in a lab, source outside the repo, verified
-before it is cited), or DECLARED (fantasy, labelled as such on the card). Playing a
-card changes a slider's value or range; the picture and the four lines respond as they
-would to any other input. A DECLARED card cannot be played in a registered run; the
-sweep refuses it, the page allows it.
+the input it moves, its cost, and an anchor badge: MEASURED (a number with a source in
+this repo), DEMONSTRATED (done in a lab, source outside the repo, verified before it is
+cited), or DECLARED (fantasy, labelled as such). Playing a card changes a slider's value
+or range; the picture and the five lines respond as to any other input. A DECLARED card
+cannot be played in a registered run; the sweep refuses it, the page allows it.
 
-**The rule, as a test.** `sim/vessel.py` and `classify_failure` do not import the deck.
+**The rule, as tests.** `sim/vessel.py` and `classify_failure` do not import the deck.
 The deck is a data table (`web/deck.json`, mirrored in `sim/deck.py` for parity) whose
 every row is `{organism, trait, input, delta_or_range, cost, anchor, source}`; a test
-asserts every row names an input that exists and no row names an inequality, and a
-second test asserts every MEASURED row's source resolves to a file:line in this repo.
+asserts every row names an input that exists and no row names an inequality; a second
+asserts every MEASURED row's source resolves to a file:line in this repo. **Third rule:
+every inequality keeps a HOLD case and a VIOLATED case on the swept grid after any card
+is played.** A card that makes a line unfalsifiable (zero respiration makes STARVE
+vacuous, since `respiration(0, T) = 0`, `sim/physiology.py:54`; a strength or clarity
+that puts BURST or OPAQUE past every slider) has removed a judge; the per-card test
+plays each card, sweeps the page grid, and asserts every line takes both values.
 
 ### Material table (wall rows)
 
 Each row is a `(sigma, k(lambda) or opacity, density, anchor)` tuple the wall-material
-input can take. Ice is the only MEASURED row today (§3). The rest are DEMONSTRATED or
-DECLARED until sourced, and every number below is UNGROUNDED, needs a source, until
-the CrossRef chain in the citation rule has run.
+input can take. Ice is the only MEASURED row (§3); every other number below is
+UNGROUNDED, needs a source, until the CrossRef chain has run. **Every `sigma` or `k` row
+must keep BURST and OPAQUE violable on the page grid** (the third rule): `sigma` is
+capped where `t_min` at 100 km and `p*` still fits the `t` slider, `k` is floored where
+`f_photon(t_min)` still crosses `f_floor` inside it; a row that cannot satisfy both
+ships DECLARED with its range clipped and the clip printed.
 
-| material          | organism it is stolen from | what it does to the four lines                          | anchor       |
-| ----------------- | -------------------------- | ------------------------------------------------------- | ------------ |
-| water ice         | the comet                  | the §3 baseline                                         | MEASURED     |
-| nacre             | mollusc shell              | ~100 MPa tensile, ~30x ice, so BURST retreats; opaque, so OPAQUE fires unless paired with an ice window or the comet-as-vessel light pipe (§11 ch.2) | DEMONSTRATED |
-| biogenic silica   | diatom frustule            | grown glass, clear in the visible and strong; the one row that can open the window in both directions at once | DEMONSTRATED |
-| spider silk       | spidroin in tobacco/potato | ~1 GPa tensile; not a wall, a tether: in zero g structure is tension, so mirrors and leaves hang on silk (§11 ch.2) | DEMONSTRATED |
-| magnetite         | chiton radula              | hardest biomaterial; armour, not a vessel; a row for micrometeorite pitting once that is a failure mode | DEMONSTRATED |
-| nickel-laden wood | hyperaccumulator trees     | metal in tissue is real (sap ~25% Ni in one species); metal as a structural wall is not, and the card says so | DECLARED     |
+| material          | organism it is stolen from | what it does to the lines                                                                                                                                                           | anchor       |
+| ----------------- | -------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------ |
+| water ice         | the comet                  | the §3 baseline                                                                                                                                                                     | MEASURED     |
+| nacre             | mollusc shell              | ~100 MPa tensile, ~30x ice, so BURST retreats (clipped so it can still fire); opaque, so OPAQUE fires unless paired with an ice window or the comet-as-vessel light pipe (§11 ch.2) | DEMONSTRATED |
+| biogenic silica   | diatom frustule            | grown glass, clear in the visible and strong; the one row that can open the window in both directions at once, and so the row the third rule watches closest                        | DEMONSTRATED |
+| spider silk       | spidroin in tobacco/potato | ~1 GPa tensile; not a wall, a tether: in zero g structure is tension, so mirrors and leaves hang on silk (§11 ch.2)                                                                 | DEMONSTRATED |
+| magnetite         | chiton radula              | hardest biomaterial; armour, not a vessel; a row for micrometeorite pitting once that is a failure mode                                                                             | DEMONSTRATED |
+| nickel-laden wood | hyperaccumulator trees     | metal in tissue is real (sap ~25% Ni in one species); metal as a structural wall is not, and the card says so                                                                       | DECLARED     |
 
 ### Gene cards (organism rows)
 
-Ordered from most to least grounded. Each moves one named input.
+Ordered from most to least grounded. Each moves one named input, never a literal in
+`sim/vessel.py`: the antifreeze card leaves 273.15 alone and moves a supercooling offset
+input `dT_sc` [0 K default, declared, disclosed] that FREEZE reads as `T_int < 273.15 -
+dT_sc`; respiration cards move `r_d` within a floor above zero (third rule).
 
-| card                       | stolen from                   | input it moves                                          | anchor       |
-| -------------------------- | ----------------------------- | ------------------------------------------------------- | ------------ |
-| antifreeze proteins        | fish, insects                 | the FREEZE threshold, by a few K of supercooling        | DEMONSTRATED |
-| Dsup + desiccation proteins| tardigrade                    | the dormancy-vs-radiation budget (§11 ch.4, ch.5)       | DEMONSTRATED |
-| DNA repair                 | Deinococcus radiodurans       | the same budget, the repair term                        | DEMONSTRATED |
-| CAM + desert cuticle       | cacti, agaves                 | leaf-scale water loss in vacuum (§11 ch.1)              | DEMONSTRATED |
-| UV screens                 | Arabidopsis flavonoid mutants | the seed's UV term; note the EXPOSE-E screen mutants did WORSE than wild type | DEMONSTRATED |
-| chemosynthetic symbionts   | tube-worm bacteria            | a dark-side carbon source: O2 banked at perihelion, burned with comet organics at aphelion (§11 ch.3); a redox budget with real inputs | DECLARED |
-| radiotrophic melanin       | Chernobyl fungi               | a cosmic-ray energy term; the literature claim is contested and the card says so | DECLARED |
-| bioluminescence            | fungal luciferin plants       | nothing; a flourish for the aphelion picture            | DECLARED     |
+| card                        | stolen from                   | input it moves                                                                                                                         | anchor       |
+| --------------------------- | ----------------------------- | -------------------------------------------------------------------------------------------------------------------------------------- | ------------ |
+| antifreeze proteins         | fish, insects                 | `dT_sc`, a few K of supercooling, declared on the card                                                                                 | DEMONSTRATED |
+| Dsup + desiccation proteins | tardigrade                    | the dormancy-vs-radiation budget (§11 ch.4, ch.5)                                                                                      | DEMONSTRATED |
+| DNA repair                  | Deinococcus radiodurans       | the same budget, the repair term                                                                                                       | DEMONSTRATED |
+| CAM + desert cuticle        | cacti, agaves                 | leaf-scale water loss in vacuum (§11 ch.1)                                                                                             | DEMONSTRATED |
+| UV screens                  | Arabidopsis flavonoid mutants | the seed's UV term; note the EXPOSE-E screen mutants did WORSE than wild type                                                          | DEMONSTRATED |
+| chemosynthetic symbionts    | tube-worm bacteria            | a dark-side carbon source: O2 banked at perihelion, burned with comet organics at aphelion (§11 ch.3); a redox budget with real inputs | DECLARED     |
+| radiotrophic melanin        | Chernobyl fungi               | a cosmic-ray energy term; the literature claim is contested and the card says so                                                       | DECLARED     |
+| bioluminescence             | fungal luciferin plants       | nothing; a flourish for the aphelion picture                                                                                           | DECLARED     |
 
 **One thing plants already do that reads as fiction.** Xylem pulls water at about
--2 MPa, below absolute zero pressure; a tree is already a hydraulic system that
-operates past vacuum. This goes on the landing page as the reason a plant, and not an
-animal, is the organism for this story. UNGROUNDED, needs a source, before it ships.
+-2 MPa, below absolute zero pressure; a tree already operates past vacuum. This goes on
+the landing page as the reason a plant, not an animal, is the organism. UNGROUNDED,
+needs a source, before it ships.
 
-**Non-goals for the tier.** No genome, no evolution of cards, no cost currency beyond
-the carbon budget the model already has; a card's "cost" is carbon or mass charged to
-the existing inequalities, never a new score.
+**Non-goals for the tier.** No genome, no evolution of cards, no cost currency beyond the
+carbon budget the model has; a "cost" is carbon or mass charged to the existing inequalities.
 
-**Milestone.** The deck ships after M2 (the verdict panel) and before M3 (the picture),
-as M2b (S): the table, the two tests, and the badge. No card may be MEASURED until its
-number is in `bio_grounding` with a section number.
+**Milestone.** The deck ships after M2 and before M3, as M2b (S): the table, the three
+tests, and the badge. No card may be MEASURED until its number is in `bio_grounding`.
