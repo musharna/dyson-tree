@@ -5,7 +5,8 @@
 > Supersedes the modelling direction of `2026-09-04-q3-pressure-vessel-design.md`
 > (whose four correction banners are the input to §3 below); does not supersede
 > `docs/ROADMAP.md`, which must be bannered to point here in the same commit that
-> starts M1.
+> starts M1. §§1-10 are Act One (Q4, the vessel, watching it fail); §11 is the story
+> order after Q4 as the user set it on 2026-09-12, and §7 defers to it by chapter.
 
 ## 1. Northstar
 
@@ -262,11 +263,12 @@ did (`docs/FINDINGS.md:206-209`).
 
 - Colony loop (B): needs A's budget trusted first (`docs/ROADMAP.md:113-116`).
 - Growth over time: one design, evaluated; a tick would need a mass budget nobody has.
-- Orbit mechanics: `r` is a slider; eccentricity adds a second axis to a 4-inequality
-  state and no finding needs it.
+  Stays out until §11 chapter 3 needs a tick to integrate carbon over an orbit.
+- Orbit mechanics: DEFERRED to §11 chapter 3, not excluded. In this arc `r` is a
+  slider; chapter 3 replaces it with (perihelion, aphelion, period).
 - 3D: the cross-section carries every quantity; a third dimension is decoration.
-- Elements budget: spine item 1 is ungrounded for K (`docs/ROADMAP.md:90-93`) and
-  would enter as a fifth authored constraint.
+- Elements budget: DEFERRED to §11 chapter 6. Spine item 1 is ungrounded for K
+  (`docs/ROADMAP.md:90-93`); in this arc it would enter as a fifth authored constraint.
 - Wood or pigmented walls: `k` for wood is UNGROUNDED; the §10 pairing rule forbids it.
 - Scattering magnitude: direction pinned only (`§15:1293-1297`); shipped as a toggle.
 - Chlorophyll action spectrum: not grounded; inventing one manufactures S2's defect.
@@ -319,3 +321,227 @@ did (`docs/FINDINGS.md:206-209`).
    visitor caused) or at 1 AU, where the wall is already water?
 3. `p` and `t`: player-set with `p*` and `t_min` shown (recommended, it is the only way
    BURST is reachable by hand) or always self-consistent?
+
+## 11. The story after Q4
+
+Story order set by the user on 2026-09-12. §§1-10 are Act One. Each chapter adds one
+registered question (chapter 6 adds three), phrased so a gate can check it, and reuses
+the four inequalities of §4. Sizes: S < 1 week, M 1-3 weeks, L > 3 weeks. "UNGROUNDED,
+needs a source" means the number stays off the page until `bio_grounding` carries it.
+
+### Chapter 1. The scale ladder: who needs a vessel at all
+
+**Seen.** The Q4 sphere shrinks on a log ladder from 100 km to 10 µm with a seed, a
+lichen thallus, a tardigrade and a plant cell drawn beside it at true scale. At the
+small end the wall band vanishes because the organism's own wall holds the pressure; at
+the large end it is metres of ice. Dyson's original drawing (foliage outside in vacuum,
+habitat inside) tops the ladder with each leaf redrawn as a sealed vessel at leaf scale,
+the only reading under which it holds air.
+
+**Question.** At what internal radius `R_free` does `t_min = p·R/(2·sigma)` first exceed
+the wall a cell or cuticle supplies for free, for `p` in {0.5, 1} MPa turgor against a
+cell wall and `p*` against ice, and does `R_free` fall below the smallest `R` the Q4
+page draws?
+
+**Inputs and anchors.** Ladder class {cell, seed, lichen, tardigrade, leaf, Q4 vessel},
+each with an "own wall" thickness and strength. The same hoop equation (§3; q3 spec
+`:133`) at every rung. Cell turgor 0.5-1 MPa, cell-wall strength, cuticle thickness, and
+vacuum survival of seeds, lichens and tardigrades: all UNGROUNDED, needs a source
+(chapter 4's EXPOSE papers are the natural anchor). Size S.
+
+**Variant, lichen as the grounded organism class.** Lichen survived 18 months on EXPOSE;
+once sourced it is the one rung with a measured, not declared, desiccation tolerance.
+UNGROUNDED until sourced.
+
+### Chapter 2. Mirror leaves and stacked shells (Act 2: moving the window outward)
+
+**Seen.** A petal mirror of player-set area unfolds around the sphere and the interior
+brightens; a shell count adds concentric ice rings and the interior warms while going
+bluer and darker with each ring. Dragging `r` out to 2 AU and 5 AU, the visitor watches
+which combination keeps the interior liquid and the disc green, and at what ring count
+the disc greys because no PAR survives the stack.
+
+**Question.** For `r` in {2, 5} AU and `sigma` in {0.7, 1.5, 3.1} MPa, what is the
+smallest (shell count `N`, mirror ratio `M`) pair under which all four inequalities of
+§4 hold at `p = p*`, and what `N_dark(r)` first drives `I_wall` below `I_c` with `M` at
+its mass-feasible maximum?
+
+**Inputs and anchors.** Mirror ratio `M` [1, log to 10^4]; shell count `N` [0 to 5];
+mirror areal mass (declared) charged into the hoop load of the wall carrying it.
+Compensation irradiance scales `1/r²` (`sim/physiology.py:25-29`;
+`sim/organism.py:126-135`), so 5 AU needs 25x and 40 AU 1,600x; `I_wall = M ·
+irradiance(r) · f_photon(t)` extends §3's closure. Shells: `bio_grounding` §14
+`:1150-1158` puts one extra IR-opaque shell at +31 to +36 K at measured `tau`, and
+`:1195-1200` shows the stack saturating (5.16, 21.8, 25.7, 26.7 °C at `tau = 0.26`)
+since each shell passes a quarter of what reaches it; PAR loss goes as `f_photon(t)^N`.
+Mirror areal mass and reflectance: UNGROUNDED, needs a source. Both sliders feed the
+same four inequalities; no new failure word is authored. Size M.
+
+**Variant, comet as vessel.** Grow inside the comet: crust is the wall, thickness is free,
+transparency the only constraint, the trunk a light pipe from a surface window. BURST
+drops out and OPAQUE is the whole game. Light-pipe loss per metre: UNGROUNDED, needs a
+source.
+
+**Variant, how many trees make a Dyson sphere.** Leaf area to intercept 1% of solar
+output, printed as a count of Q4 vessels at the current `R`. A flourish from TSI
+(`sim/physiology.py:14`) and `4·pi·r²`; no registered question.
+
+### Chapter 3. The orbit is the calendar
+
+**Seen.** The `r` slider becomes an ellipse with perihelion `q`, aphelion `Q` and period
+drawn to scale, and a clock runs. The sphere thaws through perihelion, frosts and greys
+through aphelion, and a carbon integral fills or drains beside it. The tree lives if the
+integral is positive after one lap, even though the instant readout says FREEZE for most
+of the year.
+
+**Question.** For the Q4 default vessel, which `(q, Q)` pairs on a registered grid give
+`∫ net_carbon_contained(r(t), t_wall) dt >= 0` over one period, and does the closing
+`Q` exceed the fixed-`r` `r_close` band of §6 by more than the dormancy respiration
+fraction accounts for?
+
+**Inputs and anchors.** `q`, `Q` (AU); a dormancy respiration fraction applied when
+`T_int < 273.15 K` [declared, disclosed]; a tick, the first in the repo. `r(t)` from
+Kepler's equation, stateless; the integrand is §4 STARVE per tick with `1/r²` inside
+`irradiance` (`sim/physiology.py:29`). Dormancy through aphelion (resurrection plants,
+seed dormancy) is the biology; the dormant respiration rate is UNGROUNDED, needs a
+source. §7 defers growth-over-time and orbit mechanics here.
+
+**Variant, albedo as an evolvable trait.** §17 `:1497-1501` has the shell melting at
+albedo 0 and freezing at 0.0721 at 1 AU. Instead of declaring it, let albedo respond to
+`T_shell` over the orbit (frost forms, frost sublimes) so the sphere self-regulates or
+runs away; the same `(1-a)^0.25` factor scales `I_wall` per §3. Size L.
+
+### Chapter 4. The seed as the spaceship (Act 3)
+
+**Seen.** A pod on the outer wall dehisces and seeds drift off the comet at walking
+pace, since escape velocity from a ~1e12 kg body is ~1 m/s. A transit bar counts
+centuries to the next comet at Oort-cloud spacing while a DNA-damage meter climbs and an
+ice-coat slider slows it. Arrival draws germination or a dead seed with the dose printed.
+
+**Question.** At a registered transit time of centuries and the measured vacuum plus
+radiation damage rate, what ice-coat thickness `d_coat` holds accumulated DNA damage
+below the germination-loss threshold, and does any `d_coat` under 1 m do it?
+
+**Inputs and anchors.** Transit time; ice-coat thickness `d_coat`; dose rate behind
+`d_coat` (the dormancy-vs-radiation budget). Arabidopsis and tobacco seeds germinated
+after 558 days outside the ISS on EXPOSE-E: Tepfer and Leach 2017, Astrobiology,
+10.1089/ast.2015.1457; Tepfer, Zalar and Leach 2012, 10.1089/ast.2011.0744; both: verify
+via CrossRef before citing in-repo. Escape velocity ~1 m/s from `sqrt(2GM/R)` at ~1e12
+kg, comet mass UNGROUNDED, needs a source. Dose attenuation in ice and the
+damage-to-viability curve: UNGROUNDED, needs a source. Size M.
+
+### Chapter 5. Seed bootstrapping, and what the seed carries
+
+**Seen.** A seed lands on bare ice with its carbon reserve drawn as a shrinking bar. It
+absorbs sunlight, melts a pocket (334 kJ/kg latent heat) and starts the first wall; the
+bar drains as it builds. Either the vessel closes before the bar empties and the Q4 page
+appears, or the bar hits zero and the seedling frosts over.
+
+**Question.** Is there a seed reserve mass `m_seed` for which the startup budget closes
+(absorbed sunlight over the startup time melts the water the first `t_min` wall needs
+before the reserve is spent), and what is the smallest such `m_seed` at 1.10 AU?
+
+**Inputs and anchors.** Seed reserve mass; seed absorptance; startup time. Latent heat
+of fusion 334 kJ/kg; `irradiance(r)` (`sim/physiology.py:22-30`); `t_min` and `p*` from
+§3. Seed reserve carbon per mass and startup respiration: UNGROUNDED, needs a source.
+Alongside, a grounding table (not a mechanic) of carried traits: UV screens (Tepfer's
+UV-screen mutants did WORSE than wild type; from the same two papers, verify via
+CrossRef), DNA repair, desiccation proteins, anti-freeze coat, each row
+source-or-UNGROUNDED. The lichen variant of chapter 1 may sit here instead. Size M.
+
+### Chapter 6. Element budget, air per person, gravitropism
+
+**Seen.** Three panels. A mass slider grows the tree against a ~1e12 kg comet and one
+element bar empties first with its name printed. A head count at 1 AU and 5 AU shows the
+leaf area each person needs behind the wall's `f_photon`, Dyson's stated purpose. A
+gravitropism panel stays greyed: "gated on NASA GeneLab".
+
+**Questions.** (a) With the comet's element fractions, which element runs out first and
+at what tree mass `m_limit`, as a fraction of comet mass? (b) What leaf area per human
+`A_air(r, t)` balances one person's O2 demand at 1 AU and 5 AU behind `f_photon(t)`, and
+by what factor does the wall raise it? (c) No mechanic and no registered question for
+gravitropism until GeneLab measurements set the architecture (`docs/ROADMAP.md:110-112`).
+
+**Inputs and anchors.** Tree mass; head count; element table. Spine item 1: comet
+organic-C-rich ~50% by mass, Ca-depleted, P present, K unmeasured
+(`docs/ROADMAP.md:94-98`; `docs/prior_art_2026-09-01.md` §3); K is UNGROUNDED, needs a
+source. Human O2 demand and tissue stoichiometry: UNGROUNDED, needs a source. Comet mass
+~1e12 kg: UNGROUNDED, needs a source. Size M.
+
+### Cards inside Q4's page
+
+Two static cards under the readout panel, no new inputs.
+
+- **Shield.** The `p*` wall is already 5.6 to 18.6 m of ice at the swept sigmas; about
+  1 m of water stops most solar protons, so shielding may come free with the pressure
+  wall. The 1 m figure is UNGROUNDED, needs a source; the thickness is §3's `t_min`.
+- **Treeship falsified.** Photon pressure ~9 µN/m² at 1 AU on a km² leaf gives ~9 N; on
+  a ~1e12 kg comet that is ~1e-14 m/s². It does not fly, by ~14 orders of magnitude. The
+  only propulsion a plant has is shading one side of its comet to bias outgassing, and
+  that is speculative. Photon pressure is TSI/c (`sim/physiology.py:14`); comet mass
+  UNGROUNDED, needs a source.
+
+## 12. The speculative tier: a gene deck and a material table
+
+User ruling 2026-09-12: the story may step into science fiction, on one condition that
+keeps the model honest. **A card moves an input. A card never moves an inequality.**
+The four failures of §4 stay the judge; what the visitor chooses is what the organism
+is made of and what it stole from whom.
+
+**Seen.** Beside the design inputs, a deck. Each card names an organism, the trait,
+the input it moves, its cost, and a coloured anchor badge: MEASURED (a number with a
+source in this repo), DEMONSTRATED (done in a lab, source outside the repo, verified
+before it is cited), or DECLARED (fantasy, labelled as such on the card). Playing a
+card changes a slider's value or range; the picture and the four lines respond as they
+would to any other input. A DECLARED card cannot be played in a registered run; the
+sweep refuses it, the page allows it.
+
+**The rule, as a test.** `sim/vessel.py` and `classify_failure` do not import the deck.
+The deck is a data table (`web/deck.json`, mirrored in `sim/deck.py` for parity) whose
+every row is `{organism, trait, input, delta_or_range, cost, anchor, source}`; a test
+asserts every row names an input that exists and no row names an inequality, and a
+second test asserts every MEASURED row's source resolves to a file:line in this repo.
+
+### Material table (wall rows)
+
+Each row is a `(sigma, k(lambda) or opacity, density, anchor)` tuple the wall-material
+input can take. Ice is the only MEASURED row today (§3). The rest are DEMONSTRATED or
+DECLARED until sourced, and every number below is UNGROUNDED, needs a source, until
+the CrossRef chain in the citation rule has run.
+
+| material          | organism it is stolen from | what it does to the four lines                          | anchor       |
+| ----------------- | -------------------------- | ------------------------------------------------------- | ------------ |
+| water ice         | the comet                  | the §3 baseline                                         | MEASURED     |
+| nacre             | mollusc shell              | ~100 MPa tensile, ~30x ice, so BURST retreats; opaque, so OPAQUE fires unless paired with an ice window or the comet-as-vessel light pipe (§11 ch.2) | DEMONSTRATED |
+| biogenic silica   | diatom frustule            | grown glass, clear in the visible and strong; the one row that can open the window in both directions at once | DEMONSTRATED |
+| spider silk       | spidroin in tobacco/potato | ~1 GPa tensile; not a wall, a tether: in zero g structure is tension, so mirrors and leaves hang on silk (§11 ch.2) | DEMONSTRATED |
+| magnetite         | chiton radula              | hardest biomaterial; armour, not a vessel; a row for micrometeorite pitting once that is a failure mode | DEMONSTRATED |
+| nickel-laden wood | hyperaccumulator trees     | metal in tissue is real (sap ~25% Ni in one species); metal as a structural wall is not, and the card says so | DECLARED     |
+
+### Gene cards (organism rows)
+
+Ordered from most to least grounded. Each moves one named input.
+
+| card                       | stolen from                   | input it moves                                          | anchor       |
+| -------------------------- | ----------------------------- | ------------------------------------------------------- | ------------ |
+| antifreeze proteins        | fish, insects                 | the FREEZE threshold, by a few K of supercooling        | DEMONSTRATED |
+| Dsup + desiccation proteins| tardigrade                    | the dormancy-vs-radiation budget (§11 ch.4, ch.5)       | DEMONSTRATED |
+| DNA repair                 | Deinococcus radiodurans       | the same budget, the repair term                        | DEMONSTRATED |
+| CAM + desert cuticle       | cacti, agaves                 | leaf-scale water loss in vacuum (§11 ch.1)              | DEMONSTRATED |
+| UV screens                 | Arabidopsis flavonoid mutants | the seed's UV term; note the EXPOSE-E screen mutants did WORSE than wild type | DEMONSTRATED |
+| chemosynthetic symbionts   | tube-worm bacteria            | a dark-side carbon source: O2 banked at perihelion, burned with comet organics at aphelion (§11 ch.3); a redox budget with real inputs | DECLARED |
+| radiotrophic melanin       | Chernobyl fungi               | a cosmic-ray energy term; the literature claim is contested and the card says so | DECLARED |
+| bioluminescence            | fungal luciferin plants       | nothing; a flourish for the aphelion picture            | DECLARED     |
+
+**One thing plants already do that reads as fiction.** Xylem pulls water at about
+-2 MPa, below absolute zero pressure; a tree is already a hydraulic system that
+operates past vacuum. This goes on the landing page as the reason a plant, and not an
+animal, is the organism for this story. UNGROUNDED, needs a source, before it ships.
+
+**Non-goals for the tier.** No genome, no evolution of cards, no cost currency beyond
+the carbon budget the model already has; a card's "cost" is carbon or mass charged to
+the existing inequalities, never a new score.
+
+**Milestone.** The deck ships after M2 (the verdict panel) and before M3 (the picture),
+as M2b (S): the table, the two tests, and the badge. No card may be MEASURED until its
+number is in `bio_grounding` with a section number.
