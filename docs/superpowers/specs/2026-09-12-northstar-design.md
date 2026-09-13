@@ -3,9 +3,10 @@
 > Revised 2026-09-12 after an llm-panel audit (impaired: codex/astra unavailable); findings in the coordinator's memory memo `northstar_panel_audit_2026-09-12.md`.
 > Revised again 2026-09-12 after the round-2 panel audit: prediction 1 re-banded on the edge wall, bands hand-written from committed rows (§6), Q4 registers on FREEZE/STARVE/OPAQUE only, the deck's third rule demands first violation inside the registered box, M1 split into M1a0/M1a.
 > Revised a third time 2026-09-13 after the round-3 panel (codex and astra answering): the transmission law is declared (sphere-averaged, refracted, §3) and every number in §3-§6 recomputed under it, normal incidence kept as a control row; M1a0 commits ONE spectral table (λ, k, E_AM0, n_ph) that the hand rows and `sim/vessel.py` both integrate on, plus `prereg.yaml`; Q4 registers on FREEZE and OPAQUE only (STARVE cannot be first-violated on the auto path, 0 of 3,900 states); every inequality reads the wall in force, with the four (p, t) modes tabulated (§5); the registered grids, edge rule and load order are written down (§6); the deck test quantifies over each card's whole range and stack (§12).
+> Revised a fourth time 2026-09-13 after the round-4 panel (codex, 13 findings, every one confirmed or partially confirmed by an independent verifier, plus 4 the verifier added). Two root classes: **a law declared without its own reflectance is a second declaration** (the shell law fixed `n = 1.31` and then set the reflectance that `n` implies to zero, calling it "consistent with albedo 0"; §3 now states R̄ = 0.0627 and §6 registers a Fresnel sensitivity arm for both predictions, binding included), and **a verifier's scan grid copied into the spec as its own** (round 3's "3,900 / 7,722 states" were the reproduction script's scan sizes; every §4 count is now from the registered 197 × 101 × 3 = 59,691-node grid). Also: `f_photon` declared as a disk average with the interior mixing named as an input (§3); the `f_floor` card struck so §3's "only comparator the deck may move" holds (§12); `prereg.yaml` committed one commit before the calculator, edge-rule ties decided (§6, §8); every BURST cell reads `σ_eff(T_shell)` (§5); the pvlib source pinned to a commit (§6, §8). Responses to all 17 findings at the end of the document.
 
 > Drafted 2026-09-12 against `release/1.0.1-rc` (`7ed4414`); revised against `master`
-> (`08fac2e`, then `17f08c6`). Every claim about current code carries a `file:line`. Nothing here edits
+> (`08fac2e`, then `17f08c6`, then `372f941`). Every claim about current code carries a `file:line`. Nothing here edits
 > a frozen pre-registration.
 > Supersedes the modelling direction of `2026-09-04-q3-pressure-vessel-design.md`
 > (whose four correction banners are the input to §3 below); does not supersede
@@ -110,9 +111,16 @@ difference is load-bearing (round-3 audit, astra), so the law is declared here:
 **The transmission law (sphere-averaged, refracted).** Distant sun, thin wall
 (`t << R`): a ray meets the lit hemisphere at incidence angle `θ` from the local
 normal with projected-area weight `2μ dμ` (`μ = cos θ`), refracts into the ice by
-Snell, `sin θ' = sin θ / n`, with `n = 1.31` (DECLARED, the sixth declared input), no
-Fresnel reflection (consistent with `albedo = 0`), and crosses the slab path
-`t / cos θ'`. So
+Snell, `sin θ' = sin θ / n`, with `n = 1.31` (DECLARED, the sixth declared input), and
+crosses the slab path `t / cos θ'`. The REGISTERED law carries no Fresnel reflection.
+That is an omission with a known size, not a consistency with `albedo = 0`: the same
+`n = 1.31` fixes the unpolarised reflectance at every interface, `R(normal) = ((n-1)/(n+1))²
+= 0.0180`, and its projected-area average over the lit hemisphere, `R̄ = ∫₀¹ 2μ R(μ) dμ =
+0.0627`, which is the shell's own specular albedo, 87% of the 0.0721 that freezes the shell
+at 1 AU (below). The law is kept as declared so that rounds 2-3's hand-pinned bands stay the
+registration; the reflectance the law omits is registered as a named sensitivity arm for both
+predictions, binding included (§6, "Fresnel arm"), and the page prints the specular albedo
+0.063 beside the 0.072 line (§5). So
 
 `T(k·t) = ∫₀¹ 2μ · exp(-k·t / μ'(μ)) dμ`, `μ'(μ) = sqrt(1 - (1 - μ²) / n²)`,
 
@@ -121,13 +129,28 @@ a function of `k·t` alone, tabulated once and interpolated (log-log, 2,401 node
 for straight rays (`2·E₃(1)`); at `k·t` = 0.1 / 0.5 / 2 / 5 it is 0.8857 / 0.5463 /
 0.0920 / 0.0030. `tau(lambda, t) = T(k(lambda)·t)` everywhere below. Normal-incidence
 `exp(-k·t)` survives as the CONTROL law: `sim/vessel.py` takes the law as an argument,
-and §6 carries one control row per prediction computed under it. Two integrals of
+and §6 carries one control row per prediction computed under it. The thin-wall law omits
+O(t/R) effects (chord curvature, total internal reflection at the inner face, multiple
+passes); over the registered auto-path domain `t/R ≤ 4.4e-4` at R = 10 km (the σ 0.7 edge
+wall, 4.366 m) and the exact-chord recompute moves `tau_sw` from 0.34712 to 0.34711 and the
+P1 edge by less than 1e-5 AU, under the 1e-4 AU edge tolerance (§6). Two integrals of
 `tau` are the wall:
 
 - `f_photon(t) = ∫₄₀₀⁷⁰⁰ tau(λ,t)·n_ph(λ) dλ / ∫₄₀₀⁷⁰⁰ n_ph(λ) dλ`, the fraction of
   AM0 PAR photons that arrive (`tools/size_par_filter.py:181-186`). This is the
   photon count, not a chlorophyll-weighted rate (`§12:959-963`); it is an upper bound
-  on what the organism can use, stated as such on the page.
+  on what the organism can use, stated as such on the page. **`f_photon` is the
+  projected-disk average**, the total PAR throughput of the lit hemisphere divided by the
+  disk area: a point organism at lateral offset `ρ` from the sun line sees only the rays
+  that entered at `sin θ = ρ/R`, so its local fraction runs from the normal-incidence value
+  at the centre (0.2699 at the P2 wall, t = 55.72 m) to 0.2259 at the rim, with the disk
+  average 0.2500. The organism is therefore taken to fill the interior, or the interior to
+  mix what it receives; that is the seventh declared input, `interior = mixed` (§3
+  declared list), and the page carries the alternative `central` (a point organism at the
+  centre, which reads the normal-incidence `f_photon` with the shell-law `tau_sw`) as a
+  labelled variant: P2 under `central` crosses the 0.25 floor at R = 119.3 km, inside the
+  registered band. `tau_sw` is a global energy balance and is the disk average under
+  either setting.
 - `tau_sw(t) = ∫₂₈₀⁴⁰⁰⁰ tau(λ,t)·E(λ) dλ / ∫ E dλ`, solar-energy-weighted
   (`check_greenhouse_transparency.py:94-96`), band-normalised over 280 to 4000 nm
   (99.05% of TSI 1360.8; the tail outside the band is assumed to transmit like the
@@ -193,14 +216,19 @@ R = 10 km as the tool does (`R_ORGANISM_M`, `check_greenhouse_transparency.py:35
 scalar-limit implementation passes (b) and fails (a), so each control names which path
 it exercises.
 
-**Declared assumptions, six, all exposed as inputs:** `t_opt` and `omega`
+**Declared assumptions, seven, all exposed as inputs:** `t_opt` and `omega`
 (`sim/organism.py:37,40`); `albedo` and `emissivity` (also `Organism` fields, `:38-39`,
-read here as the shell's); `f_floor` (§4); the ice refractive index `n = 1.31` (§3).
-The interior freezing point `T_freeze` is an input too, but a grounded one: default
-273.15 K, the pure-water value, the only comparator the deck may move (§12). Albedo is not cosmetic: at 1 AU the shell
-melts at albedo 0 and freezes at 0.0721 (`§17:1501-1502`); if `albedo > 0` the same
-`(1 - albedo)` scales `I_wall`, since Beer-Lambert models absorption only and is
-consistent with `albedo = 0` (`§17:1505-1509`). Dust: magnitude ungroundable, direction
+read here as the shell's); `f_floor` (§4); the ice refractive index `n = 1.31` (§3); the
+interior mixing, `interior = mixed` (§3, `f_photon` as a disk average; `central` is the
+labelled variant). The interior freezing point `T_freeze` is an input too, but a grounded
+one: default 273.15 K, the pure-water value, the only comparator the deck may move (§12).
+Albedo is not cosmetic: at 1 AU the shell melts at albedo 0 and freezes at 0.0721
+(`§17:1501-1502`), and the shell's own specular reflectance under the declared `n` is
+R̄ = 0.0627, 87% of that line (§3): the registered `albedo = 0` is a declaration that the
+Fresnel arm (§6) relaxes, with the melt door moving from 1.0381 to 1.0051 AU when R̄ is
+read as the albedo. If `albedo > 0` the same `(1 - albedo)` scales `I_wall`; Beer-Lambert
+models absorption only (`§17:1505-1509`), which is why the reflectance has to be carried
+separately, not why it can be zero. Dust: magnitude ungroundable, direction
 pinned downward on `tau`, `T_int`, `p*` (`§15:1287-1297`); the page carries a `dust
 floor` toggle {none, 0.0087, 0.0548 /m} labelled DECLARED; Q4 registers on `none`.
 
@@ -221,12 +249,17 @@ to the fixed point's residual (`|Δp| < 1e-6` Pa, `check_greenhouse_transparency
 BURST and BOIL therefore hold by construction on the auto path (except BURST's
 `sigma(T_shell) = 0` door inside 1.0381 AU, the melt door, below) and are failure modes
 of manual gestures only. STARVE holds on the auto path for a different reason: it is never
-the first inequality violated. Over the registered grids (§6; r 1.04 to 3.00 AU, R 10 m
-to 1000 km, three sigmas, 3,900 states under the shell law, 7,722 at normal incidence)
-STARVE is first-violated 0 times; every STARVE violation sits at `T_int < 273.15 K`,
+the first inequality violated. Over the registered grid (§6; r 1.04 to 3.00 AU in 0.01 AU
+steps, R 10 m to 1000 km at 20 nodes per decade, three sigmas: 197 × 101 × 3 = 59,691
+states, scanned under both laws) STARVE is first-violated 0 times under the shell law
+(52,816 FREEZE, 394 OPAQUE, 6,481 HELD) and 0 times at normal incidence (52,668 / 359 /
+6,664); every STARVE violation (41,968 shell, 41,796 normal) sits at `T_int < 273.15 K`,
 where FREEZE already named the picture, and the smallest STARVE margin with FREEZE holding
-is +1.89 µmol (at normal incidence the auto path never drops `f_photon` below 0.096
-while STARVE at 273.15 K needs 0.0007; round-3 audit). So `binding = STARVE` is a lose-condition that cannot fire, and Q4 does not
+is +1.826 µmol under the shell law (σ 0.7, r 1.09 AU, R 794 km, `f_photon` 0.094) and
++1.874 at normal incidence; the grid minimum of `f_photon` on the auto path is 0.0579
+(shell) / 0.0667 (normal) while STARVE at 273.15 K needs 0.0007. (Round 3 printed 3,900 and
+7,722 states and +1.89: those were the reproduction script's scan sizes and its coarse
+minimum, not the registered grid; round-4 audit.) So `binding = STARVE` is a lose-condition that cannot fire, and Q4 does not
 register on it; STARVE is displayed as a margin and monitored (§6). Every comparison
 carries a stated epsilon (BURST and BOIL: 1e-6 relative; FREEZE: 1e-6 K; STARVE and
 OPAQUE: 1e-9 in their units) so a HOLD is never a solver residue, the readout prints the
@@ -237,21 +270,26 @@ keeps a mutation control that must trip it: sizing the wall at `0.99·t_min` at 
 defaults gives hoop stress 707,071 Pa against 700,000 (BURST) and `p_sat(T_int)` 1965.3 Pa
 against `p*` 1960.5 (BOIL). Q4 registers on FREEZE and OPAQUE only (§6).
 
-**BURST.** `p·R/(2t) > sigma(T_shell)`. `sigma` is Petrovic's 0.7 to 3.1 MPa while the
+**BURST.** `p·R/(2t) > σ_eff(T_shell)`. `σ_eff` is Petrovic's 0.7 to 3.1 MPa while the
 shell is solid, and 0 when `T_shell = T_eq(r) > 273.15 K`, because the wall is then
 water, not ice (`§17:1465-1471`: at 1 AU, albedo 0, the coldest part of the wall is
 5.16 °C). Two doors, one inequality: too much pressure for the wall you built, or a
 distance so close the wall is not a solid. The annulus's inner edge, 1.0381 AU at
-albedo 0 (`§17:1480-1486`), falls out of `sigma(T_shell) = 0`, not a stored number.
-The wall-phase check is a PRECONDITION evaluated before `t_min`: with `sigma = 0`,
-`t_min = pR/(2·0)` is undefined, so a state inside the melt door is BURST by
-construction, displayed with `sigma = 0` printed, and lies outside the registered `r`
-grid, whose lower edge is 1.04 AU (§6). At 1.00 AU and R = 10 km the other lines all
-HOLD (`T_int` 294.9 K, `f_photon` 0.41, STARVE +9.2); the registered pair would read
-HELD there, which is why the grid does not reach it.
+albedo 0 (`§17:1480-1486`), falls out of `σ_eff(T_shell) = 0`, not a stored number.
+`σ_eff(T_shell)` is what BURST reads in EVERY (p, t) mode (§5's table): the wall-phase
+check is part of the inequality, not of the auto path, and on the auto path it is
+additionally a PRECONDITION of `t_min`, since with `σ_eff = 0`, `t_min = pR/(2·0)` is
+undefined; so a state inside the melt door is BURST in every mode, displayed with
+`σ_eff = 0` printed, and lies outside the registered `r` grid, whose lower edge is 1.04 AU
+(§6). At 1.00 AU and R = 10 km the other lines all HOLD under the shell law (`T_int`
+294.37 K, `f_photon` 0.391, STARVE +9.12; 294.92 K / 0.414 / +9.21 at normal incidence);
+the registered pair would read HELD there, which is why the grid does not reach it.
 
 **FREEZE.** `T_int < T_freeze`, `T_freeze` = 273.15 K unless a deck card lowers it
-(§12). `T_int = (1+tau_sw)^0.25 · T_eq(r)` drops below melting outward: at R = 10 km and
+(§12). The 273.15 K / 611.21 Pa pair is a convention, 0.01 K and 0.45 Pa below the triple
+point (273.16 K / 611.657 Pa): liquid there is metastable, and taking the triple point as
+the freezing line instead moves the P1 σ 0.7 edge from 1.20493 to 1.20482 AU, 1.1e-4 AU,
+the size of the edge tolerance (§6). `T_int = (1+tau_sw)^0.25 · T_eq(r)` drops below melting outward: at R = 10 km and
 `p = p*` the edge is 1.205 to 1.254 AU across the three sigmas (§6; 1.211 to 1.261 at
 normal incidence), 1.468 AU in the `tau = 1` limit of a vanishing wall, where the law
 does not enter. The interior frosts.
@@ -270,7 +308,9 @@ beside `net_carbon_adapted` (`sim/organism.py:102-123`), with `T_eq` replaced by
 Because `f_photon` is a photon count that over-credits the surviving blue band
 (`§12:959-963`), STARVE fires later than it should; the page says so under the readout.
 At the defaults it is far from firing: ALGAL's `I_c` is 0.492 µmol
-(`compensation_irradiance`, `:126-135`) against 1993.6 µmol at 1.10 AU, 2.5e-4. There
+(`compensation_irradiance`, `:126-135`) against 1993.6 µmol of pre-wall PAR at 1.10 AU
+(`irradiance(1.10)`, `sim/physiology.py:22-30`), which the 1.400 m default wall passes at
+`f_photon` 0.8327 as `I_wall` = 1660.1 µmol, 3.0e-4 of it. There
 is no `I_c(T_int)` in the repo; a temperature-consistent threshold is algebraically the
 STARVE line itself, not a second inequality.
 
@@ -305,7 +345,8 @@ to 1 km]; internal pressure `p` [auto = `p*`, or manual]; distance `r` [1.10 AU,
 existing slider]; ice tensile strength `sigma` [0.7 MPa; 0.7, 1.5, 3.1]; organism class
 [algal]; wall material [ice, the only grounded option]. Under a "declared assumptions"
 disclosure: `albedo` [0.0], `emissivity` [1.0], `t_opt` [298.15 K], `omega` [20 K],
-`f_floor` [0.25], dust floor [none]. Auto is the self-consistent design; manual over- or under-builds.
+`f_floor` [0.25], dust floor [none], interior [mixed; `central` labelled variant, §3],
+Fresnel [off; `on` is the §6 arm, labelled]. Auto is the self-consistent design; manual over- or under-builds.
 When `p` goes manual with `t` on auto, `t` freezes at `t_min(p*)` and does not re-track
 the manual `p`; otherwise hoop stress would equal `sigma` at every `p` and the BURST
 gesture below could never fire.
@@ -315,7 +356,7 @@ gesture below could never fire.
 Interior hue from the transmitted PAR spectrum (blue-shift as `t` grows: `tau(λ,t)` at
 31 PAR rows), brightness from `f_photon`. Organism: a green disc whose saturation is
 `net_carbon_contained / a_max`, grey at zero. Overlays, each keyed to its inequality:
-BURST fractures the wall with `p·R/2t` vs `sigma` at the break; FREEZE frosts the
+BURST fractures the wall with `p·R/2t` vs `σ_eff(T_shell)` at the break; FREEZE frosts the
 interior with `T_int` vs 273.15 K; BOIL dries it with `p` vs `p_sat(T_int)`; STARVE
 fades the disc with `net` vs 0; OPAQUE darkens the interior with `f_photon` vs `f_floor`
 (labelled declared). No text-transform anywhere (`web/index.html:29-33`).
@@ -324,22 +365,31 @@ fades the disc with `net` vs 0; OPAQUE darkens the interior with `f_photon` vs `
 or VIOLATED. Below: `p*`, `t_min`, two windows in `r`, labelled: `[r_melt, r_freeze]`
 for the current wall HELD FIXED (1.2428 AU at the defaults) and the auto-path edge with
 `p*` and `t_min` re-solved at each `r` (1.2805 AU), and the live `R_window` against the
-registered floor.
+registered floor. Beside the albedo input the panel prints the two lines the declaration
+sits between: "shell specular albedo from n = 1.31: 0.063 (not applied in the registered
+law; Fresnel arm §6)" and "freezes at 1 AU above albedo 0.072".
 
 **The four (p, t) modes**, what each inequality reads; `classify_failure` receives the
 resolved pair and does not know which mode produced it:
 
-| `p`    | `t`    | resolution                                                                                   | BURST reads                | BOIL reads                | FREEZE / STARVE / OPAQUE read |
-| ------ | ------ | -------------------------------------------------------------------------------------------- | -------------------------- | ------------------------- | ----------------------------- |
-| auto   | auto   | `p = p*(r, R, σ)`, `t = t_min(p*)`; the design                                              | `p*R/2t_min` = σ, margin 0 | `p*` = `p_sat`, margin 0  | `t_min`                       |
-| manual | auto   | `t` FROZEN at `t_min(p*)` of the auto state, does not re-track `p` (else BURST never fires) | `p·R/2t` vs σ              | `p` vs `p_sat(T_int(t))`  | the frozen `t`                |
-| auto   | manual | `p` re-solved as the fixed point ON THE GIVEN `t`: `p = p_sat(T_int(t))`                    | `p·R/2t` vs σ              | `p` = `p_sat`, margin 0   | the manual `t`                |
-| manual | manual | both as given                                                                                | `p·R/2t` vs σ              | `p` vs `p_sat(T_int(t))`  | the manual `t`                |
+| `p`    | `t`    | resolution                                                                                  | BURST reads                                                                                           | BOIL reads               | FREEZE / STARVE / OPAQUE read |
+| ------ | ------ | ------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------- | ------------------------ | ----------------------------- |
+| auto   | auto   | `p = p*(r, R, σ)`, `t = t_min(p*)`; the design                                              | `p*R/2t_min` vs `σ_eff(T_shell)`: = σ, margin 0, while the shell is solid; BURST inside the melt door | `p*` = `p_sat`, margin 0 | `t_min`                       |
+| manual | auto   | `t` FROZEN at `t_min(p*)` of the auto state, does not re-track `p` (else BURST never fires) | `p·R/2t` vs `σ_eff(T_shell)`                                                                          | `p` vs `p_sat(T_int(t))` | the frozen `t`                |
+| auto   | manual | `p` re-solved as the fixed point ON THE GIVEN `t`: `p = p_sat(T_int(t))`                    | `p·R/2t` vs `σ_eff(T_shell)`                                                                          | `p` = `p_sat`, margin 0  | the manual `t`                |
+| manual | manual | both as given                                                                               | `p·R/2t` vs `σ_eff(T_shell)`                                                                          | `p` vs `p_sat(T_int(t))` | the manual `t`                |
+
+Every BURST cell reads `σ_eff(T_shell)` (§4), never the input `σ`: a manual wall at r = 1.00 AU
+has `T_shell = T_eq = 278.311 K > 273.15 K`, so `σ_eff = 0` and the line is BURST at any
+`p > 0`, not "5,000 Pa against 700,000 HOLDS". The mode-agnostic invariant M1a tests: for
+every (p, t) mode and every `r`, `classify_failure` names BURST whenever `T_shell > 273.15 K`,
+with `σ_eff = 0` printed, and the same call with `r` moved outside the melt door and the same
+`p`, `t` reads the input `σ` (positive case).
 
 **The first 60 seconds**, at the defaults (1 km, 1.10 AU, 0.7 MPa, auto wall and
 pressure). Load: alive; FREEZE, STARVE and OPAQUE HOLD with margins, BURST and BOIL
 at margin 0 by construction (§4). Drag `r` inward: at 1.038 AU the wall line turns to
-water and BURST fires with `sigma = 0`. Drag outward: the interior frosts at the edge
+water and BURST fires with `σ_eff = 0`. Drag outward: the interior frosts at the edge
 `model.js` prints for this wall; at the defaults `p*` is 1960.5 Pa, `t_min` 1.400 m,
 `tau_sw` 0.4331 (shell law; 2033.6 Pa, 1.453 m, 0.4445 at normal incidence, between the
 0.625 m row's 0.5086, `§13:1031`, and the 16.1 m row's), `T_int` 290.34 K, and the
@@ -355,9 +405,11 @@ defaults (§4); it stays a HOLD with its margin printed (+8.23 µmol at the defa
 
 ## 6. Pre-registration Q4
 
-**Question.** At self-consistent pressure `p*` and a spectral ice wall, is there ANY
-radius `R` at which the vessel is strong enough to hold liquid water and clear enough
-to pass the declared photon floor, and at what distance `r` does that window close?
+**Question.** At self-consistent pressure `p*` and a spectral ice wall sized to the hoop
+load (`t = t_min`, so strength is an identity on this path, §4, and BURST is asserted, not
+asked), is there ANY radius `R` at which the interior stays liquid and the wall stays
+clear enough to pass the declared photon floor, and at what distance `r` does that
+window close?
 
 **Quantities and the registered grids.** `r`: 1.04 to 3.00 AU in 0.01 AU steps, 197
 nodes, lower edge above the 1.0381 AU melt door (§4) so every node has a solid wall.
@@ -370,7 +422,13 @@ error, §4); `r_close(R, sigma)` = the largest `r` with the window open at that 
 `classify_failure`. **Edge rule:** an edge is the root of the binding line's margin,
 bracketed by the last HOLD and first VIOLATED grid nodes and refined by bisection to
 1e-4 AU in `r` and 0.1% in `R`; grid nodes are for display and for the bracket, never
-the reported edge. If no node holds, `R_window = 0` and the window is empty. Load order:
+the reported edge. **Ties:** `binding` = the first violated inequality in load order AT
+THE FIRST VIOLATED NODE, and it is that line's margin that is bisected; if two lines are
+both violated at that node, or two roots fall within one tolerance of each other inside
+the bracket, load order decides and the runner prints both margins. (On the registered
+rows no two lines share a bracket: P2 OPAQUE 95.6 km against FREEZE 532.6 km; the 0.10 arm
+777.5 against 532.6 km; under the Fresnel optics+thermal arm 70.8 against 104.3 km.) If
+no node holds, `R_window = 0` and the window is empty. Load order:
 BURST, FREEZE, BOIL, STARVE, OPAQUE. A window edge is a curve, so each registration fixes
 one axis at a declared value. `binding` is drawn only from FREEZE and OPAQUE: BURST and
 BOIL hold by construction at `t = t_min`, `p = p*`, and STARVE is never first-violated
@@ -378,35 +436,55 @@ there (§4); none of the three can bind or lose a prediction, and STARVE's margi
 reported at every edge so a run that reaches it is a finding, not a registered loss.
 
 **Where the bands come from.** The bands below are HAND-WRITTEN in this spec from the
-committed rows in the table that follows, and `prereg.yaml` (committed in M1a0, before
-any vessel code exists) copies them verbatim with the grids, edge rule, tolerances and
-load order above; a test asserts the prereg's band strings equal this section's. The
-rows are reproduced in M1a0 by `tools/q4_hand_rows.py`, committed with its output beside
-the spec's table. It reads the ONE committed spectral table `sim/spectral_table.csv`
-(§3: λ, `k`, `E_AM0`, `n_ph` on ASTM's 2,002-row grid, header carrying the md5 and byte
-size of both sources, `ASTMG173.csv` b31870bd… 57,708 B and `iop2008.dat` cf5f76d5…
+committed rows in the table that follows, and `prereg.yaml` copies them verbatim with the
+grids, edge rule, tolerances and load order above; a test asserts the prereg's band
+strings equal this section's. **A prereg is never written by the code that checks it:**
+`prereg.yaml` is committed ALONE, referencing this spec at `372f941` or later, ONE COMMIT
+BEFORE `tools/q4_hand_rows.py`, which is vessel arithmetic (it implements `p*`, `tau_sw`,
+`f_photon` and the edge rule) and so cannot share the prereg's commit without erasing the
+chronology git is meant to show; M1a's ancestor test (§8) pins that order. The rows are
+reproduced in M1a0 by `tools/q4_hand_rows.py`, committed with its output beside the
+spec's table. It reads the ONE committed spectral table `sim/spectral_table.csv` (§3: λ,
+`k`, `E_AM0`, `n_ph` on ASTM's 2,002-row grid, header carrying the md5 and byte size of
+both sources, `ASTMG173.csv` b31870bd… 57,708 B, fetched from pvlib-python at commit
+`2d0ed71e1308293b3081979404f8e90f2f2dde1e` (`pvlib/data/ASTMG173.csv`; the file at that
+commit hashes to b31870bd…, checked 2026-09-13, and `docs/THIRD-PARTY.md:35` today names
+the mutable `main` URL, which M1a0 pins to this commit), and `iop2008.dat` cf5f76d5…
 16,514 B, and the word `trapezoid`) and the existing `sim/thermal.py`,
-`sim/physiology.py`, `sim/organism.py` functions; its output repeats both digests. Two
-tests keep it honest: no float literal in `q4_hand_rows.py` equals any value printed in
-this section's table (a script that prints the literals cannot pass), and
-`test_reproduce_hand_rows` recomputes every row FROM THE COMMITTED TABLE and matches the
-printed digits. The import guard (`q4_hand_rows.py` imports nothing from `sim/vessel.py`)
+`sim/physiology.py`, `sim/organism.py` functions; its output repeats both digests. Both
+sources are gitignored (`.gitignore:9-10`) and ABSENT from the checkout; the table is
+the only input that exists in CI. Three tests keep the rows honest, with their limits
+stated: (i) the literal SMELL test, no float literal in `q4_hand_rows.py` equals any value
+printed in this section's table, is a smell, not a proof (`0.16 + 0.001`, `float("0.161")`
+or a value read from a file evade it); (ii) `test_reproduce_hand_rows` recomputes every
+row FROM THE COMMITTED TABLE and matches the printed digits, which proves the rows follow
+from the table and CANNOT catch a wrongly generated table, since both consumers share it;
+so (iii) `test_regenerate_spectral_table` re-runs the producer on the two sources and
+asserts the regenerated table is byte-identical to the committed one, and it SKIPS,
+never passes, when either source is absent (CI), so a green CI run says "rows follow
+from table", and only a developer run with the sources says "table follows from
+sources". The import guard (`q4_hand_rows.py` imports nothing from `sim/vessel.py`)
 is an M1a test, when that file exists: an AST walk of the import closure with a
 negative case that adds the forbidden import and must fail. M1a's code computes the same
 points and is the object under test, never the source of a band: a computed point outside
 its hand band FAILS, it does not re-register. An empty window at every `r` would falsify
 both and be the headline finding.
 
-| row | fixed | wall at the edge | edge |
-| --- | --- | --- | --- |
-| P1, σ 0.7 MPa | R 10 km | `p` = p_sat(0 °C) = 611.21 Pa, t 4.366 m, τ_sw 0.3471, f_photon 0.640 | r 1.2049 AU |
-| P1, σ 1.5 MPa | R 10 km | 611.21 Pa, t 2.037 m, τ_sw 0.4045, f_photon 0.778 | r 1.2303 AU |
-| P1, σ 3.1 MPa | R 10 km | 611.21 Pa, t 0.986 m, τ_sw 0.4599, f_photon 0.875 | r 1.2543 AU |
-| P1 control, normal incidence | R 10 km, σ 0.7 / 1.5 / 3.1 | same walls, τ_sw 0.3610 / 0.4187 / 0.4741 | r 1.2111 / 1.2365 / 1.2605 AU |
-| P2 OPAQUE, f_floor 0.25 | r 1.10 AU, σ 0.7 | p* 816.4 Pa, t 55.72 m, τ_sw 0.1908, T_int 277.20 K | R 95.6 km |
-| P2 FREEZE | r 1.10 AU, σ 0.7 | p* = 611.21 Pa, t 232.5 m, τ_sw 0.1227 | R 532.6 km |
-| P2 arms, OPAQUE crossing | r 1.10 AU, σ 0.7 | f_floor 0.50 / 0.10 | R 10.6 km / 777.5 km (R_window for 0.10 = 532.6 km, FREEZE) |
-| P2 control, normal incidence | r 1.10 AU, σ 0.7, f_floor 0.25 | p* 816.6 Pa, t 67.05 m | R 114.9 km (FREEZE 642.6 km) |
+| row                                   | fixed                          | wall at the edge                                                                         | edge                                                        |
+| ------------------------------------- | ------------------------------ | ---------------------------------------------------------------------------------------- | ----------------------------------------------------------- |
+| P1, σ 0.7 MPa                         | R 10 km                        | `p` = p_sat(0 °C) = 611.21 Pa, t 4.366 m, τ_sw 0.3471, f_photon 0.640                    | r 1.2049 AU                                                 |
+| P1, σ 1.5 MPa                         | R 10 km                        | 611.21 Pa, t 2.037 m, τ_sw 0.4045, f_photon 0.778                                        | r 1.2303 AU                                                 |
+| P1, σ 3.1 MPa                         | R 10 km                        | 611.21 Pa, t 0.986 m, τ_sw 0.4599, f_photon 0.875                                        | r 1.2543 AU                                                 |
+| P1 control, normal incidence          | R 10 km, σ 0.7 / 1.5 / 3.1     | same walls, τ_sw 0.3610 / 0.4187 / 0.4741                                                | r 1.2111 / 1.2365 / 1.2605 AU                               |
+| P2 OPAQUE, f_floor 0.25               | r 1.10 AU, σ 0.7               | p\* 816.4 Pa, t 55.72 m, τ_sw 0.1908, T_int 277.20 K                                     | R 95.6 km                                                   |
+| P2 FREEZE                             | r 1.10 AU, σ 0.7               | p\* = 611.21 Pa, t 232.5 m, τ_sw 0.1227                                                  | R 532.6 km                                                  |
+| P2 arms, OPAQUE crossing              | r 1.10 AU, σ 0.7               | f_floor 0.50 / 0.10                                                                      | R 10.6 km / 777.5 km (R_window for 0.10 = 532.6 km, FREEZE) |
+| P2 control, normal incidence          | r 1.10 AU, σ 0.7, f_floor 0.25 | p\* 816.6 Pa, t 67.05 m                                                                  | R 114.9 km (FREEZE 642.6 km)                                |
+| P2 variant, interior `central`        | r 1.10 AU, σ 0.7, f_floor 0.25 | shell τ_sw, normal-incidence f_photon (§3)                                               | R 119.3 km                                                  |
+| P1 Fresnel arm (i), optics only       | R 10 km, σ 0.7 / 1.5 / 3.1     | two-interface T, R̄ 0.0627; τ_sw 0.3108 / 0.3621 / 0.4115, f_photon 0.573 / 0.696 / 0.782 | r 1.1886 / 1.2116 / 1.2334 AU                               |
+| P1 Fresnel arm (ii), optics + thermal | R 10 km, σ 0.7 / 1.5 / 3.1     | as (i) and T_eq·(1−R̄)^¼; melt door 1.0051 AU                                             | r 1.1507 / 1.1730 / 1.1941 AU                               |
+| P2 Fresnel arm (i), optics only       | r 1.10 AU, σ 0.7, f_floor 0.25 | OPAQUE: p\* 789.6 Pa, t 42.74 m, τ_sw 0.1827; FREEZE at t 173.0 m                        | OPAQUE R 75.8 km (FREEZE 396.2 km)                          |
+| P2 Fresnel arm (ii), optics + thermal | r 1.10 AU, σ 0.7, f_floor 0.25 | T_eq(1.10) 261.10 K; FREEZE: t 30.9 m, τ_sw 0.1979; OPAQUE at t 42.74 m                  | FREEZE R 70.8 km binds before OPAQUE 104.3 km               |
 
 **Registered prediction 1, in `r` at fixed `R = 10 km`, dust none, albedo 0, algal:**
 **`r_close(10 km, sigma) ∈ [1.19, 1.27] AU` for every sigma, `binding = FREEZE`.**
@@ -444,6 +522,34 @@ expected at ≈10.6 km, below the band, and the 0.10 arm's OPAQUE crossing at �
 past FREEZE's 532.6 km, so that arm's `R_window` is expected FREEZE-bound at 532.6 km.
 Both arms are reported, not registered.
 
+**The Fresnel arm, registered as a sensitivity arm for BOTH predictions (round-4 audit).**
+The registered law is the declared law of §3, without reflectance: option (a), kept
+because rounds 2-3 pinned the bands by hand under it and re-registering under Fresnel
+would require declaring the inner medium's index too (the interior is water or vapour,
+not vacuum, and the spec has grounded neither), which would be a second undeclared
+choice; the omitted reflectance is instead carried as a named arm with its own expected
+outcomes, so Q4 stays falsifiable on the declared law and the arm says what the
+declaration costs. Two variants, both computed with unpolarised Fresnel at
+`n = 1.31`, air→ice at `μ` and ice→interior at `μ'` (reciprocal, equal), incoherent
+multi-pass, `T(k·t) = ∫₀¹ 2μ (1−R)² e^{−x} / (1 − R² e^{−2x}) dμ` with `x = k·t/μ'`:
+(i) optics only, the two-interface `T` inside `tau_sw` and `f_photon`, `T_eq` unchanged;
+(ii) optics + thermal, (i) and `T_eq → T_eq·(1−R̄)^¼` with R̄ = 0.0627 read as the shell's
+albedo. Under (ii) `T(1)` is 0.2714 against 0.3001, `T_eq(1.10 AU)` 261.10 K against
+265.36 K, and the melt door 1.0051 AU against 1.0381. Expected outcomes, hand-read from
+the arm rows above: **P1** under (i) 1.1886 / 1.2116 / 1.2334 AU, the σ 0.7 edge OUTSIDE
+[1.19, 1.27] by 0.0014 AU; under (ii) 1.1507 / 1.1730 / 1.1941, two of three outside;
+binding FREEZE in both. **P2** under (i) OPAQUE binds at 75.8 km (FREEZE 396.2 km),
+inside [60, 300]; under (ii) **the binding FLIPS: FREEZE at 70.8 km before OPAQUE at
+104.3 km**, `R_window` 70.8 km, inside the band with the wrong binding. So the arm is
+expected to MISS prediction 1's band and to FLIP prediction 2's binding; a run that
+reports the registered rows HELD and the arm rows as expected has confirmed the
+declaration's cost, not hidden it. The arm rows are reported beside every registered row,
+the page carries Fresnel as a labelled toggle (§5) and prints the specular albedo 0.063
+beside the 0.072 line, and if M1a's `sim/vessel.py` returns arm rows off these digits by
+more than the edge tolerance that is a defect, as for any control row. Single-pass
+against multi-pass Fresnel moves P1 by 0.0007 to 0.0009 AU; the registered arm is
+multi-pass.
+
 **Gates the registration rests on: A and C.** Gate A: `T_eq(1 AU, sphere) ∈ [275, 282]
 K` (q3 spec `:211-212`). Gate C: `saturation_pressure` gives 611.657 Pa at 273.16 K
 within atol 0.01 Pa (Buck: 611.654), the one MEASURED anchor (the triple point); the
@@ -465,9 +571,10 @@ radiative core and vapour pressure only, not `sigma`, `albedo`, `t_opt`, `omega`
 Q2 did (`docs/FINDINGS.md:206-209`).
 
 **Declared, explicit:** `t_opt = 298.15 K`, `omega = 20 K`, `albedo = 0`,
-`emissivity = 1`, `f_floor = 0.25`, `n = 1.31`, dust `none`, `T_freeze = 273.15 K`, the
-shell law of §3 (control law reported beside it); `R_ORGANISM` is swept, not assumed,
-and prediction 1 names 10 km only as its fixed point.
+`emissivity = 1`, `f_floor = 0.25`, `n = 1.31`, `interior = mixed`, dust `none`,
+`T_freeze = 273.15 K`, the shell law of §3 without reflectance (control law and Fresnel
+arm reported beside it); `R_ORGANISM` is swept, not assumed, and prediction 1 names 10 km
+only as its fixed point.
 
 ## 7. Non-goals for this arc
 
@@ -496,29 +603,44 @@ and prediction 1 names 10 km only as its fixed point.
   4200 nm), `E_AM0` (W m⁻² nm⁻¹, ASTM column 2), `n_ph` (`E_AM0·λ/(hc)`, relative photon
   weight); provenance header naming both source files with md5 and byte size (§6), the
   quadrature (`trapezoid`) and the producer's commit. A `k`-only table cannot drive
-  `tau_sw` or `f_photon` in CI, where the sources are absent (round-3 audit). Commit the
-  table checks of §6 (digest, row count, monotone λ, four pinned rows). Commit
-  `tools/q4_hand_rows.py` and its output, and `experiments/q4_vessel/prereg.yaml` with
-  both bands, both bindings, the `r` and `R` grids, the edge rule and tolerances, the load
-  order, the six declared values, the law and its control (§6), all copied from this spec.
-  Acceptance: `test_reproduce_hand_rows` recomputes every §6 row from the committed table
-  and matches the printed digits; `test_prereg_equals_spec` matches the prereg's band
-  strings to §6; the no-literal test passes; `pytest` green.
+  `tau_sw` or `f_photon` in CI, where the sources are absent (round-3 audit). Pin
+  `docs/THIRD-PARTY.md:35` from the mutable `main` URL to the pvlib-python commit
+  `2d0ed71e1308293b3081979404f8e90f2f2dde1e` (§6), and name that commit in the table
+  header. Commit the table checks of §6 (digest, row count, monotone λ, four pinned rows)
+  and `test_regenerate_spectral_table` (byte-identical regeneration from the sources;
+  SKIPS when they are absent, §6). Then, in this order and in SEPARATE commits:
+  `experiments/q4_vessel/prereg.yaml` ALONE, with both bands, both bindings, the `r` and
+  `R` grids, the edge rule with its tie clause and tolerances, the load order, the seven
+  declared values, the law, its control and the Fresnel arm's expected outcomes (§6), all
+  copied from this spec; then, one commit later, `tools/q4_hand_rows.py` and its output,
+  which now includes the control rows, the `central` variant row and both Fresnel arm
+  rows of §6. Acceptance: `test_reproduce_hand_rows` recomputes every §6 row (registered,
+  control, variant and arm) from the committed table and matches the printed digits;
+  `test_prereg_equals_spec` matches the prereg's band strings to §6; the literal smell
+  test passes; `test_regenerate_spectral_table` passes with the sources present and
+  reports SKIPPED without them; `git log` shows the prereg's commit strictly before the
+  calculator's; `pytest` green.
 - **M1a (M): the vessel, in Python.** `sim/vessel.py` (`wall_thickness`, `hoop_stress`,
   `shell_transmission(kt)` with the law as an argument, `transmission_spectrum`,
   `par_photon_fraction`, `solar_transmission`, `saturation_pressure`,
   `contained_temperature`, `self_consistent_pressure` raising on iteration exhaustion,
-  `classify_failure(p, t, r, R, sigma, organism, inputs)` with the wall-phase
-  precondition, §4), reading `sim/spectral_table.csv`; `Organism.net_carbon_contained`
+  `classify_failure(p, t, r, R, sigma, organism, inputs)` reading `σ_eff(T_shell)` in
+  every mode, §4), reading `sim/spectral_table.csv`; `Organism.net_carbon_contained`
   beside the existing paths; the §10 same-object test; the two closed-form controls (§3:
-  21.41 / 11.91 / 6.40 km mixed, 31.51 / 22.62 / 15.13 km scalar limit) and the two
-  control-law rows of §6; Gate C with its atol and the identity test; the import-guard
-  AST test with its negative case (§6); a test that `prereg.yaml`'s commit is an ancestor
-  of HEAD and its md5 unchanged, as `tests/test_parity_js.py:82-99` pins fixtures; the
-  runner-error test with the `0.99·t_min` mutation control (§4). Acceptance: `pytest`
-  green with the new tests; `sim/vessel.py` reproduces every §6 row to the printed digits
-  under the shell law and every control row under the control law; no band string is
-  written by `sim/vessel.py`, and `prereg.yaml` is untouched since M1a0.
+  21.41 / 11.91 / 6.40 km mixed, 31.51 / 22.62 / 15.13 km scalar limit), the two
+  control-law rows, the `central` variant row and the four Fresnel arm rows of §6 (the
+  law argument takes `shell`, `normal`, `shell+fresnel`); Gate C with its atol and the
+  identity test; the import-guard AST test with its negative case (§6); a test that
+  `prereg.yaml`'s commit is an ancestor of HEAD, is a strict ancestor of the commit that
+  added `tools/q4_hand_rows.py`, and its md5 unchanged, as `tests/test_parity_js.py:82-99`
+  pins fixtures; the runner-error test with the `0.99·t_min` mutation control (§4); and
+  the mode-agnostic BURST invariant (§5): `classify_failure` names BURST with
+  `σ_eff = 0` printed for any (p, t) mode whenever `T_shell > 273.15 K`, with the
+  positive case at the same `p`, `t` outside the melt door reading the input `σ`.
+  Acceptance: `pytest` green with the new tests; `sim/vessel.py` reproduces every §6 row
+  to the printed digits under the shell law, every control row under the control law and
+  every arm row under `shell+fresnel`; no band string is written by `sim/vessel.py`, and
+  `prereg.yaml` is untouched since M1a0.
 - **M1b (M): the numbers, in the browser.** The port to `web/model.js` with new
   fixture cases and parity tests. Acceptance: on the live page a stranger opens the
   console and `DysonModel.classifyFailure(...)` at the prereg's example inputs returns
@@ -577,8 +699,13 @@ and prediction 1 names 10 km only as its fixed point.
    Normal-incidence `exp(-k·t)` was an undeclared approximation that moved the
    registered edges by 0.006 to 0.016 AU; it is now the control law, with its own rows.
 6. **Round-3 audit, what Q4 registers on: FREEZE and OPAQUE.** STARVE is never
-   first-violated on the auto path (0 of 3,900 states, §4) and joins BURST and BOIL as a
-   displayed margin; `prereg.yaml` moves to M1a0 so the registration predates the code.
+   first-violated on the auto path (0 of 59,691 registered-grid states under either law,
+   §4; round 3 wrote 3,900, a reproduction script's scan size) and joins BURST and BOIL
+   as a displayed margin; `prereg.yaml` moves to M1a0 so the registration predates the
+   code.
+7. **Round-4 audit, the reflectance the law omits: registered as an arm, not as the
+   law.** `n = 1.31` implies R̄ = 0.0627; the declared law stays the registration (§6,
+   option (a)) and the Fresnel arm is expected to miss P1's band and flip P2's binding.
 
 ## 11. The story after Q4
 
@@ -729,6 +856,7 @@ stoichiometry and the ~1e12 kg comet mass: all UNGROUNDED, needs a source. Size 
 ### Cards inside Q4's page
 
 Two static cards under the readout panel, no new inputs.
+
 - **Shield.** The `p*` wall at 1 AU and 10 km is 5.4 to 18.0 m of ice (§3 shell law;
   5.6 to 18.6 m at normal incidence, `§13:1054-1058`);
   about 1 m of water stops most solar protons, so shielding may come free with the
@@ -765,14 +893,24 @@ and STARVE are not registered (§4, §6): the first two stay manual-gesture fail
 card may remove their manual door; STARVE stays a displayed margin and no card may make it
 undisplayable (`r_d` keeps a floor above zero, since `respiration(0, T) = 0`,
 `sim/physiology.py:54`). A VIOLATED cell somewhere on the page grid (r to 100 AU, t to
-1 km) does not satisfy the rule, because an extreme slider always supplies one. **The
+1 km) does not satisfy the rule, because an extreme slider always supplies one. **And
+every failure must remain REACHABLE inside the page's slider ranges** (`R` 10 m to
+100 km, `r` 0.5 to 100 AU, `t` 0.01 m to 1 km, §5): a card that leaves a line violable
+only past the end of a slider has removed it from the page. The number that fixed this
+rule: at 1.10 AU and σ 0.7 the auto-path OPAQUE crossing sits inside the 100 km slider
+only for `f_floor ≥ 0.2461`; at 0.161 it is at 299.5 km there, 174.0 km even at 1.04 AU,
+723.2 km at 1.20 AU and 770.4 km at σ 3.1 / 1.04 AU, nowhere the visitor can drag. **The
 per-card test quantifies over the card's whole reach, not one played value:** for a card
 that sets a value, that value; for a card that enables a range, BOTH endpoints; for cards
 that stack, the maximum playable stack; for each, it runs the auto path across each box
-and asserts the named line is the first to flip inside it. A range whose endpoint fails
-is CLIPPED at the last passing value and the clip is printed: an `f_floor` card may reach
-down to 0.161 (OPAQUE crossing 300 km) and up to 0.293 (60 km) and no further, since
-0.10 is FREEZE-bound at 532.6 km and 0 makes OPAQUE unreachable. **Worked failing
+and asserts the named line is the first to flip inside it and still flips inside the
+slider ranges. A range whose endpoint fails is CLIPPED at the last passing value and the
+clip is printed. **There is no `f_floor` card** (round-4 audit): `f_floor` is OPAQUE's
+right-hand side, and §3 names `T_freeze` as the only comparator the deck may move; the
+round-3 draft admitted an `f_floor` card reaching 0.161 to 0.293, which contradicted §3
+and defined its clips from the very box it was then tested against. `f_floor` stays a
+declared input under the assumptions disclosure, swept by Q4's arms, not dealt from the
+deck. **Worked failing
 example:** antifreeze at `dT_sc = 5 K` moves the R = 10 km FREEZE edge to 1.2631 /
 1.2894 / 1.3141 AU for sigma 0.7 / 1.5 / 3.1 (edge wall at `p_sat(-5 °C)` = 421.8 Pa);
 two of three leave the box, prediction 1's binding changes, and the card FAILS, even
@@ -813,19 +951,22 @@ literal would move the inequality's right-hand side, which the tier rule forbids
 TOTAL `dT_sc` across every antifreeze card played is capped at 1.3 K: the sigma 3.1 MPa
 edge reaches the box top of 1.27 AU at `dT_sc` = 1.343 K (0.7 MPa: 5.57 K; 1.5 MPa:
 3.39 K), so at 1.3 K the edges are 1.2197 / 1.2453 / 1.2695 and any larger total fails
-the third rule. Respiration cards move `r_d` down to a tenth of its value (0.024; the
+the third rule. **The 1.3 K cap is a DECK-TEST CONSTANT**, derived from prediction 1's
+box and protecting only the third rule: DECLARED cards are excluded from registered runs
+(above), so the cap never touches Q4's registered numbers, and it moves if the box does.
+Respiration cards move `r_d` down to a tenth of its value (0.024; the
 P2-window STARVE margin moves +3.11 to +3.20), never to zero.
 
-| card                        | stolen from                   | input it moves                                                                                                                         | anchor       |
-| --------------------------- | ----------------------------- | -------------------------------------------------------------------------------------------------------------------------------------- | ------------ |
+| card                        | stolen from                   | input it moves                                                                                                                            | anchor       |
+| --------------------------- | ----------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------- | ------------ |
 | antifreeze proteins         | fish, insects                 | `T_freeze` down by `dT_sc`, 1.3 K total cap across stacked cards; real proteins give a few K, so the card is clipped and the clip printed | DEMONSTRATED |
-| reduced dark respiration    | none named                    | `r_d`, down to 0.024, never zero                                                                                                       | DECLARED     |
-| Dsup + desiccation proteins | tardigrade                    | the dormancy-vs-radiation budget (§11 ch.4, ch.5)                                                                                      | DEMONSTRATED |
-| DNA repair                  | Deinococcus radiodurans       | the same budget, the repair term                                                                                                       | DEMONSTRATED |
-| CAM + desert cuticle        | cacti, agaves                 | leaf-scale water loss in vacuum (§11 ch.1)                                                                                             | DEMONSTRATED |
-| UV screens                  | Arabidopsis flavonoid mutants | the seed's UV term; note the EXPOSE-E screen mutants did WORSE than wild type                                                          | DEMONSTRATED |
-| chemosynthetic symbionts    | tube-worm bacteria            | a dark-side carbon source: O2 banked at perihelion, burned with comet organics at aphelion (§11 ch.3); a redox budget with real inputs | DECLARED     |
-| radiotrophic melanin        | Chernobyl fungi               | a cosmic-ray energy term; the literature claim is contested and the card says so                                                       | DECLARED     |
+| reduced dark respiration    | none named                    | `r_d`, down to 0.024, never zero                                                                                                          | DECLARED     |
+| Dsup + desiccation proteins | tardigrade                    | the dormancy-vs-radiation budget (§11 ch.4, ch.5)                                                                                         | DEMONSTRATED |
+| DNA repair                  | Deinococcus radiodurans       | the same budget, the repair term                                                                                                          | DEMONSTRATED |
+| CAM + desert cuticle        | cacti, agaves                 | leaf-scale water loss in vacuum (§11 ch.1)                                                                                                | DEMONSTRATED |
+| UV screens                  | Arabidopsis flavonoid mutants | the seed's UV term; note the EXPOSE-E screen mutants did WORSE than wild type                                                             | DEMONSTRATED |
+| chemosynthetic symbionts    | tube-worm bacteria            | a dark-side carbon source: O2 banked at perihelion, burned with comet organics at aphelion (§11 ch.3); a redox budget with real inputs    | DECLARED     |
+| radiotrophic melanin        | Chernobyl fungi               | a cosmic-ray energy term; the literature claim is contested and the card says so                                                          | DECLARED     |
 
 **One thing plants already do that reads as fiction.** Xylem pulls water at about
 -2 MPa, below absolute zero pressure; a tree already operates past vacuum. This goes on
@@ -840,3 +981,57 @@ tests, and the badge, with only the antifreeze (`T_freeze` via `dT_sc`) and redu
 rows live, since every other row moves an input that does not exist until its chapter
 (§11 ch.1, 3, 4, 5); those rows ship with their chapters and the row test runs against
 the inputs present at each ship. Bioluminescence moved no input and is dropped. No card may be MEASURED until its number is in `bio_grounding`.
+
+## Round 4 responses
+
+Verified audit table: 13 codex findings + 4 verifier findings, none refuted. Every number
+below was recomputed this session (`v4_rev7_fresnel.py`, `v4_gridscan.py` rerun) and
+matched the verifier's digits; the registered rows were unchanged.
+
+1. **Disk average reused as local irradiance (MAJOR).** FIXED, §3: `f_photon` is declared
+   the projected-disk average; interior mixing is the seventh declared input
+   (`interior = mixed`); the `central` variant is a labelled row (P2 119.3 km, in band).
+2. **No Fresnel, "consistent with albedo 0" (MAJOR).** FIXED, §3, §5, §6: the phrase is
+   gone; R(normal) 0.0180 and R̄ 0.0627 stated; Fresnel arm registered for both
+   predictions with expected outcomes (P1 1.1886 / 1.2116 / 1.2334 and 1.1507 / 1.1730 /
+   1.1941 AU; P2 OPAQUE 75.8 km, and FREEZE 70.8 km before OPAQUE 104.3 km); the page
+   prints 0.063 beside 0.072. Decision (a): the declared law stays the registration.
+3. **O(t/R) effects unbounded (NIT).** FIXED, §3: t/R ≤ 4.4e-4, edge shift < 1e-5 AU.
+4. **Rows reproduce only with sources outside the checkout (MINOR).** FIXED, §6, §8:
+   stated; the regeneration test skips without the sources.
+5. **§4 numbers not from the registered grid (MAJOR).** FIXED, §4: 59,691 states,
+   STARVE-first 0 / 0, min margin +1.826 / +1.874, f_photon minimum 0.0579 / 0.0667,
+   1 AU / 10 km / σ 0.7 = 294.37 K / 0.391 / +9.12, 1993.6 labelled pre-wall with
+   I_wall 1660.1.
+6. **273.15 K / 611.21 Pa below the triple point (NIT).** FIXED, §4: labelled a
+   metastable-liquid convention, edge shift 1.1e-4 AU.
+7. **Not reproducible from the checkout; mutable `main` URL (MAJOR).** FIXED, §6, §8:
+   pvlib commit `2d0ed71e1308293b3081979404f8e90f2f2dde1e` pinned in the spec and
+   scheduled for `docs/THIRD-PARTY.md:35` in M1a0; `test_reproduce_hand_rows` stated to
+   be unable to catch a wrong table; `test_regenerate_spectral_table` added, SKIP not
+   PASS when sources are absent.
+8. **Prereg chronology; edge-rule ties (MINOR).** FIXED, §6, §8: `prereg.yaml` alone,
+   one commit before `q4_hand_rows.py`, pinned by the ancestor test; tie clause added.
+9. **Mode table prints raw σ (MINOR).** FIXED, §4, §5: every BURST cell reads
+   `σ_eff(T_shell)`; r = 1.00 AU worked example; Q4's question no longer asks about
+   strength on the path where it is an identity.
+10. **Checks that cannot fail (MINOR).** FIXED for the two real ones, §6, §12: the
+    no-literal test is renamed a smell test with its evasions named; the `f_floor` clip
+    circularity is moot because the card is struck. The three already-disclosed ones
+    (Gate B identity, table digest as pin, 882 Pa regression control) are unchanged, as
+    the verifier found them disclosed.
+11. **`f_floor` card unreachable on the slider; 1.3 K cap load-bearing only for the deck
+    (MAJOR).** FIXED, §12: card struck; "reachable inside the slider ranges" added to the
+    third rule with the numbers (f_floor ≥ 0.2461 for OPAQUE inside 100 km at 1.10 AU /
+    σ 0.7); the cap labelled a deck-test constant.
+12. **Sampled citations accurate (NIT).** No change.
+13. **Executor could implement σ = 0 only on the auto path (MINOR).** FIXED, §5, §8: the
+    mode-agnostic invariant is written in §5 and is an M1a test.
+14. **N1, spec contradicts itself on which comparator a card may move (MAJOR).** FIXED,
+    §12: the `f_floor` card is struck; §3's rule stands.
+15. **N2, Fresnel flips P2's binding (MAJOR).** FIXED, §6: the arm is registered for both
+    predictions, binding included; the flip is its expected outcome.
+16. **N3, two more stale §4 numbers (MINOR).** FIXED, §4, with finding 5.
+17. **N4, verifier's scan sizes copied as the spec's grid (NIT).** FIXED, §4, §10: the
+    3,900 / 7,722 are named as the reproduction script's sizes and replaced by the
+    registered 59,691; the round-3 banner is left as history.
