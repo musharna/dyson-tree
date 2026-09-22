@@ -32,7 +32,7 @@ command in the source is reproducible and carries no redistribution question.
   `tools/check_s3_scattering.py`, `tools/size_par_filter.py`, grounding the
   `PAR_FRACTION = 0.3879` correction in `docs/bio_grounding_2026-09-02.md` §12.
 - **File:** `ASTMG173.csv`, fetched from the pvlib-python project at
-  <https://raw.githubusercontent.com/pvlib/pvlib-python/main/pvlib/data/ASTMG173.csv>
+  <https://raw.githubusercontent.com/pvlib/pvlib-python/2d0ed71e1308293b3081979404f8e90f2f2dde1e/pvlib/data/ASTMG173.csv>
 - **Citation:** ASTM G173-03(2020), *Standard Tables for Reference Solar
   Spectral Irradiances: Direct Normal and Hemispherical on 37° Tilted Surface*,
   ASTM International. The underlying reference spectra are distributed by NREL.
