@@ -27,3 +27,9 @@ include = ["sim*", "experiments*"]
 [tool.pytest.ini_options]
 pythonpath = ["."]
 testpaths = ["tests"]
+# `slow` is the §4 census: a 59,691-node scan under both laws, minutes per law.
+# Deselected by default so `pytest -q` stays a fast gate; run it with `pytest -m slow`.
+# Its always-on half is test_committed_output_matches_the_census, which reads the
+# committed tools/q4_hand_rows.out.
+markers = ["slow: multi-minute grid scans (the section 4 census)"]
+addopts = "-m 'not slow'"

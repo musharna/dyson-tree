@@ -1,0 +1,88 @@
+=== provenance: the one input table ===
+  producer_commit: 5246a509ff21492c30ba97a51bc5832cc763dba6
+  quadrature: trapezoid
+  source: ASTMG173.csv  md5 b31870bd3500b58414100af7e4b0e04c  size 57708 B  pvlib-python commit 2d0ed71e1308293b3081979404f8e90f2f2dde1e
+  source: iop2008.dat  md5 cf5f76d58a31aa5f994fa038c390a856  size 16514 B  Warren & Brandt 2008, IOP_2008_ASCIItable.dat
+  table sha256 (data rows): 2cfea122d9f6f8aae04b3cc53221d67f6d010f94ead1ff39a81a78f4398da0b8
+  rows 2002, 280 to 4000 nm; PAR rows 301
+
+=== §3 constants ===
+  T_eq(1 AU, area_ratio 4) = 278.311174 K
+  p_sat(0 C) = 611.21000 Pa   [the edge wall's pressure]
+  melt door, albedo 0: 1.03815 AU
+  freeze-line albedo at 1 AU: 0.07214
+  T_shell law T(1) = 0.30009; control e^-1 = 0.36788
+  Fresnel multi-pass T(1): vapour 0.27138  water 0.28416
+  R_slab at kt->0: vapour 0.105951  water 0.062829
+  tau=1 ceiling edge: 1.4682 AU  (STARVE +1.98)
+
+=== §6 P1, edge in r at R = 10 km, dust none, albedo 0, algal ===
+  P1 registered, shell law
+    sigma 0.7 MPa: p 611.21 Pa  t 4.366 m  tau_sw 0.3471  f_photon 0.640  R_slab_sw 0.0000  melt door 1.0381 AU  edge 1.2049 AU (root 1.2049)
+    sigma 1.5 MPa: p 611.21 Pa  t 2.037 m  tau_sw 0.4045  f_photon 0.778  R_slab_sw 0.0000  melt door 1.0381 AU  edge 1.2303 AU (root 1.2303)
+    sigma 3.1 MPa: p 611.21 Pa  t 0.986 m  tau_sw 0.4599  f_photon 0.875  R_slab_sw 0.0000  melt door 1.0381 AU  edge 1.2543 AU (root 1.2543)
+  P1 control, normal incidence
+    sigma 0.7 MPa: p 611.21 Pa  t 4.366 m  tau_sw 0.3610  f_photon 0.676  R_slab_sw 0.0000  melt door 1.0381 AU  edge 1.2111 AU (root 1.2111)
+    sigma 1.5 MPa: p 611.21 Pa  t 2.037 m  tau_sw 0.4187  f_photon 0.807  R_slab_sw 0.0000  melt door 1.0381 AU  edge 1.2365 AU (root 1.2365)
+    sigma 3.1 MPa: p 611.21 Pa  t 0.986 m  tau_sw 0.4741  f_photon 0.894  R_slab_sw 0.0000  melt door 1.0381 AU  edge 1.2605 AU (root 1.2605)
+  P1 arm (i) vapour  n_int 1.000, thermal_reflectance 0
+    sigma 0.7 MPa: p 611.21 Pa  t 4.366 m  tau_sw 0.3108  f_photon 0.573  R_slab_sw 0.0000  melt door 1.0381 AU  edge 1.1886 AU (root 1.1886)
+    sigma 1.5 MPa: p 611.21 Pa  t 2.037 m  tau_sw 0.3621  f_photon 0.696  R_slab_sw 0.0000  melt door 1.0381 AU  edge 1.2116 AU (root 1.2116)
+    sigma 3.1 MPa: p 611.21 Pa  t 0.986 m  tau_sw 0.4115  f_photon 0.782  R_slab_sw 0.0000  melt door 1.0381 AU  edge 1.2334 AU (root 1.2334)
+  P1 arm (i) water   n_int 1.333, thermal_reflectance 0
+    sigma 0.7 MPa: p 611.21 Pa  t 4.366 m  tau_sw 0.3259  f_photon 0.601  R_slab_sw 0.0000  melt door 1.0381 AU  edge 1.1954 AU (root 1.1954)
+    sigma 1.5 MPa: p 611.21 Pa  t 2.037 m  tau_sw 0.3797  f_photon 0.730  R_slab_sw 0.0000  melt door 1.0381 AU  edge 1.2194 AU (root 1.2194)
+    sigma 3.1 MPa: p 611.21 Pa  t 0.986 m  tau_sw 0.4316  f_photon 0.821  R_slab_sw 0.0000  melt door 1.0381 AU  edge 1.2421 AU (root 1.2421)
+  P1 arm (ii) vapour n_int 1.000, thermal_reflectance slab
+    sigma 0.7 MPa: p 611.21 Pa  t 4.366 m  tau_sw 0.3108  f_photon 0.573  R_slab_sw 0.0752  melt door 0.9983 AU  edge 1.1430 AU (root 1.1430)
+    sigma 1.5 MPa: p 611.21 Pa  t 2.037 m  tau_sw 0.3621  f_photon 0.696  R_slab_sw 0.0776  melt door 0.9971 AU  edge 1.1637 AU (root 1.1637)
+    sigma 3.1 MPa: p 611.21 Pa  t 0.986 m  tau_sw 0.4115  f_photon 0.782  R_slab_sw 0.0799  melt door 0.9958 AU  edge 1.1831 AU (root 1.1831)
+  P1 arm (ii) water  n_int 1.333, thermal_reflectance slab
+    sigma 0.7 MPa: p 611.21 Pa  t 4.366 m  tau_sw 0.3259  f_photon 0.601  R_slab_sw 0.0628  melt door 1.0050 AU  edge 1.1573 AU (root 1.1573)
+    sigma 1.5 MPa: p 611.21 Pa  t 2.037 m  tau_sw 0.3797  f_photon 0.730  R_slab_sw 0.0628  melt door 1.0050 AU  edge 1.1805 AU (root 1.1805)
+    sigma 3.1 MPa: p 611.21 Pa  t 0.986 m  tau_sw 0.4316  f_photon 0.821  R_slab_sw 0.0628  melt door 1.0050 AU  edge 1.2025 AU (root 1.2025)
+  STARVE margin at the sigma 0.7 edge: +1.98 umol
+
+=== §6 P2, window in R at r = 1.10 AU, sigma 0.7 MPa, f_floor 0.25 ===
+  P2 registered, shell law
+    OPAQUE R 95.6 km: p* 816.4 Pa  t 55.72 m  tau_sw 0.1908  T_int 277.20 K  T_shell 265.36 K  R_slab_sw 0.0000  STARVE +3.11
+    FREEZE R 532.6 km: p* 611.21 Pa  t 232.5 m  tau_sw 0.1227  T_shell 265.36 K  R_slab_sw 0.0000
+    R_window 95.6 km, binding OPAQUE
+  P2 control, normal incidence
+    OPAQUE R 114.9 km: p* 816.6 Pa  t 67.05 m  tau_sw 0.1909  T_int 277.21 K  T_shell 265.36 K  R_slab_sw 0.0000  STARVE +3.11
+    FREEZE R 642.6 km: p* 611.21 Pa  t 280.6 m  tau_sw 0.1227  T_shell 265.36 K  R_slab_sw 0.0000
+    R_window 114.9 km, binding OPAQUE
+  P2 arm (i) vapour  n_int 1.000, thermal_reflectance 0
+    OPAQUE R 75.8 km: p* 789.6 Pa  t 42.74 m  tau_sw 0.1827  T_int 276.73 K  T_shell 265.36 K  R_slab_sw 0.0000  STARVE +2.96
+    FREEZE R 396.2 km: p* 611.21 Pa  t 173.0 m  tau_sw 0.1227  T_shell 265.36 K  R_slab_sw 0.0000
+    R_window 75.8 km, binding OPAQUE
+  P2 arm (i) water   n_int 1.333, thermal_reflectance 0
+    OPAQUE R 84.0 km: p* 800.7 Pa  t 48.05 m  tau_sw 0.1861  T_int 276.93 K  T_shell 265.36 K  R_slab_sw 0.0000  STARVE +3.02
+    FREEZE R 453.5 km: p* 611.21 Pa  t 198.0 m  tau_sw 0.1227  T_shell 265.36 K  R_slab_sw 0.0000
+    R_window 84.0 km, binding OPAQUE
+  P2 arm (ii) vapour n_int 1.000, thermal_reflectance slab
+    OPAQUE R 108.3 km: p* 552.4 Pa  t 42.74 m  tau_sw 0.1827  T_int 271.76 K  T_shell 260.60 K  R_slab_sw 0.0698  STARVE +1.62
+    FREEZE R 57.1 km: p* 611.21 Pa  t 24.9 m  tau_sw 0.2084  T_shell 260.52 K  R_slab_sw 0.0709
+    R_window 57.1 km, binding FREEZE
+  P2 arm (ii) water  n_int 1.333, thermal_reflectance slab
+    OPAQUE R 115.6 km: p* 581.9 Pa  t 48.05 m  tau_sw 0.1861  T_int 272.48 K  T_shell 261.09 K  R_slab_sw 0.0628  STARVE +1.78
+    FREEZE R 86.0 km: p* 611.21 Pa  t 37.5 m  tau_sw 0.1979  T_shell 261.09 K  R_slab_sw 0.0628
+    R_window 86.0 km, binding FREEZE
+  P2 arm f_floor 0.50: OPAQUE crossing R 10.6 km;  R_window 10.6 km (OPAQUE)
+  P2 arm f_floor 0.10: OPAQUE crossing R 777.5 km;  R_window 532.6 km (FREEZE)
+  P2 variant, interior `central` (shell tau_sw, normal-incidence f_photon): R 119.3 km
+
+=== §4 census over the registered grid ===
+  grid 197 x 101 x 3 = 59691 states
+  shell: first-violated FREEZE 52816  STARVE 0  OPAQUE 394  HELD 6481  (sum 59691)
+    STARVE violated anywhere 41968, of which with T_int >= T_freeze: 0
+    min STARVE margin with FREEZE holding +1.8260 umol at sigma 0.7 MPa, r 1.09 AU, R 794.3 km, T_int 273.1729 K, f_photon 0.0936
+    grid minimum f_photon 0.0579
+  normal: first-violated FREEZE 52668  STARVE 0  OPAQUE 359  HELD 6664  (sum 59691)
+    STARVE violated anywhere 41796, of which with T_int >= T_freeze: 0
+    min STARVE margin with FREEZE holding +1.8738 umol at sigma 0.7 MPa, r 1.10 AU, R 631.0 km, T_int 273.1947 K, f_photon 0.1238
+    grid minimum f_photon 0.0667
+
+=== §4 reference state: 1 AU, R = 10 km, sigma 0.7 MPa ===
+  shell: T_int 294.37 K  f_photon 0.391  STARVE +9.12 umol
+  normal: T_int 294.92 K  f_photon 0.414  STARVE +9.21 umol
