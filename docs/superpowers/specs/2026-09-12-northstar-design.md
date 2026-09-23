@@ -4,7 +4,8 @@
 > Revised again 2026-09-12 after the round-2 panel audit: prediction 1 re-banded on the edge wall, bands hand-written from committed rows (§6), Q4 registers on FREEZE/STARVE/OPAQUE only, the deck's third rule demands first violation inside the registered box, M1 split into M1a0/M1a.
 > Revised a third time 2026-09-13 after the round-3 panel (codex and astra answering): the transmission law is declared (sphere-averaged, refracted, §3) and every number in §3-§6 recomputed under it, normal incidence kept as a control row; M1a0 commits ONE spectral table (λ, k, E_AM0, n_ph) that the hand rows and `sim/vessel.py` both integrate on, plus `prereg.yaml`; Q4 registers on FREEZE and OPAQUE only (STARVE cannot be first-violated on the auto path, 0 of 3,900 states); every inequality reads the wall in force, with the four (p, t) modes tabulated (§5); the registered grids, edge rule and load order are written down (§6); the deck test quantifies over each card's whole range and stack (§12).
 > Revised a fourth time 2026-09-13 after the round-4 panel (codex, 13 findings, every one confirmed or partially confirmed by an independent verifier, plus 4 the verifier added). Two root classes: **a law declared without its own reflectance is a second declaration** (the shell law fixed `n = 1.31` and then set the reflectance that `n` implies to zero, calling it "consistent with albedo 0"; §3 now states R̄ = 0.0627 and §6 registers a Fresnel sensitivity arm for both predictions, binding included), and **a verifier's scan grid copied into the spec as its own** (round 3's "3,900 / 7,722 states" were the reproduction script's scan sizes; every §4 count is now from the registered 197 × 101 × 3 = 59,691-node grid). Also: `f_photon` declared as a disk average with the interior mixing named as an input (§3); the `f_floor` card struck so §3's "only comparator the deck may move" holds (§12); `prereg.yaml` committed one commit before the calculator, edge-rule ties decided (§6, §8); every BURST cell reads `σ_eff(T_shell)` (§5); the pvlib source pinned to a commit (§6, §8). Responses to all 17 findings at the end of the document.
-> Revised a fifth time 2026-09-14 after the round-5 panel (codex, 16 findings, 5 confirmed and 11 partially confirmed by an independent verifier who reproduced every registered digit from the pinned sources, plus 4 the verifier added). Root class: **stating the omitted reflectance hid two more declarations** (the round-4 Fresnel arm wrote "ice→interior, reciprocal, equal", which is true only for a vacuum interior, and scaled `T_eq` by the first-surface `(1 − R̄)`, which is not energy-conserving for a slab and understates the vapour-inner wall's reflectance by 17%): the arm now has three explicit inputs, `optical_law`, `n_interior` {vapour, water} and `thermal_reflectance` {0, slab}, eight rows, and re-read expected outcomes, with P1's σ 0.7 edge under optics alone moving INSIDE the band on the water index and P2 under optics + thermal freezing at 57.1 km, below the band, on the vapour one (§3, §5, §6, §8). Also: the tie clause bisects every registered line and reports the smallest root (§6); the declared assumptions are a registry table, isothermal shell included (§3); the Question is asked under the declared law (§6); the page prints the slab reflectance of the wall in force, not the first-surface 0.063 (§5); the §4 grid census gets an in-repo producer (§8); the import guard is bidirectional with a file-read half, the regeneration test pins its formatter, the deck's comparator test is semantic (§6, §12); 0.2103 → 0.1931 and the rim 0.2259 → 0.2245 (§3, §4). Responses to all 20 findings at the end of the document.
+> Revised a fifth time 2026-09-14 after the round-5 panel (codex, 16 findings, 5 confirmed and 11 partially confirmed by an independent verifier who reproduced every registered digit from the pinned sources, plus 4 the verifier added). Root class: **stating the omitted reflectance hid two more declarations** (the round-4 Fresnel arm wrote "ice→interior, reciprocal, equal", which is true only for a vacuum interior, and scaled `T_eq` by the first-surface `(1 − R̄)`, which is not energy-conserving for a slab and understates the vapour-inner wall's reflectance by 17%): the arm now has three explicit inputs, `optical_law`, `n_interior` {vapour, water} and `thermal_reflectance` {0, slab}, eight rows, and re-read expected outcomes, with P1's σ 0.7 edge under optics alone moving INSIDE the band on the water index and P2 under optics + thermal freezing at 57.1 km, below the band, on the vapour one (§3, §5, §6, §8; that 57.1 km followed a non-conserving balance and is superseded in round 6 by 78.4 km, inside the band). Also: the tie clause bisects every registered line and reports the smallest root (§6); the declared assumptions are a registry table, isothermal shell included (§3); the Question is asked under the declared law (§6); the page prints the slab reflectance of the wall in force, not the first-surface 0.063 (§5); the §4 grid census gets an in-repo producer (§8); the import guard is bidirectional with a file-read half, the regeneration test pins its formatter, the deck's comparator test is semantic (§6, §12); 0.2103 → 0.1931 and the rim 0.2259 → 0.2245 (§3, §4). Responses to all 20 findings at the end of the document.
+> Revised a seventh time 2026-09-22 after the round-6 audit (codex, 6 findings): arm (ii)'s thermal balance conserves energy (`T_shell⁴ = (1 − R_slab_sw)·T_eq⁴`, `T_int⁴ = (1 − R_slab_sw + T_sw)·T_eq⁴`) and its four rows are recomputed (P2 water binds OPAQUE again); tie candidates are the lines that change sign in the bracket; a twelfth registry row, `solar_tail_transmission`, and the key `optical_law`; `test_prereg_equals_spec` compares the whole prereg structure; stale M1a0 wording fixed. Responses at the end.
 
 > Drafted 2026-09-12 against `release/1.0.1-rc` (`7ed4414`); revised against `master`
 > (`08fac2e`, then `17f08c6`, then `372f941`). Every claim about current code carries a `file:line`. Nothing here edits
@@ -163,7 +164,7 @@ P1 edge by less than 1e-5 AU, under the 1e-4 AU edge tolerance (§6). Two integr
 - `tau_sw(t) = ∫₂₈₀⁴⁰⁰⁰ tau(λ,t)·E(λ) dλ / ∫ E dλ`, solar-energy-weighted
   (`check_greenhouse_transparency.py:94-96`), band-normalised over 280 to 4000 nm
   (99.05% of TSI 1360.8; the tail outside the band is assumed to transmit like the
-  band). NIR carries 53% of TSI and ice absorbs it (`§13:1021-1025`): at `p*` and
+  band, the registry row `solar_tail_transmission: band_weighted_tau_sw`). NIR carries 53% of TSI and ice absorbs it (`§13:1021-1025`): at `p*` and
   R = 10 km a pressure wall passes 26 to 34% of solar energy at normal incidence (`tau`
   0.2609 to 0.3429, `§13:1054-1058`) and 25 to 33% under the shell law (0.2516 to
   0.3320); the 16 to 23% (`§13:1036`) belongs to the withdrawn 18 kPa walls.
@@ -231,8 +232,8 @@ it exercises.
 
 **Declared assumptions, the registry.** Round 5 found the count wrong twice ("seven"
 against ten enumerated in §6, with `n_interior` and the shell's temperature profile in
-neither list); this table is the list, every row exposed on the page under "declared", and
-`prereg.yaml` copies it (§8).
+neither list); this table is the list, twelve rows (round 6 added the solar tail), every
+row exposed on the page under "declared", and `prereg.yaml` copies it under these keys (§8).
 
 | name                    | registered value                          | role                                                                                      | where it moves                                    |
 | ----------------------- | ----------------------------------------- | ----------------------------------------------------------------------------------------- | ------------------------------------------------- |
@@ -244,9 +245,10 @@ neither list); this table is the list, every row exposed on the page under "decl
 | shell temperature       | isothermal, `T_shell = T_eq`              | §13 two-body balance; §17's gradient-wall reading excluded (above)                        | fixed                                             |
 | dust                    | `none`                                    | magnitude ungroundable, direction pinned downward on `tau`, `T_int`, `p*` (`§15:1287-1297`) | page toggle {none, 0.0087, 0.0548 /m}, DECLARED   |
 | `T_freeze`              | 273.15 K                                  | interior freezing point, grounded (pure water); the only comparator the deck may move (§12) | deck                                              |
-| the law                 | shell law of §3, no reflectance           | the registration                                                                          | control law `normal`; Fresnel arm                 |
+| `optical_law`           | `shell`: shell law of §3, no reflectance  | the registration                                                                          | control law `normal`; Fresnel arm `shell+fresnel` |
 | `n_interior`            | arm only: vapour 1.000 (default), water 1.333 | index of what the inner face touches (§3 above, §6)                                   | arm rows                                          |
-| `thermal_reflectance`   | arm only: `0` (registered), `slab`        | what `T_eq` is scaled by, `(1 − R_slab_sw(t))^¼` of the wall in force (§6)                | arm rows                                          |
+| `thermal_reflectance`   | arm only: `0` (registered), `slab`        | `slab`: two-body balance with `R_slab_sw(t)` of the wall in force, `T_shell⁴ = (1 − R_slab_sw)·T_eq⁴`, `T_int⁴ = (1 − R_slab_sw + T_sw)·T_eq⁴` (§6) | arm rows                                          |
+| `solar_tail_transmission` | `band_weighted_tau_sw`                  | the 0.95% of TSI outside 280–4000 nm transmits like the band (§3)                          | fixed                                             |
 
 Albedo is not cosmetic: at 1 AU the shell melts at albedo 0 and freezes at 0.0721
 (`§17:1501-1502`), and the shell's own slab reflectance under the declared `n` sits on
@@ -453,18 +455,25 @@ error, §4); `r_close(R, sigma)` = the largest `r` with the window open at that 
 bracketed by the last HOLD and first VIOLATED grid nodes and refined by bisection to
 1e-4 AU in `r` and 0.1% in `R`; grid nodes are for display and for the bracket, never
 the reported edge. **Ties (round-5 audit: an edge rule keyed to the node, not the root, could report
-an edge past the window's own close):** inside the bracket EVERY registered line's margin
-(FREEZE and OPAQUE) is bisected to its root; the edge is the SMALLEST root and `binding` is
-that root's line, so the reported edge is where the window closes by its own definition,
+an edge past the window's own close; round-6 audit: "bisect every line" is undefined for a
+line with no sign change in the bracket):** the bracket is the last all-HOLD node and the first
+any-VIOLATED node; the CANDIDATES are the registered lines (FREEZE, OPAQUE) that HOLD at the
+lower node and VIOLATE at the upper one, the only lines with a sign change in the bracket;
+each candidate's margin is bisected to its root; the edge is the SMALLEST root and `binding`
+is that root's line, so the reported edge is where the window closes by its own definition,
 never where the load-order line happens to cross; only when two roots fall within one
-tolerance of each other does load order decide, and the runner prints both margins. The
-rule this replaces bisected the line first in load order at the first violated node, and
-was wrong on the case where both lines hold at node k, both are violated at k+1, and the
-load-order line's root sits deeper in the bracket than the other's; M1a keeps that case as
-a test with a synthetic pair of margins. (On the registered rows no two lines share a
-bracket: P2 OPAQUE 95.6 km against FREEZE 532.6 km; the 0.10 arm 777.5 against 532.6 km;
-under the Fresnel optics + thermal arm, FREEZE 57.1 against OPAQUE 108.3 km with vapour
-inside and 86.0 against 115.6 km with water.) If
+tolerance of each other does load order decide, and the runner prints both. Roots of other
+lines further out (e.g. P2's FREEZE at 532.6 km) are printed as COUNTERFACTUAL, never as the
+edge. The rule this replaces bisected the line first in load order at the first violated
+node, and was wrong on the case where both lines hold at node k, both are violated at k+1,
+and the load-order line's root sits deeper in the bracket than the other's; M1a keeps that
+case as a test with a synthetic pair of margins. (On the registered rows no two lines share
+a bracket: P2 OPAQUE 95.6 km against FREEZE 532.6 km; the 0.10 arm 777.5 against 532.6 km.
+Under the Fresnel optics + thermal arm with vapour inside, FREEZE 78.4 against OPAQUE
+102.3 km, different brackets; with water, OPAQUE 109.8 against FREEZE 111.6 km, the closest
+pair in the arm, 1.8 km apart, and BOTH inside the one bracket between the 100.0 and
+112.2 km nodes: that arm row is the tie clause's live case, and the rule it replaces would
+have reported FREEZE at 111.6 km.) If
 no node holds, `R_window = 0` and the window is empty. Load order:
 BURST, FREEZE, BOIL, STARVE, OPAQUE. A window edge is a curve, so each registration fixes
 one axis at a declared value. `binding` is drawn only from FREEZE and OPAQUE: BURST and
@@ -474,10 +483,13 @@ reported at every edge so a run that reaches it is a finding, not a registered l
 
 **Where the bands come from.** The bands below are HAND-WRITTEN in this spec from the
 committed rows in the table that follows, and `prereg.yaml` copies them verbatim with the
-grids, edge rule, tolerances and load order above; a test asserts the prereg's band
-strings equal this section's. **A prereg is never written by the code that checks it:**
-`prereg.yaml` is committed ALONE, referencing this spec at `372f941` or later, ONE COMMIT
-BEFORE `tools/q4_hand_rows.py`, which is vessel arithmetic (it implements `p*`, `tau_sw`,
+grids, edge rule, tolerances and load order above; `test_prereg_equals_spec` asserts the
+WHOLE prereg structure (bands, bindings, grids, edge rule, tolerances, load order, registry,
+arm rows) equals a canonical expected structure parsed from this spec's own tables and text,
+not two band strings (round-6 audit). **A prereg is never written by the code that checks it:**
+`prereg.yaml` is committed ALONE, referencing this spec at its round-6 revision, ONE COMMIT
+BEFORE `tools/q4_hand_rows.py` (the hand-row commit is cherry-picked onto the prereg commit,
+never merged from its older parent), which is vessel arithmetic (it implements `p*`, `tau_sw`,
 `f_photon` and the edge rule) and so cannot share the prereg's commit without erasing the
 chronology git is meant to show; M1a's ancestor test (§8) pins that order. The rows are
 reproduced in M1a0 by `tools/q4_hand_rows.py`, committed with its output beside the
@@ -485,8 +497,8 @@ spec's table. It reads the ONE committed spectral table `sim/spectral_table.csv`
 `k`, `E_AM0`, `n_ph` on ASTM's 2,002-row grid, header carrying the md5 and byte size of
 both sources, `ASTMG173.csv` b31870bd… 57,708 B, fetched from pvlib-python at commit
 `2d0ed71e1308293b3081979404f8e90f2f2dde1e` (`pvlib/data/ASTMG173.csv`; the file at that
-commit hashes to b31870bd…, checked 2026-09-13, and `docs/THIRD-PARTY.md:35` today names
-the mutable `main` URL, which M1a0 pins to this commit), and `iop2008.dat` cf5f76d5…
+commit hashes to b31870bd…, checked 2026-09-13; `docs/THIRD-PARTY.md:35` is pinned to this
+commit, done in M1a0 at `ae56554`), and `iop2008.dat` cf5f76d5…
 16,514 B, and the word `trapezoid`) and the existing `sim/thermal.py`,
 `sim/physiology.py`, `sim/organism.py` functions; its output repeats both digests. Both
 sources are gitignored (`.gitignore:9-10`) and ABSENT from the checkout; the table is
@@ -497,11 +509,10 @@ or a value read from a file evade it); (ii) `test_reproduce_hand_rows` recompute
 row FROM THE COMMITTED TABLE and matches the printed digits, which proves the rows follow
 from the table and CANNOT catch a wrongly generated table, since both consumers share it;
 so (iii) `test_regenerate_spectral_table` re-runs the producer on the two sources and
-asserts the regenerated table equals the committed one (the producer pins its formatter,
-`%.10e` and `\n`, so the file is byte-stable across hosts, and the assertion compares the
-parsed values at rtol 1e-12, so a host-side formatting difference reads as a formatting
-defect and never as a table defect; the header md5 is provenance, not the assertion;
-round-5 audit), and it SKIPS,
+asserts the regenerated table equals the committed one as PARSED VALUES at rtol 1e-12
+(`tests/test_spectral_table.py:94-122`; the producer pins its formatter, `%.10e` and `\n`,
+but a header- or newline-only difference is not detected by this test, it is out of its
+scope; the header md5 is provenance, not the assertion; round-5 and round-6 audits), and it SKIPS,
 never passes, when either source is absent (CI), so a green CI run says "rows follow
 from table", and only a developer run with the sources says "table follows from
 sources". The import guard is BIDIRECTIONAL with a file-read half (round-5 audit: one-way, it left
@@ -527,12 +538,12 @@ both and be the headline finding.
 | P2 variant, interior `central`        | r 1.10 AU, σ 0.7, f_floor 0.25 | shell τ_sw, normal-incidence f_photon (§3)                                               | R 119.3 km                                                  |
 | P1 Fresnel arm (i), vapour inside     | R 10 km, σ 0.7 / 1.5 / 3.1     | two-interface T, n_interior 1; τ_sw 0.3108 / 0.3621 / 0.4115, f_photon 0.573 / 0.696 / 0.782 | r 1.1886 / 1.2116 / 1.2334 AU                               |
 | P1 Fresnel arm (i), water inside      | R 10 km, σ 0.7 / 1.5 / 3.1     | n_interior 1.333; τ_sw 0.3259 / 0.3797 / 0.4316, f_photon 0.601 / 0.730 / 0.821            | r 1.1954 / 1.2194 / 1.2421 AU                               |
-| P1 Fresnel arm (ii), vapour inside    | R 10 km, σ 0.7 / 1.5 / 3.1     | as (i) vapour and T_eq·(1−R_slab_sw)^¼, R_slab_sw 0.0752 / 0.0776 / 0.0799; melt door 0.9983 / 0.9971 / 0.9958 AU | r 1.1430 / 1.1637 / 1.1831 AU                    |
-| P1 Fresnel arm (ii), water inside     | R 10 km, σ 0.7 / 1.5 / 3.1     | as (i) water and T_eq·(1−R_slab_sw)^¼, R_slab_sw 0.0628; melt door 1.0050 AU              | r 1.1573 / 1.1805 / 1.2025 AU                               |
+| P1 Fresnel arm (ii), vapour inside    | R 10 km, σ 0.7 / 1.5 / 3.1     | as (i) vapour and the two-body balance, T_int⁴ = (1 − R_slab_sw + T_sw)·T_eq⁴, R_slab_sw 0.0752 / 0.0776 / 0.0799; melt door 0.9983 / 0.9971 / 0.9958 AU | r 1.1540 / 1.1766 / 1.1980 AU                    |
+| P1 Fresnel arm (ii), water inside     | R 10 km, σ 0.7 / 1.5 / 3.1     | as (i) water and the two-body balance, R_slab_sw 0.0628; melt door 1.0050 AU              | r 1.1668 / 1.1914 / 1.2146 AU                               |
 | P2 Fresnel arm (i), vapour inside     | r 1.10 AU, σ 0.7, f_floor 0.25 | OPAQUE: p\* 789.6 Pa, t 42.74 m, τ_sw 0.1827; FREEZE at t 173.0 m                         | OPAQUE R 75.8 km (FREEZE 396.2 km)                          |
 | P2 Fresnel arm (i), water inside      | r 1.10 AU, σ 0.7, f_floor 0.25 | OPAQUE: p\* 800.7 Pa, t 48.05 m, τ_sw 0.1861; FREEZE at t 198.0 m                         | OPAQUE R 84.0 km (FREEZE 453.5 km)                          |
-| P2 Fresnel arm (ii), vapour inside    | r 1.10 AU, σ 0.7, f_floor 0.25 | FREEZE: t 24.9 m, τ_sw 0.2084, R_slab_sw 0.071, T_shell 260.52 K; OPAQUE at t 42.74 m     | FREEZE R 57.1 km binds before OPAQUE 108.3 km               |
-| P2 Fresnel arm (ii), water inside     | r 1.10 AU, σ 0.7, f_floor 0.25 | FREEZE: t 37.5 m, τ_sw 0.1979, R_slab_sw 0.0628, T_shell 261.09 K; OPAQUE at t 48.05 m    | FREEZE R 86.0 km binds before OPAQUE 115.6 km               |
+| P2 Fresnel arm (ii), vapour inside    | r 1.10 AU, σ 0.7, f_floor 0.25 | FREEZE: p\* 611.21 Pa, t 34.2 m, τ_sw 0.1930, R_slab_sw 0.0703, T_shell 260.57 K; OPAQUE at t 42.74 m | FREEZE R 78.4 km binds before OPAQUE 102.3 km               |
+| P2 Fresnel arm (ii), water inside     | r 1.10 AU, σ 0.7, f_floor 0.25 | OPAQUE: p\* 612.9 Pa, t 48.05 m, τ_sw 0.1861, T_int 273.19 K, T_shell 261.09 K; FREEZE at t 48.7 m | OPAQUE R 109.8 km binds before FREEZE 111.6 km (closest pair in the arm, 1.8 km) |
 
 **Registered prediction 1, in `r` at fixed `R = 10 km`, dust none, albedo 0, algal:**
 **`r_close(10 km, sigma) ∈ [1.19, 1.27] AU` for every sigma, `binding = FREEZE`.**
@@ -582,7 +593,8 @@ which is the vapour case and no other: the ice→water reflectance is 7.6e-5 at 
 incidence, and P1's σ 0.7 edge under optics alone moves from 1.1886 AU, outside the band, to
 1.1954 AU, inside it, on that one hidden index; vapour is the arm's default because wherever
 FREEZE holds the inner face is below 273.15 K and liquid cannot wet it without freezing to
-it); and `thermal_reflectance ∈ {0, slab}`, what `T_eq` is scaled by. Optics: unpolarised
+it); and `thermal_reflectance ∈ {0, slab}`, whether the thermal balance carries the slab's
+reflectance. Optics: unpolarised
 Fresnel at `n = 1.31`, air→ice at `μ` (`R₁`) and ice→interior at `μ'` by `n_interior`
 (`R₂`), incoherent multi-pass, `T(k·t) = ∫₀¹ 2μ (1−R₁)(1−R₂) e^{−x} / (1 − R₁R₂ e^{−2x}) dμ`
 with `x = k·t/μ'`, and beside it the slab's own reflectance `R_slab(k·t) = ∫₀¹ 2μ (R₁ +
@@ -591,24 +603,30 @@ with `x = k·t/μ'`, and beside it the slab's own reflectance `R_slab(k·t) = �
 a non-absorbing slab, and it used the first-surface 0.0627 where the vapour-inner slab
 reflects 0.0752 at the P1 wall; an M1a test asserts the identity for both indices). (i)
 optics only: the two-interface `T` inside `tau_sw` and `f_photon`, `T_eq` unchanged. (ii)
-optics + thermal: (i) and `T_eq → T_eq · (1 − R_slab_sw(t))^¼`, the solar-weighted slab
-reflectance OF THE WALL IN FORCE, which enters the `p*` fixed point because `t` does;
+optics + thermal: (i) and the two-body balance with the slab's solar-weighted reflectance
+`R_slab_sw(t)` OF THE WALL IN FORCE (absorptance `A = 1 − R_slab_sw − T_sw`). Interior:
+`T_int⁴ = T_sw·T_eq⁴ + T_shell⁴`; shell: `2·T_shell⁴ = A·T_eq⁴ + T_int⁴`. Hence
+`T_shell⁴ = (1 − R_slab_sw)·T_eq⁴` and `T_int⁴ = (1 − R_slab_sw + T_sw)·T_eq⁴`, which at
+`R_slab_sw = 0` is the registered `(1 + tau_sw)` law (round 5's `(1 − R_slab)(1 + T)` lost
+the `R·T` term, round-6 audit). `R_slab_sw` enters the `p*` fixed point because `t` does;
 `I_wall` is not scaled again, the (i) transmission already carries both faces. With vapour
 inside, `T(1)` is 0.2714 against 0.3001, `R_slab_sw` 0.0752 / 0.0776 / 0.0799 at the three
 P1 edge walls, above the 0.0721 freeze line, so under (ii) the melt door sits INSIDE 1 AU
-(0.9983 / 0.9971 / 0.9958 AU) and `T_shell` at the P2 FREEZE wall is 260.52 K against
+(0.9983 / 0.9971 / 0.9958 AU) and `T_shell` at the P2 FREEZE wall is 260.57 K against
 265.36; with water inside, `T(1)` is 0.2842, `R_slab_sw` 0.0628 at every wall (the inner
 face adds nothing), the melt door 1.0050 AU and `T_shell(1.10 AU)` 261.09 K. Expected
 outcomes, hand-read from the arm rows above: **P1** under (i) vapour 1.1886 / 1.2116 /
 1.2334 AU, the σ 0.7 edge OUTSIDE [1.19, 1.27] by 0.0014 AU; (i) water 1.1954 / 1.2194 /
-1.2421, all three INSIDE; (ii) vapour 1.1430 / 1.1637 / 1.1831, all three outside; (ii)
-water 1.1573 / 1.1805 / 1.2025, two of three outside; binding FREEZE in every row. **P2**
-under (i) OPAQUE binds at 75.8 km (vapour; FREEZE 396.2) and 84.0 km (water; FREEZE
-453.5), both inside [60, 300]; under (ii) **the binding FLIPS on both indices: FREEZE at
-57.1 km before OPAQUE at 108.3 km with vapour inside, `R_window` 57.1 km, OUTSIDE the
-band's 60 km floor; FREEZE at 86.0 km before OPAQUE at 115.6 km with water, inside the
-band with the wrong binding.** So the arm is expected to miss prediction 1's band on three
-of its four rows and to flip prediction 2's binding on both (ii) rows; a run that reports
+1.2421, all three INSIDE; (ii) vapour 1.1540 / 1.1766 / 1.1980, two of three outside (σ 0.7
+and 1.5); (ii) water 1.1668 / 1.1914 / 1.2146, one of three outside (σ 0.7); binding FREEZE
+in every row. **P2** under (i) OPAQUE binds at 75.8 km (vapour; FREEZE 396.2) and 84.0 km
+(water; FREEZE 453.5), both inside [60, 300]; under (ii) **the binding FLIPS with vapour
+inside: FREEZE at 78.4 km (t 34.2 m) before OPAQUE at 102.3 km, `R_window` 78.4 km, inside
+the band with the wrong binding; with water inside OPAQUE still binds, at 109.8 km before
+FREEZE at 111.6 km, inside the band, the closest pair in the arm (1.8 km, one bracket,
+decided by the tie clause).** So the arm is expected to miss prediction 1's band on three
+of its four `(n_interior, thermal_reflectance)` combinations (at least one σ each) and to
+flip prediction 2's binding on the (ii) vapour row only; a run that reports
 the registered rows HELD and the eight arm rows as expected has confirmed the
 declaration's cost, not hidden it. The arm rows are reported beside every registered row,
 the page carries the arm as a three-way toggle and `n_interior` as a declared input (§5)
@@ -639,7 +657,8 @@ Q2 did (`docs/FINDINGS.md:206-209`).
 
 **Declared, explicit:** `t_opt = 298.15 K`, `omega = 20 K`, `albedo = 0`,
 `emissivity = 1`, `f_floor = 0.25`, `n = 1.31`, `interior = mixed`, dust `none`,
-`T_freeze = 273.15 K`, isothermal shell, the shell law of §3 without reflectance (control
+`T_freeze = 273.15 K`, isothermal shell, the solar tail outside 280–4000 nm transmitting like
+the band, `optical_law = shell`, the shell law of §3 without reflectance (control
 law and Fresnel arm reported beside it; the arm's `n_interior` and `thermal_reflectance`
 are arm inputs, and §3's registry table is the list); `R_ORGANISM` is swept, not assumed, and prediction 1 names 10 km
 only as its fixed point.
@@ -664,38 +683,49 @@ only as its fixed point.
 
 - **M1a0 (S): the spectral table, the hand rows, the prereg.** Nothing below runs
   without it. Fetch `iop2008.dat` and `ASTMG173.csv` (gitignored, `.gitignore:9-10`,
-  absent from the checkout). Extend `tools/extract_ice_k.py`, which today filters PAR
-  only (`:21`, `0.40<=l<=0.70`), to write `sim/spectral_table.csv`: ASTM G173's native
+  absent from the checkout). Extend `tools/extract_ice_k.py` (PAR filter at `:37`,
+  `0.40 <= l <= 0.70`; its `--table` flag, `:69-74`, now calls `tools/make_spectral_table.py`)
+  to write `sim/spectral_table.csv`: ASTM G173's native
   grid, 2,002 rows, 280 to 4000 nm, columns λ (nm), `k` (/m, log-space interpolation of
   `m_im` as `check_greenhouse_transparency.py:62-63` does, selection window 250 to
   4200 nm), `E_AM0` (W m⁻² nm⁻¹, ASTM column 2), `n_ph` (`E_AM0·λ/(hc)`, relative photon
   weight); provenance header naming both source files with md5 and byte size (§6), the
   quadrature (`trapezoid`) and the producer's commit. A `k`-only table cannot drive
-  `tau_sw` or `f_photon` in CI, where the sources are absent (round-3 audit). Pin
-  `docs/THIRD-PARTY.md:35` from the mutable `main` URL to the pvlib-python commit
-  `2d0ed71e1308293b3081979404f8e90f2f2dde1e` (§6), and name that commit in the table
-  header. Commit the table checks of §6 (digest, row count, monotone λ, four pinned rows)
-  and `test_regenerate_spectral_table` (byte-identical regeneration from the sources;
-  SKIPS when they are absent, §6). Then, in this order and in SEPARATE commits:
+  `tau_sw` or `f_photon` in CI, where the sources are absent (round-3 audit).
+  `docs/THIRD-PARTY.md:35` is pinned to the pvlib-python commit
+  `2d0ed71e1308293b3081979404f8e90f2f2dde1e` (§6), named in the table header. Commit the
+  table checks of §6 (digest, row count, monotone λ, four pinned rows) and
+  `test_regenerate_spectral_table` (parsed-value equality at rtol 1e-12 on regeneration from
+  the sources; SKIPS when they are absent, §6). (All of this landed at `ae56554`.) Then, in this order and in SEPARATE commits:
   `experiments/q4_vessel/prereg.yaml` ALONE, with both bands, both bindings, the `r` and
   `R` grids, the edge rule with its tie clause and tolerances, the load order, the §3 registry
-  of declared values, the law, its control, and the Fresnel arm as eight explicit rows keyed
+  of declared values (twelve keys, `optical_law` among them), its control, and the Fresnel arm as eight explicit rows keyed
   by `n_interior × thermal_reflectance`, each with its expected outcome (§6), all copied
-  from this spec; then, one commit later, `tools/q4_hand_rows.py` and its output, which
+  from this spec; then, one commit later (the hand-row commit cherry-picked onto the prereg
+  commit), `tools/q4_hand_rows.py` and its output, which
   includes the control rows, the `central` variant row, the eight Fresnel arm rows of §6
   and the §4 grid census (the four counts per law, the min-STARVE-margin node with its
   margin, the grid minimum of `f_photon`; round-5 audit: those numbers had no producer in
-  the repo, only a verifier's scratch script). Acceptance: `test_reproduce_hand_rows` recomputes every §6 row (registered,
-  control, variant and arm) and the §4 census from the committed table and matches the
-  printed digits;
-  `test_prereg_equals_spec` matches the prereg's band strings to §6; the literal smell
-  test passes; `test_regenerate_spectral_table` passes with the sources present and
-  reports SKIPPED without them; `git log` shows the prereg's commit strictly before the
-  calculator's; `pytest` green.
+  the repo, only a verifier's scratch script). What exists: `test_reproduce_hand_rows` and
+  the per-row tests recompute every §6 row (registered, control, variant and arm) from the
+  committed table on every run and parse the committed census from the output; the census
+  RECOMPUTATION is the separate `test_section4_census`, marked `slow` and deselected by
+  default. Acceptance, `pytest -q && pytest -m slow`: every §6 row matches the printed
+  digits; the census recomputes; `test_prereg_equals_spec` matches the WHOLE prereg to a
+  canonical structure parsed from §3's registry, §6's text and table (not the band strings
+  alone); the strict-ancestor test (the prereg's introducing commit is a strict ancestor of
+  the commit that introduces `tools/q4_hand_rows.py`; "ancestor of HEAD" is dropped as
+  tautological, round-6 audit); the literal smell test, extended to the prereg, passes;
+  `test_regenerate_spectral_table` passes with the sources present and reports SKIPPED
+  without them.
 - **M1a (M): the vessel, in Python.** `sim/vessel.py` (`wall_thickness`, `hoop_stress`,
   `shell_transmission(kt)` with the law as an argument, `transmission_spectrum`,
   `par_photon_fraction`, `solar_transmission`, `saturation_pressure`,
-  `contained_temperature`, `self_consistent_pressure` raising on iteration exhaustion,
+  `contained_temperature(r_au, t, *, optical_law="shell", n_interior=1.000,
+  thermal_reflectance="0") -> (T_int, T_shell)`, `self_consistent_pressure(r_au, R, sigma, *,
+  optical_law="shell", n_interior=1.000, thermal_reflectance="0")` raising on iteration
+  exhaustion (the three arm inputs travel as keyword arguments, and `classify_failure`'s
+  `inputs` is a frozen dataclass carrying all twelve registry keys by name),
   `classify_failure(p, t, r, R, sigma, organism, inputs)` reading `σ_eff(T_shell)` in
   every mode, §4), reading `sim/spectral_table.csv`; `Organism.net_carbon_contained`
   beside the existing paths; the §10 same-object test; the two closed-form controls (§3:
@@ -707,10 +737,9 @@ only as its fixed point.
   `shell_transmission` and the test `R_slab + T = 1` at `k·t = 0` for both indices; the
   tie-rule test with a synthetic pair of margins whose load-order root sits deeper in the
   bracket (§6); Gate C with its atol and the
-  identity test; the import-guard AST test with its negative case (§6); a test that
-  `prereg.yaml`'s commit is an ancestor of HEAD, is a strict ancestor of the commit that
-  added `tools/q4_hand_rows.py`, and its md5 unchanged, as `tests/test_parity_js.py:82-99`
-  pins fixtures; the runner-error test with the `0.99·t_min` mutation control (§4); and
+  identity test; the import-guard AST test with its negative case (§6); the M1a0
+  strict-ancestor test kept, plus `prereg.yaml`'s md5 unchanged, as
+  `tests/test_parity_js.py:82-99` pins fixtures; the runner-error test with the `0.99·t_min` mutation control (§4); and
   the mode-agnostic BURST invariant (§5): `classify_failure` names BURST with
   `σ_eff = 0` printed for any (p, t) mode whenever `T_shell > 273.15 K`, with the
   positive case at the same `p`, `t` outside the melt door reading the input `σ`.
@@ -785,7 +814,8 @@ only as its fixed point.
    option (a)) and the Fresnel arm is expected to miss P1's band and flip P2's binding.
 8. **Round-5 audit, the arm's own two hidden choices.** `n_interior` and the slab
    reflectance are the arm's explicit inputs; eight rows; P1 (i) lands inside the band on
-   the water index and P2 (ii) freezes below the band on the vapour one (§6).
+   the water index and P2 (ii) freezes below the band on the vapour one (§6); round 6
+   corrected the balance: P2 (ii) vapour freezes at 78.4 km, inside the band, wrong binding.
 
 ## 11. The story after Q4
 
@@ -1135,7 +1165,8 @@ written down. The registered rows are unchanged.
    FIXED, §3, §6: variant (ii) scales `T_eq` by `(1 − R_slab_sw(t))^¼` of the wall in force,
    `R_slab + T = 1` at `k·t = 0` is an M1a test, and the rows are recomputed: P1 (ii) 1.1430 /
    1.1637 / 1.1831 (vapour) and 1.1573 / 1.1805 / 1.2025 (water); P2 (ii) FREEZE 57.1 before
-   OPAQUE 108.3 km (vapour, below the band) and 86.0 before 115.6 km (water). The refuted
+   OPAQUE 108.3 km (vapour, below the band) and 86.0 before 115.6 km (water). SUPERSEDED in
+   round 6 (finding 1): that balance lost the `R·T` term; the rows are now §6's. The refuted
    sub-claim (`I_wall` double-counted) is answered in §6: `I_wall` is not scaled again.
 3. **Arm digits reproduce (NIT).** No change beyond 1-2.
 4. **Question phrased without the law (MINOR).** FIXED, §6: "under the declared law of §3".
@@ -1175,3 +1206,14 @@ written down. The registered rows are unchanged.
 20. **NEW-4, first-surface albedo printed where the slab value belongs (MINOR).** FIXED, §5:
     the page prints `R_slab_sw(t)` of the wall in force for the chosen `n_interior`, and the
     reason 0.063 is not printed is stated.
+
+## Round 6 responses
+
+Codex, 6 findings (`~/.cache/llm-panel/runs/dyson-tree-6e0926de3dc8/20260922-205412-2638298/codex.md`); arm digits from `v7_slab.py` (`v7_slab.out`). User approved: fix, then prereg, no further round.
+
+1. **Arm (ii) balance loses transmitted energy (BLOCKER).** FIXED, §3, §6: `T_shell⁴ = (1 − R_slab_sw)·T_eq⁴`, `T_int⁴ = (1 − R_slab_sw + T_sw)·T_eq⁴`; P1 (ii) 1.1540 / 1.1766 / 1.1980 (vapour), 1.1668 / 1.1914 / 1.2146 (water); P2 (ii) vapour FREEZE 78.4 before OPAQUE 102.3 km, water OPAQUE 109.8 before FREEZE 111.6 km.
+2. **Tie clause not executable (BLOCKER).** FIXED, §6: candidates are the lines that change sign in the bracket; later roots are counterfactual. The P2 (ii) water row is its live case.
+3. **Registry omits the solar tail; key and signature unnamed (MAJOR).** FIXED, §3, §6, §8: twelfth row `solar_tail_transmission`, key `optical_law`, keyword signatures in `sim/vessel.py`.
+4. **Prereg guards partial (MAJOR).** FIXED, §6, §8: whole-structure `test_prereg_equals_spec`, "ancestor of HEAD" dropped, `pytest -m slow` in the acceptance, hand rows cherry-picked onto the prereg.
+5. **Registered rows and census reproduce (NIT).** No change.
+6. **Five stale file:line claims (MINOR).** FIXED, §6, §8: THIRD-PARTY pinned, parsed-value equality, `extract_ice_k.py:37` and `--table`, census test described as it exists.
