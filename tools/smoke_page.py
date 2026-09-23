@@ -343,6 +343,85 @@ def exercise(page, label: str) -> None:
     check(page.locator("#plot path").count() >= 1, f"[{label}] vascular curve is drawn")
 
 
+VLINES = ("BURST", "FREEZE", "BOIL", "STARVE", "OPAQUE")
+
+
+def exercise_vessel(page, label: str) -> None:
+    """M2: the verdict panel in a real browser (spec §8 M2, §5), plus input latency."""
+
+    def settle():
+        page.wait_for_function(
+            "() => !['v-rauto','v-Rwin'].some(i => document.getElementById(i).textContent.includes('computing'))",
+            timeout=60000,
+        )
+
+    def violated():
+        return [n for n in VLINES if page.locator(f"#v-status-{n}").inner_text().strip() == "VIOLATED"]
+
+    def set_range(sel, value):
+        page.locator(sel).fill(str(value))
+        page.locator(sel).dispatch_event("input")
+
+    def reload():
+        page.reload(wait_until="load")
+        settle()
+
+    settle()
+    check(violated() == [], f"[{label}] vessel defaults: every line HOLDS, got {violated()}")
+    for n in ("FREEZE", "STARVE", "OPAQUE"):
+        m = page.locator(f"#v-margin-{n}").inner_text()
+        check(number_in(m.replace("−", "-")) > 0 and m.startswith("+"), f"[{label}] default {n} margin positive: {m!r}")
+    for n in ("BURST", "BOIL"):
+        m = page.locator(f"#v-margin-{n}").inner_text()
+        check(m.startswith("0 ") and "by construction" in m, f"[{label}] default {n} margin 0 by construction: {m!r}")
+    rauto = page.locator("#v-rauto").inner_text()
+    check("1.2805" in rauto, f"[{label}] auto-path edge in r at the defaults is 1.2805 AU: {rauto!r}")
+    rwin = page.locator("#v-Rwin").inner_text()
+    notes.append(f"NOTE  [{label}] defaults: R_window {rwin}; r edges {rauto}; "
+                 f"edge compute {page.locator('#v-edge-ms').inner_text()} ms")
+    check(page.locator("#v-summary").get_attribute("aria-live") == "polite", f"[{label}] verdict summary is a polite live region")
+    unlabelled = page.eval_on_selector_all(
+        "#vessel input, #vessel select",
+        "els => els.filter(e => !(e.labels && e.labels.length) && !e.getAttribute('aria-label')).map(e => e.id)",
+    )
+    check(not unlabelled, f"[{label}] every vessel control has a label: {unlabelled}")
+
+    # input-to-readout latency: dragging r, the five lines are recomputed synchronously
+    lat = page.evaluate(
+        """() => { const s = document.getElementById('v-r'); const out = [];
+                   for (let i = 0; i < 40; i++) { s.value = (1.05 + i * 0.005).toFixed(3);
+                     const t0 = performance.now(); s.dispatchEvent(new Event('input'));
+                     void document.getElementById('v-status-FREEZE').textContent;
+                     out.push(performance.now() - t0); }
+                   out.sort((a, b) => a - b);
+                   return {median: out[20], max: out[39]}; }"""
+    )
+    notes.append(f"NOTE  [{label}] r-drag input-to-readout latency: median {lat['median']:.1f} ms, max {lat['max']:.1f} ms (40 inputs)")
+    check(lat["max"] < 100, f"[{label}] r-drag input-to-readout under 100 ms (max {lat['max']:.1f} ms)")
+
+    reload()
+    set_range("#v-R", 4)
+    set_range("#v-r", 1.20)
+    check(violated() == [], f"[{label}] R 10 km, r 1.20 AU: all hold, got {violated()}")
+    set_range("#v-r", 1.21)
+    check(violated() == ["FREEZE"], f"[{label}] R 10 km, r 1.21 AU (past r_close 1.2049): exactly FREEZE, got {violated()}")
+
+    reload()
+    page.select_option("#v-p-mode", "manual")
+    set_range("#v-p", 3.35)
+    check(violated() == ["BURST"], f"[{label}] manual p 2239 Pa > p*: exactly BURST, got {violated()}")
+    set_range("#v-p", 3.25)
+    check(violated() == ["BOIL"], f"[{label}] manual p 1778 Pa < p_sat: exactly BOIL, got {violated()}")
+
+    reload()
+    page.select_option("#v-t-mode", "manual")
+    set_range("#v-t", 2)
+    check(violated() == ["OPAQUE"], f"[{label}] manual t 100 m: exactly OPAQUE, got {violated()}")
+    check(page.locator("#v-t-out").inner_text().startswith("100.000 m"), f"[{label}] t label reads 100 m: {page.locator('#v-t-out').inner_text()!r}")
+    settle()
+    reload()
+
+
 def main() -> int:
     assert SITE.is_dir(), "site/ not built — run tools/build_site.sh first"
     from playwright.sync_api import sync_playwright
@@ -386,6 +465,7 @@ def main() -> int:
                 f"[{label}] title renders",
             )
             exercise(page, label)
+            exercise_vessel(page, label)
             page.close()
         browser.close()
     httpd.shutdown()

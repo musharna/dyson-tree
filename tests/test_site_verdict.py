@@ -1,0 +1,194 @@
+"""M2 acceptance, on the BUILT page: the seven inputs and the verdict panel (spec §8 M2, §4, §5).
+
+Builds site/ with tools/build_site.sh, then loads the scripts site/index.html loads, in its
+order, into a bare node `vm` context with a minimal DOM: `document.getElementById` returns
+an element only for an id that site/index.html actually carries, so a control or readout the
+page forgot fails here. app.js (the uncontained Q1 plot) is not loaded; it draws SVG.
+
+Each scenario sets controls the way the page does (value, then `input` and `change`
+events) and reads back the TEXT the panel prints: status (HOLDS / VIOLATED) and the printed
+margin per line. The expected sets come from the spec, not from the page's own model call.
+
+Fails, never skips, without node or bash.
+"""
+
+from __future__ import annotations
+
+import json
+import re
+import shutil
+import subprocess
+import tempfile
+from pathlib import Path
+
+import pytest
+import yaml
+
+ROOT = Path(__file__).resolve().parents[1]
+LINES = ["BURST", "FREEZE", "BOIL", "STARVE", "OPAQUE"]
+
+DRIVER = r"""
+const fs = require("fs"), vm = require("vm"), path = require("path");
+const site = process.argv[2];
+const scenarios = JSON.parse(fs.readFileSync(0, "utf8"));
+const html = fs.readFileSync(path.join(site, "index.html"), "utf8");
+const ids = new Set([...html.matchAll(/\sid="([^"]+)"/g)].map((m) => m[1]));
+const srcs = [...html.matchAll(/<script src="\.\/([^"]+)"><\/script>/g)].map((m) => m[1]);
+const LINES = ["BURST", "FREEZE", "BOIL", "STARVE", "OPAQUE"];
+function run(steps) {
+  const els = new Map();
+  const timers = [];
+  const document = {
+    getElementById(id) {
+      if (!ids.has(id)) return null;
+      if (!els.has(id)) {
+        const l = {};
+        els.set(id, {
+          id, value: "", textContent: "", className: "", disabled: false, attrs: {},
+          setAttribute(k, v) { this.attrs[k] = String(v); },
+          getAttribute(k) { return k in this.attrs ? this.attrs[k] : null; },
+          addEventListener(ev, fn) { (l[ev] = l[ev] || []).push(fn); },
+          fire(ev) { (l[ev] || []).forEach((fn) => fn({ target: this })); },
+        });
+      }
+      return els.get(id);
+    },
+  };
+  const ctx = { console, document, setTimeout: (fn) => (timers.push(fn), timers.length), clearTimeout: () => {} };
+  ctx.window = ctx;
+  vm.createContext(ctx);
+  for (const s of srcs.filter((s) => s !== "app.js"))
+    vm.runInContext(fs.readFileSync(path.join(site, s), "utf8"), ctx, { filename: s });
+  for (const st of steps) {
+    const e = document.getElementById(st.id);
+    if (!e) throw new Error("no element #" + st.id);
+    e.value = String(st.value);
+    e.fire("input");
+    e.fire("change");
+  }
+  while (timers.length) timers.shift()();
+  const g = (id) => { const e = document.getElementById(id); if (!e) throw new Error("no #" + id); return e.textContent; };
+  const out = { lines: {}, summary: g("v-summary"), live: document.getElementById("v-summary").attrs["aria-live"] || null };
+  for (const n of LINES) out.lines[n] = { status: g("v-status-" + n), margin: g("v-margin-" + n), cmp: g("v-cmp-" + n) };
+  for (const k of ["v-pstar", "v-tmin", "v-rfixed", "v-rauto", "v-Rwin", "v-Rfloor", "v-rslab", "v-albedo-freeze", "v-error"]) out[k] = g(k);
+  return out;
+}
+const res = {};
+for (const [name, steps] of Object.entries(scenarios)) res[name] = run(steps);
+process.stdout.write(JSON.stringify({ scripts: srcs, res }));
+"""
+
+SCENARIOS = {
+    "defaults": [],
+    # spec §8 M2: drag r past the registered r_close at R = 10 km (P1, sigma 0.7: 1.2049 AU)
+    "R10km_r1.20": [{"id": "v-R", "value": "4"}, {"id": "v-r", "value": "1.20"}],
+    "R10km_r1.21": [{"id": "v-R", "value": "4"}, {"id": "v-r", "value": "1.21"}],
+    # manual p above / below p* (1960.5 Pa at the defaults), t frozen at t_min(p*)
+    "p_above": [{"id": "v-p-mode", "value": "manual"}, {"id": "v-p", "value": "3.35"}],
+    "p_below": [{"id": "v-p-mode", "value": "manual"}, {"id": "v-p", "value": "3.25"}],
+    # manual t of 100 m at the defaults, p re-solved on the given wall
+    "t_100m": [{"id": "v-t-mode", "value": "manual"}, {"id": "v-t", "value": "2"}],
+}
+
+
+def num(text: str) -> float:
+    m = re.search(r"[-+−]?\d+(?:\.\d+)?(?:e[-+]?\d+)?", text)
+    assert m, f"no number in {text!r}"
+    return float(m.group(0).replace("−", "-"))
+
+
+@pytest.fixture(scope="module")
+def page():
+    node, bash = shutil.which("node"), shutil.which("bash")
+    assert node and bash, (
+        "node and bash are required; this test fails rather than skips"
+    )
+    subprocess.run(
+        [bash, str(ROOT / "tools" / "build_site.sh")],
+        cwd=ROOT,
+        check=True,
+        capture_output=True,
+        timeout=120,
+    )
+    with tempfile.TemporaryDirectory() as tmp:
+        drv = Path(tmp) / "drive.cjs"
+        drv.write_text(DRIVER)
+        proc = subprocess.run(
+            [node, str(drv), str(ROOT / "site")],
+            input=json.dumps(SCENARIOS),
+            capture_output=True,
+            text=True,
+            timeout=600,
+        )
+    assert proc.returncode == 0, proc.stderr
+    out = json.loads(proc.stdout)
+    assert out["scripts"].index("model.js") < out["scripts"].index("verdict.js")
+    return out
+
+
+def violated(r):
+    return [n for n in LINES if r["lines"][n]["status"] == "VIOLATED"]
+
+
+def test_statuses_are_one_of_two_words(page):
+    for name, r in page["res"].items():
+        for n in LINES:
+            assert r["lines"][n]["status"] in ("HOLDS", "VIOLATED"), (
+                name,
+                n,
+                r["lines"][n],
+            )
+
+
+def test_defaults(page):
+    r = page["res"]["defaults"]
+    assert violated(r) == [], r
+    for n in ("FREEZE", "STARVE", "OPAQUE"):
+        assert num(r["lines"][n]["margin"]) > 0, (n, r["lines"][n])
+    for n in ("BURST", "BOIL"):
+        m = r["lines"][n]["margin"]
+        assert num(m) == 0.0 and "by construction" in m, (n, m)
+    assert abs(num(r["v-pstar"]) - 1960.5) < 0.05, r["v-pstar"]
+    assert abs(num(r["v-tmin"]) - 1.400) < 5e-4, r["v-tmin"]
+    assert abs(num(r["lines"]["STARVE"]["margin"]) - 8.23) < 5e-3
+    # spec §5: the fixed wall freezes at 1.2428 AU, the auto-path edge is 1.2805 AU
+    assert "1.2428" in r["v-rfixed"], r["v-rfixed"]
+    assert "1.2805" in r["v-rauto"], r["v-rauto"]
+    assert r["v-error"] == ""
+    assert r["live"] == "polite"
+    assert "alive" in r["summary"], r["summary"]
+
+
+def test_R_window_and_registered_band(page):
+    r = page["res"]["defaults"]
+    assert 90 < num(r["v-Rwin"]) < 100, r["v-Rwin"]  # ≈96 km provisional (§5)
+    prereg = yaml.safe_load((ROOT / "experiments/q4_vessel/prereg.yaml").read_text())
+    lo, hi = prereg["predictions"]["P2"]["band_km"]
+    assert f"[{lo}, {hi}] km" in r["v-Rfloor"], r["v-Rfloor"]
+
+
+def test_r_past_registered_r_close_flips_exactly_freeze(page):
+    assert violated(page["res"]["R10km_r1.20"]) == []
+    assert violated(page["res"]["R10km_r1.21"]) == ["FREEZE"]
+    assert "FREEZE" in page["res"]["R10km_r1.21"]["summary"]
+
+
+def test_manual_p_above_p_star_is_exactly_burst(page):
+    assert violated(page["res"]["p_above"]) == ["BURST"]
+
+
+def test_manual_p_below_p_sat_is_exactly_boil(page):
+    assert violated(page["res"]["p_below"]) == ["BOIL"]
+
+
+def test_manual_t_100m_is_exactly_opaque(page):
+    r = page["res"]["t_100m"]
+    assert violated(r) == ["OPAQUE"]
+    assert "declared" in r["lines"]["OPAQUE"]["cmp"]
+
+
+def test_slab_reflectance_printed_live(page):
+    a = num(page["res"]["defaults"]["v-rslab"])
+    b = num(page["res"]["t_100m"]["v-rslab"])
+    assert 0 < a < 0.2 and a != b
+    assert "0.072" in page["res"]["defaults"]["v-albedo-freeze"]

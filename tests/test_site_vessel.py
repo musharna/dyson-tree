@@ -31,7 +31,7 @@ const srcs = [...html.matchAll(/<script src="\.\/([^"]+)"><\/script>/g)].map((m)
 const ctx = { console };
 ctx.window = ctx;
 vm.createContext(ctx);
-const model = srcs.filter((s) => s !== "app.js"); // app.js needs a DOM
+const model = srcs.filter((s) => s !== "app.js" && s !== "verdict.js"); // both need a DOM
 for (const s of model) vm.runInContext(fs.readFileSync(path.join(site, s), "utf8"), ctx, { filename: s });
 const out = { scripts: srcs, results: [] };
 for (const c of cases) {
