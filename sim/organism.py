@@ -123,6 +123,20 @@ class Organism:
         return gross - respiration(self.r_d, t) / self.leaf_mass_ratio
 
 
+    def net_carbon_contained(self, r_au: float, t: float, inputs=None) -> float:
+        """Net carbon for the organism INSIDE the vessel of wall thickness t (§3, §4).
+
+        Gross at I_wall = (1 - albedo)·irradiance(r)·f_photon(t) and T_int, scaled by the
+        Gaussian response about the DECLARED inputs.t_opt_K (not adapted_optimum);
+        respiration at T_int. Beside the three paths above, which do not change.
+        inputs is a sim.vessel.VesselInputs (the §3 registry); default the registered one."""
+        from sim import vessel
+
+        inp = vessel.REGISTERED if inputs is None else inputs
+        t_int, _ = vessel.contained_temperature(r_au, t, **inp.thermal())
+        f_ph = vessel.par_photon_fraction(t, **inp.optics(), interior=inp.interior)
+        return vessel.net_carbon_contained(self, r_au, t_int, f_ph, inp)
+
 def compensation_irradiance(org: Organism, k: float | None = None) -> float:
     """Leaf-level compensation irradiance: gross(I) = leaf respiration.
     Closed form of a_max*I/(I+k) = R  ->  I = k*R/(a_max - R)."""
