@@ -272,9 +272,10 @@ which manual is the caller's business (§5).
 
 **On the auto path two lines are equalities, not tests, and a third cannot fire.** With
 `t = t_min`, hoop stress equals `sigma` exactly; with `p = p*`, `p` equals `p_sat(T_int)`
-to the fixed point's residual (`|Δp| < min(1e-6 Pa, 1e-9·p)`; `check_greenhouse_transparency.py:127`
-used 1e-6 Pa alone, but a 1e-6 Pa residual exceeds BOIL's `1e-6·p` allowance below ~1 Pa, so
-at r 2.82 AU, `p*` ≈ 0.12 Pa it tripped the auto-path BOIL runner error; M1a finding).
+to the fixed point's residual (`|Δp| < 1e-6` Pa, `check_greenhouse_transparency.py:127`, the
+registered value, applied as `|Δp| < min(1e-6 Pa, 1e-9·p)`: a 1e-6 Pa residual exceeds BOIL's
+`1e-6·p` allowance below ~1 Pa, and at r 2.82 AU, `p*` ≈ 0.12 Pa it tripped the auto-path BOIL
+runner error; M1a finding).
 BURST and BOIL therefore hold by construction on the auto path (except BURST's
 `sigma(T_shell) = 0` door inside 1.0381 AU, the melt door, below) and are failure modes
 of manual gestures only. STARVE holds on the auto path for a different reason: it is never
