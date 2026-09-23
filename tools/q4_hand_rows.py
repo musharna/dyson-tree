@@ -21,9 +21,10 @@ THE ARITHMETIC, in the order the spec derives it.
   T_norm(kt)  = exp(-kt)                                       the control law
   T_fresnel   = int_0^1 2 mu (1-R1)(1-R2) e / (1 - R1 R2 e^2) dmu    the arm, multi-pass
   t_min       = p R / (2 sigma)      hoop stress at the wall
-  T_int       = (1 + tau_sw(t))^0.25 * T_shell_temp(r)
+  T_int       = (1 + tau_sw(t))^0.25 * T_eq(r)                 registered, T_shell = T_eq
   p*          solves p = p_sat(T_int(p)) by damped iteration (Buck)
-  arm (ii)    T_shell_temp(r) = T_eq(r) * (1 - R_slab_sw(t))^0.25 of the wall in force
+  arm (ii)    two-body balance with R_slab_sw(t) of the wall in force (spec §6, round 6):
+              T_shell^4 = (1 - R_slab_sw) T_eq^4,  T_int^4 = (1 - R_slab_sw + tau_sw) T_eq^4
 
 Run: `python tools/q4_hand_rows.py` (writes stdout; the committed `.out` beside it is
 the checked-in record). `--no-census` skips the 59,691-node grid, which takes minutes.
@@ -248,12 +249,21 @@ def shell_temperature(r_au, t_m, r_slab_fn=None):
     return t_eq(r_au) * (1.0 - r_slab_fn(t_m)) ** 0.25
 
 
+def interior_temperature(r_au, t_m, tau_fn, r_slab_fn=None):
+    """T_int: (1 + tau)^0.25 T_eq, or (1 - R_slab_sw + tau)^0.25 T_eq under arm (ii).
+
+    Interior: T_int^4 = tau T_eq^4 + T_shell^4; shell: 2 T_shell^4 = A T_eq^4 + T_int^4
+    with A = 1 - R - tau. Reduces to the registered law at R = 0."""
+    rs = 0.0 if r_slab_fn is None else r_slab_fn(t_m)
+    return (1.0 - rs + tau_fn(t_m)) ** 0.25 * t_eq(r_au)
+
+
 def fixed_point(r_au, r_m, sigma_pa, tau_fn, r_slab_fn=None, p0=None, tol=1e-7):
     """p* = p_sat(T_int(p*)) with t = pR/(2 sigma) inside the loop. Damped 50/50."""
     p = P_EDGE_PA * 2.0 if p0 is None else p0
     for _ in range(5000):
         t = p * r_m / (2.0 * sigma_pa)
-        t_int = (1.0 + tau_fn(t)) ** 0.25 * shell_temperature(r_au, t, r_slab_fn)
+        t_int = interior_temperature(r_au, t, tau_fn, r_slab_fn)
         p_new = saturation_pressure_pa(t_int - T_FREEZE)
         if abs(p_new - p) < tol:
             p = p_new
@@ -263,7 +273,7 @@ def fixed_point(r_au, r_m, sigma_pa, tau_fn, r_slab_fn=None, p0=None, tol=1e-7):
         raise RuntimeError("self-consistent pressure did not converge")
     t = p * r_m / (2.0 * sigma_pa)
     t_shell = shell_temperature(r_au, t, r_slab_fn)
-    return p, t, tau_fn(t), (1.0 + tau_fn(t)) ** 0.25 * t_shell, t_shell
+    return p, t, tau_fn(t), interior_temperature(r_au, t, tau_fn, r_slab_fn), t_shell
 
 
 # ---------------------------------------------------------------- the rows
@@ -274,7 +284,9 @@ def p1_edge(sigma_pa, tau_fn, r_slab_fn=None):
         T_EQ_1AU if r_slab_fn is None else T_EQ_1AU * (1.0 - r_slab_fn(t)) ** 0.25
     )
     door = (t_shell_1au / T_FREEZE) ** 2
-    return t, tau_fn(t), door * math.sqrt(1.0 + tau_fn(t)), door
+    rs = 0.0 if r_slab_fn is None else r_slab_fn(t)
+    edge = (T_EQ_1AU / T_FREEZE) ** 2 * math.sqrt(1.0 - rs + tau_fn(t))
+    return t, tau_fn(t), edge, door
 
 
 def p1_edge_rootfind(sigma_pa, tau_fn, r_slab_fn=None):

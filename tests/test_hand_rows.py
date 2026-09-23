@@ -60,14 +60,14 @@ P1_SPEC = {
         (0.986, 0.4316, 0.821, 1.2421),
     ],
     "arm_ii_vapour": [
-        (4.366, 0.3108, 0.573, 1.1430),
-        (2.037, 0.3621, 0.696, 1.1637),
-        (0.986, 0.4115, 0.782, 1.1831),
+        (4.366, 0.3108, 0.573, 1.1540),
+        (2.037, 0.3621, 0.696, 1.1766),
+        (0.986, 0.4115, 0.782, 1.1980),
     ],
     "arm_ii_water": [
-        (4.366, 0.3259, 0.601, 1.1573),
-        (2.037, 0.3797, 0.730, 1.1805),
-        (0.986, 0.4316, 0.821, 1.2025),
+        (4.366, 0.3259, 0.601, 1.1668),
+        (2.037, 0.3797, 0.730, 1.1914),
+        (0.986, 0.4316, 0.821, 1.2146),
     ],
 }
 
@@ -83,14 +83,16 @@ P2_SPEC = {
     "normal": (114.9, 816.6, 67.05, None, None, 642.6, "OPAQUE"),
     "arm_i_vapour": (75.8, 789.6, 42.74, 0.1827, None, 396.2, "OPAQUE"),
     "arm_i_water": (84.0, 800.7, 48.05, 0.1861, None, 453.5, "OPAQUE"),
-    "arm_ii_vapour": (108.3, None, 42.74, 0.1827, None, 57.1, "FREEZE"),
-    "arm_ii_water": (115.6, None, 48.05, 0.1861, None, 86.0, "FREEZE"),
+    "arm_ii_vapour": (102.3, None, 42.74, 0.1827, None, 78.4, "FREEZE"),
+    "arm_ii_water": (109.8, 612.9, 48.05, 0.1861, 273.19, 111.6, "OPAQUE"),
 }
 
-# §6 arm (ii) FREEZE rows print the freezing wall and its shell temperature.
+# §6 arm (ii) FREEZE walls (round 6, conserving balance): t, tau_sw, R_slab_sw, T_shell.
+# The water row prints only the FREEZE wall's t (it binds OPAQUE); its R_slab_sw is the
+# 0.0628 every water wall carries and T_shell 261.09 K as printed; tau_sw unprinted.
 P2_ARM_II_FREEZE_SPEC = {
-    "arm_ii_vapour": (24.9, 0.2084, 0.071, 260.52),
-    "arm_ii_water": (37.5, 0.1979, 0.0628, 261.09),
+    "arm_ii_vapour": (34.2, 0.1930, 0.0703, 260.57),
+    "arm_ii_water": (48.7, None, 0.0628, 261.09),
 }
 
 P2_FLOOR_ARM_SPEC = {0.50: 10.6, 0.10: 777.5}
@@ -209,7 +211,8 @@ def test_p2_arm_ii_freeze_wall(q4, law):
     _, t, tau, _, _, t_shell = q4.p2_state(r_fr, tau_fn, fph_fn, rs_fn)
     t_spec, tau_spec, rsl_spec, tshell_spec = P2_ARM_II_FREEZE_SPEC[law]
     assert _matches(t, t_spec), f"{law}: t {t:.1f} vs {t_spec}"
-    assert _matches(tau, tau_spec), f"{law}: tau_sw {tau:.4f} vs {tau_spec}"
+    if tau_spec is not None:
+        assert _matches(tau, tau_spec), f"{law}: tau_sw {tau:.4f} vs {tau_spec}"
     assert _matches(rs_fn(t), rsl_spec), (
         f"{law}: R_slab_sw {rs_fn(t):.4f} vs {rsl_spec}"
     )
@@ -392,12 +395,12 @@ FORBIDDEN_LITERALS = {
     0.4316,
     0.821,
     1.2421,
-    1.1430,
-    1.1637,
-    1.1831,
-    1.1573,
-    1.1805,
-    1.2025,
+    1.1540,
+    1.1766,
+    1.1980,
+    1.1668,
+    1.1914,
+    1.2146,
     0.0752,
     0.0776,
     0.0799,
@@ -434,17 +437,18 @@ FORBIDDEN_LITERALS = {
     84.0,
     453.5,
     198.0,
-    24.9,
-    0.2084,
-    0.071,
-    260.52,
-    57.1,
-    108.3,
-    37.5,
-    0.1979,
+    34.2,
+    0.1930,
+    0.0703,
+    260.57,
+    78.4,
+    102.3,
+    612.9,
+    273.19,
     261.09,
-    86.0,
-    115.6,
+    48.7,
+    109.8,
+    111.6,
     # §4 census and reference state
     52816.0,
     394.0,
@@ -577,3 +581,45 @@ def test_reproduce_hand_rows(q4):
     for law in REF_STATE_SPEC:
         test_section4_reference_state(q4, law)
     test_section4_starve_floor(q4)
+
+
+# ---------------------------------------------------------------------------
+# The smell test covers the prereg: every result the prereg freezes is forbidden.
+# ---------------------------------------------------------------------------
+PREREG = ROOT / "experiments" / "q4_vessel" / "prereg.yaml"
+PREREG_RESULT_SECTIONS = ("registered_rows", "control", "variants", "fresnel_arm")
+
+
+def _prereg_results(prereg):
+    """Every float the prereg records as a RESULT (inputs like n_interior excluded)."""
+    out = set()
+
+    def walk(x, key=None):
+        if isinstance(x, dict):
+            for k, v in x.items():
+                walk(v, k)
+        elif isinstance(x, list):
+            for v in x:
+                walk(v, key)
+        elif isinstance(x, float) and key not in ("n_interior",):
+            out.add(x)
+
+    for sec in PREREG_RESULT_SECTIONS:
+        walk(prereg[sec])
+    return out
+
+
+def _uncovered(prereg):
+    return sorted(_prereg_results(prereg) - FORBIDDEN_LITERALS)
+
+
+def test_smell_test_covers_the_prereg():
+    import yaml
+
+    prereg = yaml.safe_load(PREREG.read_text())
+    assert _prereg_results(prereg), "parsed no results from the prereg"
+    missing = _uncovered(prereg)
+    assert not missing, f"prereg results the smell test does not forbid: {missing}"
+    # negative control: a prereg result outside the forbidden set must be reported
+    prereg["fresnel_arm"][2]["edge_au"][0] = 1.1430
+    assert _uncovered(prereg) == [1.143], "coverage check cannot see a new result"
