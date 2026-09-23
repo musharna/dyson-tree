@@ -1,0 +1,175 @@
+# Q4 pre-registration: the vessel, and watching it fail.
+# Written by hand from the spec; no code that computes rows wrote any line of it.
+# Committed ALONE, one commit before tools/q4_hand_rows.py (spec §6, §8).
+spec:
+  path: docs/superpowers/specs/2026-09-12-northstar-design.md
+  commit: a0401ff # "docs(northstar): revise after round-6 audit"
+  sections: "§3 registry, §4 load order, §6 bands, grids, edge rule, rows"
+
+spectral_table:
+  path: sim/spectral_table.csv
+  rows: 2002
+  lambda_nm: [280, 4000]
+  quadrature: trapezoid
+  data_sha256: 2cfea122d9f6f8aae04b3cc53221d67f6d010f94ead1ff39a81a78f4398da0b8
+  sources:
+    ASTMG173.csv:
+      {
+        md5: b31870bd3500b58414100af7e4b0e04c,
+        bytes: 57708,
+        pvlib_commit: 2d0ed71e1308293b3081979404f8e90f2f2dde1e,
+      }
+    iop2008.dat: { md5: cf5f76d58a31aa5f994fa038c390a856, bytes: 16514 }
+
+predictions:
+  P1:
+    axis: r
+    fixed: { R_km: 10, dust: none, albedo: 0, organism: algal }
+    sigma_MPa: [0.7, 1.5, 3.1]
+    band_au: [1.19, 1.27]
+    band: "r_close(10 km, sigma) in [1.19, 1.27] AU for every sigma"
+    binding: FREEZE
+  P2:
+    axis: R
+    fixed: { r_au: 1.10, sigma_MPa: 0.7, dust: none, f_floor: 0.25 }
+    band_km: [60, 300]
+    band: "R_window in [60, 300] km"
+    binding: OPAQUE
+
+grids:
+  r_au: { start: 1.04, stop: 3.00, step: 0.01, nodes: 197 }
+  sigma_MPa: [0.7, 1.5, 3.1]
+  R_m: { start: 10, stop: 1.0e+6, per_decade: 20, spacing: log, nodes: 101 }
+
+load_order: [BURST, FREEZE, BOIL, STARVE, OPAQUE]
+binding_lines: [FREEZE, OPAQUE]
+asserted_not_tested: [BURST, BOIL] # auto path; a violation is a runner error, exit 2
+monitored: [STARVE]
+
+edge_rule:
+  root_of: binding line's margin
+  bracket: last all-HOLD node, first any-VIOLATED node
+  candidates: registered lines that HOLD at the lower node and VIOLATE at the upper node
+  refine: bisection
+  edge: smallest candidate root; binding = that root's line
+  tie: roots within one tolerance -> load order decides, both printed
+  later_roots: printed as counterfactual, never the edge
+  empty: no node holds -> R_window = 0
+  grid_nodes: display and bracket only, never the reported edge
+
+tolerances:
+  edge_r_au: 1.0e-4
+  edge_R_rel: 1.0e-3
+  burst_boil_rel: 1.0e-6
+  freeze_K: 1.0e-6
+  starve_opaque_abs: 1.0e-9
+  fixed_point_dp_Pa: 1.0e-6
+  gate_C_triple_point_Pa: 0.01
+  gate_C_regression_Pa: 0.5
+
+gates:
+  A: "T_eq(1 AU, sphere) in [275, 282] K"
+  C: "saturation_pressure(273.16 K) = 611.657 Pa within 0.01 Pa; 882 Pa at 5.16 C within 0.5 Pa (regression)"
+
+registry:
+  t_opt_K: 298.15
+  omega_K: 20
+  albedo: 0
+  emissivity: 1
+  f_floor: 0.25
+  n: 1.31
+  interior: mixed
+  shell_temperature: isothermal
+  dust: none
+  T_freeze_K: 273.15
+  optical_law: shell
+  n_interior: { arm_only: true, vapour: 1.000, water: 1.333, default: vapour }
+  thermal_reflectance: { arm_only: true, registered: "0", arm: slab }
+  solar_tail_transmission: band_weighted_tau_sw
+
+control:
+  optical_law: normal
+  P1_edge_au: [1.2111, 1.2365, 1.2605]
+  P2: { R_km: 114.9, binding: OPAQUE, FREEZE_km: 642.6 }
+
+variants:
+  interior_central: { P2_R_km: 119.3 }
+  P2_f_floor_arms:
+    "0.50": { OPAQUE_km: 10.6 }
+    "0.10": { OPAQUE_km: 777.5, R_window_km: 532.6, binding: FREEZE }
+
+registered_rows:
+  P1_edge_au: [1.2049, 1.2303, 1.2543]
+  P2: { R_km: 95.6, binding: OPAQUE, FREEZE_km: 532.6 }
+
+# Fresnel arm: optical_law shell+fresnel; n_interior x thermal_reflectance.
+# (ii) slab: T_shell^4 = (1 - R_slab_sw) T_eq^4, T_int^4 = (1 - R_slab_sw + T_sw) T_eq^4.
+fresnel_arm:
+  - {
+      optical_law: shell+fresnel,
+      n_interior: 1.000,
+      thermal_reflectance: "0",
+      prediction: P1,
+      edge_au: [1.1886, 1.2116, 1.2334],
+      binding: FREEZE,
+    }
+  - {
+      optical_law: shell+fresnel,
+      n_interior: 1.333,
+      thermal_reflectance: "0",
+      prediction: P1,
+      edge_au: [1.1954, 1.2194, 1.2421],
+      binding: FREEZE,
+    }
+  - {
+      optical_law: shell+fresnel,
+      n_interior: 1.000,
+      thermal_reflectance: slab,
+      prediction: P1,
+      edge_au: [1.1540, 1.1766, 1.1980],
+      binding: FREEZE,
+    }
+  - {
+      optical_law: shell+fresnel,
+      n_interior: 1.333,
+      thermal_reflectance: slab,
+      prediction: P1,
+      edge_au: [1.1668, 1.1914, 1.2146],
+      binding: FREEZE,
+    }
+  - {
+      optical_law: shell+fresnel,
+      n_interior: 1.000,
+      thermal_reflectance: "0",
+      prediction: P2,
+      R_window_km: 75.8,
+      binding: OPAQUE,
+      other_km: 396.2,
+    }
+  - {
+      optical_law: shell+fresnel,
+      n_interior: 1.333,
+      thermal_reflectance: "0",
+      prediction: P2,
+      R_window_km: 84.0,
+      binding: OPAQUE,
+      other_km: 453.5,
+    }
+  - {
+      optical_law: shell+fresnel,
+      n_interior: 1.000,
+      thermal_reflectance: slab,
+      prediction: P2,
+      R_window_km: 78.4,
+      binding: FREEZE,
+      other_km: 102.3,
+    }
+  - {
+      optical_law: shell+fresnel,
+      n_interior: 1.333,
+      thermal_reflectance: slab,
+      prediction: P2,
+      R_window_km: 109.8,
+      binding: OPAQUE,
+      other_km: 111.6,
+    }
