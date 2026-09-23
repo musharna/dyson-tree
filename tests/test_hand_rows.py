@@ -512,13 +512,8 @@ def test_imports_nothing_from_sim_vessel():
                 assert "vessel" not in a.name, f"imports {a.name}"
         elif isinstance(node, ast.ImportFrom):
             assert "vessel" not in (node.module or ""), f"imports from {node.module}"
-    # M1a's version of this guard is bidirectional and walks both import closures,
-    # with a negative case per direction; it cannot be written until sim/vessel.py
-    # exists. What is testable today is the half that does: this file's own imports,
-    # plus the fact that the module it must not read is not yet in the tree.
-    assert not (ROOT / "sim" / "vessel.py").exists(), (
-        "sim/vessel.py now exists -- replace this with M1a's bidirectional AST guard"
-    )
+    # M1a's bidirectional guard (both import closures, file reads, band strings, a
+    # negative case per direction) is tests/test_vessel.py::test_import_guard_*.
     planted = ast.parse(src + "\nfrom sim.vessel import wall_thickness\n")
     caught = [
         n.module

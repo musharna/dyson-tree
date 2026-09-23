@@ -1,11 +1,11 @@
 # derived_by=tools/derive_q1_reachability.py
-# git_sha=2e836f72ab445e44a257a087e76653b13739de99
+# git_sha=e1a1d53ea9d7901ae430b320ec3144a092ca9078
 # source=experiments/q1_crossover/prereg.yaml md5=58583216a0b7901bc9c9f0971ccee866
-# source=experiments/q1_crossover/crossover.csv md5=0289ebc7525ecb7c1bf79361297153de
+# source=experiments/q1_crossover/crossover.csv md5=19e19fafe6d435ca5c292fbbf064b584
 # python=3.13.2
 # numpy=2.3.5
 # scipy=1.16.3
-# written=2026-09-11T04:09:52-04:00
+# written=2026-09-22T22:28:42-04:00
 class,k,gate_ic_lo,gate_ic_hi,r_d_lo,r_d_hi,r_star_floor_au,r_star_ceiling_au,band_lo_au,band_hi_au,share_pct,share_of
 vascular,100,5.3,9,0.503324,0.825688,11.043318,14.6804,12,22,66.4143,inside
 algal,20,0,1,0.000000,0.476190,43.654467,,35,55,43.2723,unreachable

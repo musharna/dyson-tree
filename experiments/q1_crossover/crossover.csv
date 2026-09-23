@@ -1,11 +1,11 @@
-# git_sha=2e836f72ab445e44a257a087e76653b13739de99
+# git_sha=e1a1d53ea9d7901ae430b320ec3144a092ca9078
 # physiology_md5=af16830e7f15c5cf9848c8eb694e99c8
-# organism_md5=8882eac48ee3e4932e643650e75e0732
+# organism_md5=a5425fa33a97b64be9793a2788778abc
 # prereg_md5=58583216a0b7901bc9c9f0971ccee866
 # python=3.13.2
 # numpy=2.3.5
 # scipy=1.16.3
-# written=2026-09-11T04:09:49-04:00
+# written=2026-09-22T22:23:45-04:00
 class,k,r_star_au,pred_lo,pred_hi,inside
 vascular,50.0,17.9688,12.0,22.0,True
 vascular,100.0,12.7058,12.0,22.0,True
