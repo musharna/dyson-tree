@@ -12,6 +12,9 @@
 // loads from `file://` and from an http subpath alike. Node gets the same file
 // through `module.exports` at the bottom; the browser gets `window.DysonModel`.
 //
+// The vessel (sim/vessel.py, northstar M1b) is ported whole below; it needs
+// web/spectral_table.js loaded first in the page.
+//
 // Deliberately NOT ported: Organism.net_carbon_adapted (sim/organism.py:102-123).
 // It is Q2b's runner path and nothing on the page displays it; porting code the
 // page never calls would add an untested surface.
@@ -237,6 +240,785 @@ const ALGAL = makeOrganism({
 });
 const PRESETS = { vascular: VASCULAR, algal: ALGAL };
 
+// ======================================================================
+// THE VESSEL: port of sim/vessel.py (northstar design §3-§6, M1b).
+// One sphere, one ice wall, one organism inside. Units: pressure Pa; lengths m;
+// distance AU; temperature K; photon flux µmol m-2 s-1.
+//
+// The spectral table (sim/spectral_table.csv) arrives as web/spectral_table.js, a
+// classic script carrying the CSV's data rows verbatim, loaded BEFORE this file in
+// the page (window.DysonSpectralTable) and through require() under node. It is a
+// script, not a fetch, because the page must work from file://. The vessel tables
+// are built lazily on first use, so the carbon-budget page pays nothing for them.
+//
+// The three arm inputs are the registry's own keys: optical_law, n_interior,
+// thermal_reflectance (sim/vessel.py VesselInputs; experiments/q4_vessel/prereg.yaml).
+// ======================================================================
+
+// ---- sim/vessel.py:38-68 (declared constants) ----
+const N_ICE = 1.31;
+const N_INTERIOR = Object.freeze({ vapour: 1.0, water: 1.333 });
+const SPHERE_AREA_RATIO = 4.0;
+const T_ICE_MELT_K = 273.15;
+const PAR_NM = Object.freeze([400.0, 700.0]);
+const THIN_WALL_LIMIT = 0.1;
+const EPS_BURST_BOIL_REL = 1e-6;
+const EPS_FREEZE_K = 1e-6;
+const EPS_STARVE_OPAQUE = 1e-9;
+const FIXED_POINT_DP_PA = 1e-6;
+const FIXED_POINT_MAX_ITER = 1000;
+const EDGE_TOL_R_AU = 1e-4;
+const EDGE_TOL_R_REL = 1e-3;
+const LOAD_ORDER = Object.freeze([
+  "BURST",
+  "FREEZE",
+  "BOIL",
+  "STARVE",
+  "OPAQUE",
+]);
+const BINDING_LINES = Object.freeze(["FREEZE", "OPAQUE"]);
+const WINDOW_LINES = Object.freeze(["FREEZE", "STARVE", "OPAQUE"]);
+const OPTICAL_LAWS = Object.freeze(["shell", "normal", "shell+fresnel"]);
+const THERMAL_REFLECTANCES = Object.freeze(["0", "slab"]);
+const N_MU = 4001;
+const N_KT = 2401;
+
+// numpy.linspace(start, stop, n): start + i*step, last pinned to stop.
+function linspace(start, stop, n) {
+  const step = (stop - start) / (n - 1);
+  const out = new Float64Array(n);
+  for (let i = 0; i < n; i += 1) out[i] = start + i * step;
+  out[n - 1] = stop;
+  return out;
+}
+
+// ---- sim/vessel.py:71-79 ----
+class RunnerError extends Error {
+  constructor(msg) {
+    super(msg);
+    this.name = "RunnerError";
+    this.exit_code = 2;
+  }
+}
+class ConvergenceError extends Error {
+  constructor(msg) {
+    super(msg);
+    this.name = "ConvergenceError";
+  }
+}
+
+// ---- sim/vessel.py:82-111 (§10 same object) ----
+const GROUNDED_INPUTS = Object.freeze({
+  sigma_ice: Object.freeze({
+    id: "sigma_ice",
+    material: "ice",
+    quantity: "tensile strength",
+  }),
+  k_ice: Object.freeze({
+    id: "k_ice",
+    material: "ice",
+    quantity: "absorption coefficient",
+  }),
+  sigma_wood: Object.freeze({
+    id: "sigma_wood",
+    material: "wood",
+    quantity: "modulus of rupture",
+  }),
+});
+function assertSameObject(...ids) {
+  const mats = new Set(ids.map((i) => GROUNDED_INPUTS[i].material));
+  if (mats.size !== 1)
+    throw new RangeError(
+      `grounded inputs ${JSON.stringify(ids)} describe different objects: ${JSON.stringify([...mats].sort())}`,
+    );
+  return [...mats][0];
+}
+const WALL_INPUTS = Object.freeze(["sigma_ice", "k_ice"]);
+const WALL_MATERIAL = assertSameObject(...WALL_INPUTS);
+
+// ---- sim/vessel.py:114-140 (the table), lazily ----
+function trapezoid(y, x) {
+  let s = 0.0;
+  for (let i = 0; i + 1 < x.length; i += 1)
+    s += ((x[i + 1] - x[i]) * (y[i + 1] + y[i])) / 2.0;
+  return s;
+}
+
+// numpy.interp on an increasing xp: linear, clamped to the end values.
+function interp(x, xp, fp) {
+  const n = xp.length;
+  if (x <= xp[0]) return fp[0];
+  if (x >= xp[n - 1]) return fp[n - 1];
+  let lo = 0;
+  let hi = n - 1;
+  while (hi - lo > 1) {
+    const mid = (lo + hi) >> 1;
+    if (xp[mid] <= x) lo = mid;
+    else hi = mid;
+  }
+  const slope = (fp[lo + 1] - fp[lo]) / (xp[lo + 1] - xp[lo]);
+  return fp[lo] + (x - xp[lo]) * slope;
+}
+
+let _table = null;
+function spectralTable() {
+  if (_table) return _table;
+  let src = root.DysonSpectralTable;
+  if (
+    !src &&
+    typeof module !== "undefined" &&
+    module.exports &&
+    typeof require === "function"
+  )
+    src = require("./spectral_table.js");
+  if (!src)
+    throw new Error(
+      "spectral table not loaded: include spectral_table.js before model.js",
+    );
+  const lines = src.csv.split("\n").filter((ln) => ln.length > 0);
+  const head = lines[0].split(",");
+  const want = ["lambda_nm", "k_per_m", "E_AM0", "n_ph"];
+  if (head.join(",") !== want.join(","))
+    throw new Error(`spectral table columns ${head} != ${want}`);
+  const rows = lines.slice(1);
+  if (rows.length !== 2002)
+    throw new Error(`spectral table: expected 2002 rows, got ${rows.length}`);
+  const cols = want.map(() => new Float64Array(rows.length));
+  rows.forEach((ln, i) => {
+    const f = ln.split(",");
+    for (let j = 0; j < 4; j += 1) cols[j][i] = parseFloat(f[j]);
+  });
+  const [lam, k, e, nph] = cols;
+  const par = [];
+  for (let i = 0; i < lam.length; i += 1)
+    if (lam[i] >= PAR_NM[0] && lam[i] <= PAR_NM[1]) par.push(i);
+  const parLam = Float64Array.from(par, (i) => lam[i]);
+  const parK = Float64Array.from(par, (i) => k[i]);
+  const parN = Float64Array.from(par, (i) => nph[i]);
+  _table = {
+    data_sha256: src.data_sha256,
+    LAMBDA_NM: lam,
+    K_PER_M: k,
+    E_AM0: e,
+    N_PH: nph,
+    parLam,
+    parK,
+    parN,
+    E_TOT: trapezoid(e, lam),
+    NPH_TOT: trapezoid(parN, parLam),
+  };
+  return _table;
+}
+
+// ---- sim/vessel.py:143-157 (mechanics) ----
+function wallThickness(p, R, sigma) {
+  if (!(sigma > 0))
+    throw new RangeError(
+      `sigma must be > 0 (a molten wall has no t_min), got ${sigma}`,
+    );
+  if (!(p >= 0) || !(R > 0))
+    throw new RangeError(`need p >= 0 and R > 0, got p=${p}, R=${R}`);
+  return (p * R) / (2.0 * sigma);
+}
+function hoopStress(p, R, t) {
+  if (!(t > 0) || !(R > 0))
+    throw new RangeError(`need t > 0 and R > 0, got t=${t}, R=${R}`);
+  return (p * R) / (2.0 * t);
+}
+
+// ---- sim/vessel.py:160-230 (optics: the tabulated laws) ----
+let _quad = null;
+function quad() {
+  if (_quad) return _quad;
+  const muAll = linspace(0.0, 1.0, N_MU);
+  const mu = muAll.slice(1);
+  const mup = mu.map((m) => Math.sqrt(1.0 - (1.0 - m * m) / (N_ICE * N_ICE)));
+  const logKt = linspace(-8.0, 4.0, N_KT);
+  const kt = logKt.map((v) => Math.pow(10.0, v));
+  kt[0] = 1e-8;
+  kt[N_KT - 1] = 1e4;
+  _quad = { mu, mup, kt, logKt: kt.map(Math.log) };
+  return _quad;
+}
+
+function fresnel(mu, n1, n2) {
+  const arg = 1.0 - (n1 / n2) ** 2 * (1.0 - mu * mu);
+  if (arg <= 0) return 1.0;
+  const mu2 = Math.sqrt(arg);
+  const rs = (n1 * mu - n2 * mu2) / (n1 * mu + n2 * mu2);
+  const rp = (n2 * mu - n1 * mu2) / (n2 * mu + n1 * mu2);
+  return 0.5 * (rs * rs + rp * rp);
+}
+
+function checkNInterior(n) {
+  if (!Object.values(N_INTERIOR).some((v) => Math.abs(n - v) <= 1e-12))
+    throw new RangeError(`n_interior must be one of [1, 1.333], got ${n}`);
+  return Number(n);
+}
+function checkLaw(law) {
+  if (!OPTICAL_LAWS.includes(law))
+    throw new RangeError(
+      `optical_law must be one of ${OPTICAL_LAWS.join(", ")}, got ${law}`,
+    );
+  return law;
+}
+function checkThermal(tr) {
+  if (!THERMAL_REFLECTANCES.includes(tr))
+    throw new RangeError(
+      `thermal_reflectance must be one of "0", "slab", got ${tr}`,
+    );
+  return tr;
+}
+
+const _faceCache = new Map();
+function faces(nInt) {
+  if (!_faceCache.has(nInt)) {
+    const { mu, mup } = quad();
+    _faceCache.set(nInt, {
+      r1: mu.map((m) => fresnel(m, 1.0, N_ICE)),
+      r2: mup.map((m) => fresnel(m, N_ICE, nInt)),
+    });
+  }
+  return _faceCache.get(nInt);
+}
+
+// One pass over the (k·t, μ) grid builds every law table for an n_interior.
+const _lawCache = new Map();
+function lawTable(law, nInt) {
+  const key = law === "shell" ? -1 : nInt; // only shell and shell+fresnel are tabulated
+  if (_lawCache.has(key)) return _lawCache.get(key);
+  const { mu, mup, kt } = quad();
+  const f = law === "shell" ? null : faces(nInt);
+  const nMu = mu.length;
+  const vals = new Float64Array(kt.length);
+  const slab = f ? new Float64Array(kt.length) : null;
+  const y = new Float64Array(nMu);
+  const ys = new Float64Array(nMu);
+  for (let a = 0; a < kt.length; a += 1) {
+    for (let b = 0; b < nMu; b += 1) {
+      const e = Math.exp(-kt[a] / mup[b]);
+      if (!f) {
+        y[b] = 2 * mu[b] * e;
+      } else {
+        const r1 = f.r1[b];
+        const r2 = f.r2[b];
+        const e2 = e * e;
+        const den = 1 - r1 * r2 * e2;
+        y[b] = (2 * mu[b] * (1 - r1) * (1 - r2) * e) / den;
+        ys[b] = 2 * mu[b] * (r1 + ((1 - r1) ** 2 * r2 * e2) / den);
+      }
+    }
+    vals[a] = trapezoid(y, mu);
+    if (slab) slab[a] = trapezoid(ys, mu);
+  }
+  const logVals = vals.map((v) => Math.log(Math.max(v, 1e-300)));
+  const entry = { vals, logVals, atZero: f ? vals[0] : 1.0, slab };
+  _lawCache.set(key, entry);
+  return entry;
+}
+
+// ---- sim/vessel.py:233-255. `transmitter` resolves the law once and returns
+// k·t -> T, so a spectrum does not re-resolve it on every row. ----
+function transmitter(optical_law, n_interior) {
+  checkLaw(optical_law);
+  if (optical_law === "normal") return (kt) => Math.exp(-kt);
+  const tab = lawTable(optical_law, checkNInterior(n_interior));
+  const q = quad();
+  const lo = q.kt[0];
+  const hi = q.kt[q.kt.length - 1];
+  return (kt) => {
+    if (kt < lo) return tab.atZero;
+    if (kt > hi) return 0.0;
+    return Math.exp(interp(Math.log(kt), q.logKt, tab.logVals));
+  };
+}
+function shellTransmission(kt, optical_law = "shell", n_interior = 1.0) {
+  const tr = transmitter(optical_law, n_interior);
+  if (!(kt >= 0)) throw new RangeError(`k·t must be >= 0, got ${kt}`);
+  return tr(kt);
+}
+
+// ---- sim/vessel.py:258-270. Direct quadrature, not the table. ----
+function slabReflectance(kt, n_interior = 1.0) {
+  if (!(kt >= 0)) throw new RangeError(`k·t must be >= 0, got ${kt}`);
+  const { r1, r2 } = faces(checkNInterior(n_interior));
+  const { mu, mup } = quad();
+  const y = new Float64Array(mu.length);
+  for (let b = 0; b < mu.length; b += 1) {
+    const e2 = Math.exp((-2.0 * kt) / mup[b]);
+    y[b] =
+      2 *
+      mu[b] *
+      (r1[b] + ((1 - r1[b]) ** 2 * r2[b] * e2) / (1 - r1[b] * r2[b] * e2));
+  }
+  return trapezoid(y, mu);
+}
+
+// ---- sim/vessel.py:282-290 ----
+function solarSlabReflectance(t, n_interior = 1.0) {
+  const tab = lawTable("shell+fresnel", checkNInterior(n_interior));
+  const T = spectralTable();
+  const q = quad();
+  const lo = q.kt[0];
+  const hi = q.kt[q.kt.length - 1];
+  const y = new Float64Array(T.LAMBDA_NM.length);
+  for (let i = 0; i < y.length; i += 1) {
+    const kt = Math.min(Math.max(T.K_PER_M[i] * t, lo), hi);
+    y[i] = interp(Math.log(kt), q.logKt, tab.slab) * T.E_AM0[i];
+  }
+  return trapezoid(y, T.LAMBDA_NM) / T.E_TOT;
+}
+
+// ---- sim/vessel.py:293-300 ----
+function transmissionSpectrum(
+  t,
+  { k = null, optical_law = "shell", n_interior = 1.0 } = {},
+) {
+  if (!(t >= 0)) throw new RangeError(`t must be >= 0, got ${t}`);
+  const kk = k === null ? spectralTable().K_PER_M : k;
+  const tr = transmitter(optical_law, n_interior);
+  const out = new Float64Array(kk.length);
+  for (let i = 0; i < kk.length; i += 1) {
+    const kt = kk[i] * t;
+    if (!(kt >= 0)) throw new RangeError(`k·t must be >= 0, got ${kt}`);
+    out[i] = tr(kt);
+  }
+  return out;
+}
+
+// ---- sim/vessel.py:303-318 ----
+function solarTransmission(
+  t,
+  { optical_law = "shell", n_interior = 1.0, scalar_k = null } = {},
+) {
+  if (scalar_k !== null && scalar_k !== undefined)
+    return Math.exp(-scalar_k * t);
+  const T = spectralTable();
+  const tau = transmissionSpectrum(t, { optical_law, n_interior });
+  for (let i = 0; i < tau.length; i += 1) tau[i] *= T.E_AM0[i];
+  return trapezoid(tau, T.LAMBDA_NM) / T.E_TOT;
+}
+
+// ---- sim/vessel.py:321-344 ----
+function parPhotonFraction(
+  t,
+  { optical_law = "shell", n_interior = 1.0, interior = "mixed" } = {},
+) {
+  let law = optical_law;
+  if (interior === "central") {
+    if (law !== "shell")
+      throw new RangeError(
+        "interior 'central' is defined under the shell law only",
+      );
+    law = "normal";
+  } else if (interior !== "mixed") {
+    throw new RangeError(
+      `interior must be 'mixed' or 'central', got ${interior}`,
+    );
+  }
+  const T = spectralTable();
+  const tau = transmissionSpectrum(t, {
+    k: T.parK,
+    optical_law: law,
+    n_interior,
+  });
+  for (let i = 0; i < tau.length; i += 1) tau[i] *= T.parN[i];
+  return trapezoid(tau, T.parLam) / T.NPH_TOT;
+}
+
+// ---- sim/vessel.py:348-352. Buck (1981) over liquid water. ----
+function saturationPressure(tK) {
+  const tc = tK - 273.15;
+  return 611.21 * Math.exp((18.678 - tc / 234.5) * (tc / (257.14 + tc)));
+}
+
+// ---- sim/vessel.py:364-391. Returns [T_int, T_shell]. ----
+function containedTemperature(
+  rAu,
+  t,
+  {
+    optical_law = "shell",
+    n_interior = 1.0,
+    thermal_reflectance = "0",
+    albedo = 0.0,
+    emissivity = 1.0,
+    scalar_k = null,
+  } = {},
+) {
+  checkThermal(thermal_reflectance);
+  const tEq = equilibriumTemperature(
+    rAu,
+    SPHERE_AREA_RATIO,
+    emissivity,
+    albedo,
+  );
+  const tau = solarTransmission(t, { optical_law, n_interior, scalar_k });
+  let rs = 0.0;
+  if (thermal_reflectance === "slab") {
+    if (optical_law !== "shell+fresnel")
+      throw new RangeError(
+        "thermal_reflectance 'slab' needs optical_law 'shell+fresnel'",
+      );
+    rs = solarSlabReflectance(t, n_interior);
+  }
+  return [(1.0 - rs + tau) ** 0.25 * tEq, (1.0 - rs) ** 0.25 * tEq];
+}
+
+// ---- sim/vessel.py:394-436. Damped 50/50 fixed point. Convergence is
+// |Δp| < min(tol, 1e-9·p): 1e-6 Pa alone is looser than BOIL's 1e-6·p below ~1 Pa. ----
+function selfConsistentPressure(
+  rAu,
+  R,
+  sigma,
+  {
+    optical_law = "shell",
+    n_interior = 1.0,
+    thermal_reflectance = "0",
+    albedo = 0.0,
+    emissivity = 1.0,
+    scalar_k = null,
+    p0 = null,
+    tol = FIXED_POINT_DP_PA,
+    max_iter = FIXED_POINT_MAX_ITER,
+  } = {},
+) {
+  let p =
+    p0 === null || p0 === undefined ? 2.0 * saturationPressure(273.15) : p0;
+  let pNew = NaN;
+  const th = {
+    optical_law,
+    n_interior,
+    thermal_reflectance,
+    albedo,
+    emissivity,
+    scalar_k,
+  };
+  for (let i = 0; i < max_iter; i += 1) {
+    const t = wallThickness(p, R, sigma);
+    const [tInt] = containedTemperature(rAu, t, th);
+    pNew = saturationPressure(tInt);
+    if (Math.abs(pNew - p) < Math.min(tol, 1e-9 * pNew)) return pNew;
+    p = 0.5 * (p + pNew);
+  }
+  throw new ConvergenceError(
+    `p* did not converge in ${max_iter} passes at r=${rAu} AU, R=${R} m, sigma=${sigma} Pa, law=${optical_law}: last p=${p}, |dp|=${Math.abs(pNew - p)}`,
+  );
+}
+
+// ---- sim/vessel.py:439-441. The roadmap's closed form, a CONTROL (§3), in m. ----
+function closedFormRMax(sigma, p, k, tauMin) {
+  return (2.0 * sigma * Math.abs(Math.log(tauMin))) / (k * p);
+}
+
+// ---- sim/vessel.py:445-497. The §3 registry, by the registry's key names. ----
+const VESSEL_DEFAULTS = Object.freeze({
+  t_opt_K: 298.15,
+  omega_K: 20.0,
+  albedo: 0.0,
+  emissivity: 1.0,
+  f_floor: 0.25,
+  n: N_ICE,
+  interior: "mixed",
+  shell_temperature: "isothermal",
+  dust: "none",
+  T_freeze_K: 273.15,
+  optical_law: "shell",
+  n_interior: N_INTERIOR.vapour,
+  thermal_reflectance: "0",
+  solar_tail_transmission: "band_weighted_tau_sw",
+});
+
+function makeVesselInputs(fields = {}) {
+  if (fields && fields.__vesselInputs) return fields;
+  for (const key of Object.keys(fields))
+    if (!(key in VESSEL_DEFAULTS))
+      throw new RangeError(`unknown vessel input ${key}`);
+  const v = { ...VESSEL_DEFAULTS, ...fields };
+  checkLaw(v.optical_law);
+  v.n_interior = checkNInterior(v.n_interior);
+  checkThermal(v.thermal_reflectance);
+  if (v.n !== N_ICE)
+    throw new RangeError(`n is fixed at ${N_ICE} (§3 registry), got ${v.n}`);
+  if (v.shell_temperature !== "isothermal")
+    throw new RangeError(
+      "shell_temperature is fixed 'isothermal' (§3 registry)",
+    );
+  if (v.solar_tail_transmission !== "band_weighted_tau_sw")
+    throw new RangeError("solar_tail_transmission is fixed (§3 registry)");
+  if (v.dust !== "none")
+    throw new RangeError(
+      `dust ${v.dust}: M1a implements the registered 'none' only`,
+    );
+  if (v.interior !== "mixed" && v.interior !== "central")
+    throw new RangeError(
+      `interior must be 'mixed' or 'central', got ${v.interior}`,
+    );
+  if (v.thermal_reflectance === "slab" && v.optical_law !== "shell+fresnel")
+    throw new RangeError(
+      "thermal_reflectance 'slab' needs optical_law 'shell+fresnel'",
+    );
+  Object.defineProperty(v, "__vesselInputs", { value: true });
+  return Object.freeze(v);
+}
+function optics(inp) {
+  return { optical_law: inp.optical_law, n_interior: inp.n_interior };
+}
+function thermal(inp) {
+  return {
+    ...optics(inp),
+    thermal_reflectance: inp.thermal_reflectance,
+    albedo: inp.albedo,
+    emissivity: inp.emissivity,
+  };
+}
+const REGISTERED = makeVesselInputs();
+
+// ---- sim/vessel.py:528-539. STARVE's left side. ----
+function netCarbonContained(org, rAu, tInt, fPhoton, inputs = REGISTERED) {
+  const inp = makeVesselInputs(inputs);
+  const iWall = (1.0 - inp.albedo) * irradiance(rAu) * fPhoton;
+  let gross = grossAssimilation(iWall, org.a_max, org.k);
+  gross *= temperatureResponseGaussian(tInt, inp.t_opt_K, inp.omega_K);
+  return gross - respiration(org.r_d, tInt) / org.leaf_mass_ratio;
+}
+
+// ---- sim/organism.py:126-138 (Organism.net_carbon_contained, at a wall t) ----
+function organismNetCarbonContained(org, rAu, t, inputs = REGISTERED) {
+  const inp = makeVesselInputs(inputs);
+  const [tInt] = containedTemperature(rAu, t, thermal(inp));
+  const f = parPhotonFraction(t, { ...optics(inp), interior: inp.interior });
+  return netCarbonContained(org, rAu, tInt, f, inp);
+}
+
+// ---- sim/vessel.py:542-583. The set of violated inequalities at a RESOLVED (p, t),
+// in load order. BURST reads σ_eff(T_shell) in every mode: 0 above 273.15 K. ----
+function classifyFailure(p, t, r, R, sigma, organism, inputs = REGISTERED) {
+  if (!organism)
+    throw new RangeError(
+      "classifyFailure needs an organism (e.g. DysonModel.ALGAL)",
+    );
+  const inp = makeVesselInputs(inputs);
+  const [tInt, tShell] = containedTemperature(r, t, thermal(inp));
+  const fPh = parPhotonFraction(t, { ...optics(inp), interior: inp.interior });
+  const sigmaEff = tShell > T_ICE_MELT_K ? 0.0 : sigma;
+  const hoop = hoopStress(p, R, t);
+  const pSat = saturationPressure(tInt);
+  const net = netCarbonContained(organism, r, tInt, fPh, inp);
+  const line = (name, lhs, rhs, margin, eps) =>
+    Object.freeze({ name, lhs, rhs, margin, violated: margin < -eps });
+  const lines = {
+    BURST: line(
+      "BURST",
+      hoop,
+      sigmaEff,
+      sigmaEff - hoop,
+      EPS_BURST_BOIL_REL * Math.max(sigmaEff, hoop),
+    ),
+    FREEZE: line(
+      "FREEZE",
+      tInt,
+      inp.T_freeze_K,
+      tInt - inp.T_freeze_K,
+      EPS_FREEZE_K,
+    ),
+    BOIL: line("BOIL", p, pSat, p - pSat, EPS_BURST_BOIL_REL * pSat),
+    STARVE: line("STARVE", net, 0.0, net, EPS_STARVE_OPAQUE),
+    OPAQUE: line(
+      "OPAQUE",
+      fPh,
+      inp.f_floor,
+      fPh - inp.f_floor,
+      EPS_STARVE_OPAQUE,
+    ),
+  };
+  const violated = LOAD_ORDER.filter((n) => lines[n].violated);
+  return Object.freeze({
+    lines: Object.freeze(lines),
+    violated: Object.freeze(violated),
+    first: violated.length ? violated[0] : null,
+    sigma_eff: sigmaEff,
+    T_int: tInt,
+    T_shell: tShell,
+    f_photon: fPh,
+    thin_wall_valid: t / R < THIN_WALL_LIMIT,
+  });
+}
+
+// ---- sim/vessel.py:586-605 ----
+function checkAutoPath(p, t, r, R, sigma, organism, inputs = REGISTERED) {
+  const rep = classifyFailure(p, t, r, R, sigma, organism, inputs);
+  let bad = ["BURST", "BOIL"].filter((n) => rep.lines[n].violated);
+  if (rep.sigma_eff === 0.0) bad = bad.filter((n) => n !== "BURST");
+  if (bad.length) {
+    const detail = bad
+      .map(
+        (n) =>
+          `${n}: ${rep.lines[n].lhs.toPrecision(6)} vs ${rep.lines[n].rhs.toPrecision(6)}`,
+      )
+      .join("; ");
+    throw new RunnerError(
+      `auto-path ${bad.join("/")} violated at r=${r} AU, R=${R} m, sigma=${sigma} Pa, p=${p.toPrecision(6)} Pa, t=${t.toPrecision(6)} m: ${detail}`,
+    );
+  }
+  return rep;
+}
+
+// ---- sim/vessel.py:608-616. The design: p = p*, t = t_min(p*); returns {p, t, report}. ----
+function autoState(r, R, sigma, organism, inputs = REGISTERED, p0 = null) {
+  const inp = makeVesselInputs(inputs);
+  const p = selfConsistentPressure(r, R, sigma, { ...thermal(inp), p0 });
+  const t = wallThickness(p, R, sigma);
+  return { p, t, report: checkAutoPath(p, t, r, R, sigma, organism, inp) };
+}
+
+// ---- sim/vessel.py:630-642 ----
+function bisect(fn, lo, hi, width) {
+  let fLo = fn(lo);
+  for (let i = 0; i < 200; i += 1) {
+    if (hi - lo <= width) break;
+    const mid = 0.5 * (lo + hi);
+    const fMid = fn(mid);
+    if (fMid >= 0 === fLo >= 0) {
+      lo = mid;
+      fLo = fMid;
+    } else {
+      hi = mid;
+    }
+  }
+  return 0.5 * (lo + hi);
+}
+
+// ---- sim/vessel.py:645-713. §6's edge rule; the tie rule: smallest candidate root
+// is the edge, load order decides only within tie_tol. ----
+function findEdge(
+  nodes,
+  margins,
+  {
+    window_lines = WINDOW_LINES,
+    binding_lines = BINDING_LINES,
+    eps = null,
+    tie_tol,
+    refine_width,
+  },
+) {
+  const ep = eps || {
+    FREEZE: EPS_FREEZE_K,
+    STARVE: EPS_STARVE_OPAQUE,
+    OPAQUE: EPS_STARVE_OPAQUE,
+  };
+  const cache = new Map();
+  const at = (i) => {
+    if (!cache.has(i)) cache.set(i, margins(nodes[i]));
+    return cache.get(i);
+  };
+  const viol = (m, ln) => m[ln] < -(ep[ln] || 0.0);
+  const root_ = (ln, lo, hi) =>
+    bisect((x) => margins(x)[ln], lo, hi, refine_width(lo, hi));
+  let firstBad = null;
+  for (let i = 0; i < nodes.length; i += 1) {
+    if (window_lines.some((ln) => viol(at(i), ln))) {
+      firstBad = i;
+      break;
+    }
+  }
+  if (firstBad === null)
+    throw new RangeError(
+      "no node violates: the window does not close on this grid",
+    );
+  if (firstBad === 0)
+    return {
+      edge: 0.0,
+      binding: null,
+      roots: {},
+      tie: false,
+      bracket: null,
+      counterfactual: {},
+    };
+  const lo = nodes[firstBad - 1];
+  const hi = nodes[firstBad];
+  const mLo = at(firstBad - 1);
+  const mHi = at(firstBad);
+  const cands = binding_lines.filter((ln) => !viol(mLo, ln) && viol(mHi, ln));
+  if (!cands.length) {
+    const others = window_lines.filter((ln) => viol(mHi, ln));
+    throw new Error(
+      `window closes at node ${hi} on ${others}, none of them a binding line: a finding`,
+    );
+  }
+  const roots = {};
+  for (const ln of cands) roots[ln] = root_(ln, lo, hi);
+  const smallest = Math.min(...Object.values(roots));
+  const tied = LOAD_ORDER.filter(
+    (ln) => ln in roots && tie_tol(roots[ln], smallest),
+  );
+  const binding = tied[0];
+  const counterfactual = {};
+  for (const ln of binding_lines) {
+    if (ln in roots) continue;
+    for (let j = firstBad; j < nodes.length; j += 1) {
+      if (viol(at(j), ln)) {
+        if (!viol(at(j - 1), ln))
+          counterfactual[ln] = root_(ln, nodes[j - 1], nodes[j]);
+        break;
+      }
+    }
+  }
+  return {
+    edge: roots[binding],
+    binding,
+    roots,
+    tie: tied.length > 1,
+    bracket: [lo, hi],
+    counterfactual,
+  };
+}
+
+// ---- sim/vessel.py:716-718 (registered grids) ----
+const GRID_R_AU = Object.freeze(
+  Array.from(
+    { length: 197 },
+    (_, i) => Math.round((1.04 + i * 0.01) * 100) / 100,
+  ),
+);
+const GRID_R_M = Object.freeze(
+  Array.from(linspace(1.0, 6.0, 101), (v) => Math.pow(10.0, v)),
+);
+const SIGMAS_PA = Object.freeze([0.7e6, 1.5e6, 3.1e6]);
+
+function windowMargins(fnState) {
+  return (x) => {
+    const rep = fnState(x);
+    const m = {};
+    for (const ln of WINDOW_LINES) m[ln] = rep.lines[ln].margin;
+    return m;
+  };
+}
+
+// ---- sim/vessel.py:730-740. Largest r with the window open at fixed R. ----
+function rClose(R, sigma, organism, inputs = REGISTERED, nodes = GRID_R_AU) {
+  const inp = makeVesselInputs(inputs);
+  return findEdge(
+    nodes,
+    windowMargins((r) => autoState(r, R, sigma, organism, inp).report),
+    {
+      tie_tol: (a, b) => Math.abs(a - b) <= EDGE_TOL_R_AU,
+      refine_width: () => EDGE_TOL_R_AU * 1e-4,
+    },
+  );
+}
+
+// ---- sim/vessel.py:743-753. Largest R with the window open at fixed r. ----
+function rWindow(r, sigma, organism, inputs = REGISTERED, nodes = GRID_R_M) {
+  const inp = makeVesselInputs(inputs);
+  return findEdge(
+    nodes,
+    windowMargins((R) => autoState(r, R, sigma, organism, inp).report),
+    {
+      tie_tol: (a, b) => Math.abs(a - b) <= EDGE_TOL_R_REL * Math.min(a, b),
+      refine_width: (lo) => EDGE_TOL_R_REL * 1e-4 * lo,
+    },
+  );
+}
   const API = {
     TSI_W_M2,
     PAR_FRACTION,
@@ -262,6 +1044,18 @@ const PRESETS = { vascular: VASCULAR, algal: ALGAL };
     VASCULAR,
     ALGAL,
     PRESETS,
+    // the vessel (sim/vessel.py)
+    N_ICE, N_INTERIOR, SPHERE_AREA_RATIO, T_ICE_MELT_K, PAR_NM, THIN_WALL_LIMIT,
+    EPS_BURST_BOIL_REL, EPS_FREEZE_K, EPS_STARVE_OPAQUE, FIXED_POINT_DP_PA,
+    FIXED_POINT_MAX_ITER, EDGE_TOL_R_AU, EDGE_TOL_R_REL, LOAD_ORDER, BINDING_LINES,
+    WINDOW_LINES, OPTICAL_LAWS, THERMAL_REFLECTANCES, GROUNDED_INPUTS, WALL_INPUTS,
+    WALL_MATERIAL, GRID_R_AU, GRID_R_M, SIGMAS_PA, VESSEL_DEFAULTS, REGISTERED,
+    RunnerError, ConvergenceError, assertSameObject, spectralTable, wallThickness,
+    hoopStress, shellTransmission, slabReflectance, solarSlabReflectance,
+    transmissionSpectrum, solarTransmission, parPhotonFraction, saturationPressure,
+    containedTemperature, selfConsistentPressure, closedFormRMax, makeVesselInputs,
+    netCarbonContained, organismNetCarbonContained, classifyFailure, checkAutoPath,
+    autoState, findEdge, rClose, rWindow,
   };
 
   if (typeof module !== "undefined" && module.exports) {

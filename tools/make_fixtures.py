@@ -55,6 +55,7 @@ from sim.thermal import (  # noqa: E402
 ROOT = Path(__file__).resolve().parents[1]
 PREREG = ROOT / "experiments" / "q1_crossover" / "prereg.yaml"
 OUT = ROOT / "web" / "fixtures.json"
+PREREG_Q4 = ROOT / "experiments" / "q4_vessel" / "prereg.yaml"
 
 # Display grid: linear in AU across the whole solve window, per the ship plan.
 # Deliberately NOT the log-spaced bracketing grid the root-finder uses -- a
@@ -87,6 +88,300 @@ def org_to_dict(org: Organism) -> dict:
         "emissivity": org.emissivity,
         "albedo": org.albedo,
         "omega": org.omega,
+    }
+
+
+# ---------------------------------------------------------------- the vessel (M1b)
+# Every number below comes from sim/vessel.py through its public functions. The
+# cases are the §6 rows (P1, P2, both controls, the six law triples, the f_floor
+# arms, `central`), both §3 closed-form controls, the page defaults, the §4
+# mutation control, BURST inside the melt door in every (p, t) mode with its
+# positive case outside, a low-pressure state (p* ~0.12 Pa at 2.82 AU, where the
+# fixed point's 1e-9·p residual term is the one that holds BOIL), the §6 tie rule
+# on synthetic margins, and the prereg's registered inputs either side of each
+# registered edge. web/parity.mjs replays each case by its `call`.
+
+LAW_TRIPLES = {
+    "shell": {},
+    "normal": {"optical_law": "normal"},
+    "arm_i_vapour": {"optical_law": "shell+fresnel", "n_interior": 1.0},
+    "arm_i_water": {"optical_law": "shell+fresnel", "n_interior": 1.333},
+    "arm_ii_vapour": {
+        "optical_law": "shell+fresnel",
+        "n_interior": 1.0,
+        "thermal_reflectance": "slab",
+    },
+    "arm_ii_water": {
+        "optical_law": "shell+fresnel",
+        "n_interior": 1.333,
+        "thermal_reflectance": "slab",
+    },
+}
+
+
+def report_to_dict(rep) -> dict:
+    return {
+        "violated": list(rep.violated),
+        "first": rep.first,
+        "sigma_eff": rep.sigma_eff,
+        "T_int": rep.T_int,
+        "T_shell": rep.T_shell,
+        "f_photon": rep.f_photon,
+        "thin_wall_valid": bool(rep.thin_wall_valid),
+        "lines": {
+            n: {
+                "lhs": ln.lhs,
+                "rhs": ln.rhs,
+                "margin": ln.margin,
+                "violated": bool(ln.violated),
+            }
+            for n, ln in rep.lines.items()
+        },
+    }
+
+
+def edge_to_dict(e) -> dict:
+    return {
+        "edge": e.edge,
+        "binding": e.binding,
+        "roots": dict(e.roots),
+        "tie": bool(e.tie),
+        "bracket": list(e.bracket) if e.bracket else None,
+        "counterfactual": dict(e.counterfactual),
+    }
+
+
+def vessel_block() -> dict:
+    from sim import vessel as V
+    from sim.organism import ALGAL
+
+    cases = []
+
+    def add(name, call, args, tol, expect):
+        cases.append(
+            {"name": name, "call": call, "args": args, "tol": tol, "expect": expect}
+        )
+
+    kts = [0.0, 1e-9, 1e-6, 0.01, 0.1, 0.5, 1.0, 2.0, 5.0, 20.0, 1e3, 2e4]
+    for law, n_int in (
+        ("shell", 1.0),
+        ("normal", 1.0),
+        ("shell+fresnel", 1.0),
+        ("shell+fresnel", 1.333),
+    ):
+        add(
+            f"law {law} n_interior {n_int}",
+            "shell_transmission",
+            {"kt": kts, "optical_law": law, "n_interior": n_int},
+            "vessel_closed",
+            {"T": [V.shell_transmission(k, law, n_int) for k in kts]},
+        )
+    for n_int in (1.0, 1.333):
+        add(
+            f"slab reflectance n_interior {n_int}",
+            "slab_reflectance",
+            {"kt": kts[:-1], "n_interior": n_int},
+            "vessel_closed",
+            {"R": [V.slab_reflectance(k, n_int) for k in kts[:-1]]},
+        )
+    ts = [0.0, 0.5, 1.4, 4.366, 34.2, 55.72, 100.0, 232.5, 1000.0]
+    for key, kw in LAW_TRIPLES.items():
+        inp = V.VesselInputs(**kw)
+        exp = {
+            "tau_sw": [V.solar_transmission(t, **inp.optics()) for t in ts],
+            "f_photon": [
+                V.par_photon_fraction(t, **inp.optics(), interior="mixed") for t in ts
+            ],
+        }
+        if inp.optical_law == "shell":
+            exp["f_photon_central"] = [
+                V.par_photon_fraction(t, interior="central") for t in ts
+            ]
+        if inp.optical_law == "shell+fresnel":
+            exp["R_slab_sw"] = [V.solar_slab_reflectance(t, inp.n_interior) for t in ts]
+        tc = [V.contained_temperature(r, t, **inp.thermal()) for r in (1.0, 1.1, 2.0) for t in ts]
+        exp["T_int"] = [a for a, _ in tc]
+        exp["T_shell"] = [b for _, b in tc]
+        add(f"optics {key}", "optics_at_t", {"t": ts, "inputs": kw}, "vessel_closed", exp)
+    temps = [180.0, 200.0, 250.0, 273.15, 273.16, 278.31, 290.0, 300.0]
+    add(
+        "saturation pressure (Buck)",
+        "saturation_pressure",
+        {"T": temps},
+        "vessel_closed",
+        {"p": [V.saturation_pressure(t) for t in temps]},
+    )
+
+    # §3 self-consistent pressure at 1 AU, R 10 km, both laws; the closed-form controls
+    for s in V.SIGMAS_PA:
+        for law in ("shell", "normal"):
+            add(
+                f"p* 1 AU R 10 km sigma {s:g} {law}",
+                "self_consistent_pressure",
+                {"r": 1.0, "R": 1e4, "sigma": s, "kw": {"optical_law": law}},
+                "vessel_state",
+                {"p": V.self_consistent_pressure(1.0, 1e4, s, optical_law=law)},
+            )
+        k, tau_min = 0.38623, 0.01
+        p_mixed = V.self_consistent_pressure(1.0, 1e4, s, optical_law="normal")
+        add(
+            f"closed-form control (a) mixed, sigma {s:g}",
+            "closed_form_control",
+            {"r": 1.0, "R": 1e4, "sigma": s, "k": k, "tau_min": tau_min,
+             "kw": {"optical_law": "normal"}},
+            "vessel_state",
+            {"p": p_mixed, "R_max": V.closed_form_r_max(s, p_mixed, k, tau_min)},
+        )
+        p_scalar = V.self_consistent_pressure(1.0, 1e4, s, scalar_k=k)
+        add(
+            f"closed-form control (b) scalar limit, sigma {s:g}",
+            "closed_form_control",
+            {"r": 1.0, "R": 1e4, "sigma": s, "k": k, "tau_min": tau_min,
+             "kw": {"scalar_k": k}},
+            "vessel_state",
+            {"p": p_scalar, "R_max": V.closed_form_r_max(s, p_scalar, k, tau_min)},
+        )
+
+    def auto(name, r, R, sigma, kw=None):
+        p, t, rep = V.auto_state(r, R, sigma, ALGAL, V.VesselInputs(**(kw or {})))
+        add(
+            name,
+            "auto_state",
+            {"r": r, "R": R, "sigma": sigma, "inputs": kw or {}},
+            "vessel_state",
+            {"p": p, "t": t, "report": report_to_dict(rep)},
+        )
+
+    auto("page defaults (1.10 AU, 1 km, 0.7 MPa)", 1.10, 1e3, 0.7e6)
+    auto("page defaults, normal incidence", 1.10, 1e3, 0.7e6, {"optical_law": "normal"})
+    for key, kw in LAW_TRIPLES.items():
+        auto(f"§4 reference state 1.00 AU R 10 km {key} (BURST inside the melt door)",
+             1.0, 1e4, 0.7e6, kw)
+    auto("low pressure: p* ~0.12 Pa at 2.82 AU, R 10 km", 2.82, 1e4, 0.7e6)
+    auto("low pressure: 2.82 AU, R 10 m", 2.82, 10.0, 0.7e6)
+
+    def classify(name, p, t, r, R, sigma, kw=None):
+        rep = V.classify_failure(p, t, r, R, sigma, ALGAL, V.VesselInputs(**(kw or {})))
+        add(
+            name,
+            "classify",
+            {"p": p, "t": t, "r": r, "R": R, "sigma": sigma, "inputs": kw or {}},
+            "vessel_state",
+            report_to_dict(rep),
+        )
+
+    t100 = 100.0
+    ti, _ = V.contained_temperature(1.10, t100)
+    classify("manual 100 m wall, R 1 km, 1.10 AU (OPAQUE)", V.saturation_pressure(ti),
+             t100, 1.10, 1e3, 0.7e6)
+    # BURST inside the melt door, every (p, t) mode, and its positive case outside
+    R, s = 1e3, 0.7e6
+    p_auto = V.self_consistent_pressure(1.10, R, s)
+    t_auto = V.wall_thickness(p_auto, R, s)
+    for r_in in (0.5, 0.9, 1.0, 1.03):
+        ti, _ = V.contained_temperature(r_in, 10.0)
+        modes = {
+            "auto/auto": (p_auto, t_auto),
+            "manual/auto": (5000.0, t_auto),
+            "auto/manual": (V.saturation_pressure(ti), 10.0),
+            "manual/manual": (5000.0, 10.0),
+        }
+        for mode, (p, t) in modes.items():
+            classify(f"BURST inside melt door r {r_in} {mode}", p, t, r_in, R, s)
+            classify(f"BURST positive case: the r {r_in} {mode} (p, t) at r 1.10 (reads input sigma)", p, t, 1.10, R, s)
+    classify("arm (ii) vapour door: 0.99 AU inside", 611.21, 4.366, 0.99, 1e4, 0.7e6,
+             LAW_TRIPLES["arm_ii_vapour"])
+    classify("arm (ii) vapour door: 1.00 AU outside", 611.21, 4.366, 1.00, 1e4, 0.7e6,
+             LAW_TRIPLES["arm_ii_vapour"])
+    classify("thin-wall flag: t/R = 100", 611.21, 1000.0, 1.10, 10.0, 0.7e6)
+
+    # §4 mutation control: 0.99·t_min at the page defaults is a RunnerError
+    t99 = 0.99 * t_auto
+    try:
+        V.check_auto_path(p_auto, t99, 1.10, R, s, ALGAL)
+        raise AssertionError("0.99 t_min did not trip the runner error")
+    except V.RunnerError as exc:
+        add("runner error: 0.99 t_min at the page defaults", "check_auto_path",
+            {"p": p_auto, "t": t99, "r": 1.10, "R": R, "sigma": s, "inputs": {}},
+            "vessel_state",
+            {"raised": "RunnerError", "exit_code": exc.exit_code,
+             "report": report_to_dict(V.classify_failure(p_auto, t99, 1.10, R, s, ALGAL))})
+    add("runner error positive control: t_min passes", "check_auto_path",
+        {"p": p_auto, "t": t_auto, "r": 1.10, "R": R, "sigma": s, "inputs": {}},
+        "vessel_state",
+        {"raised": None, "exit_code": None,
+         "report": report_to_dict(V.check_auto_path(p_auto, t_auto, 1.10, R, s, ALGAL))})
+    try:
+        V.self_consistent_pressure(1.10, 1e3, 0.7e6, max_iter=3)
+        raise AssertionError("expected ConvergenceError")
+    except V.ConvergenceError:
+        add("fixed point exhausts in 3 passes", "convergence_error",
+            {"r": 1.10, "R": 1e3, "sigma": 0.7e6, "max_iter": 3}, "vessel_closed",
+            {"raised": "ConvergenceError"})
+    add("same object: sigma_ice + k_ice", "same_object", {"ids": ["sigma_ice", "k_ice"]},
+        "vessel_closed", {"material": V.assert_same_object("sigma_ice", "k_ice"), "raised": False})
+    add("same object: sigma_wood + k_ice is refused", "same_object",
+        {"ids": ["sigma_wood", "k_ice"]}, "vessel_closed", {"material": None, "raised": True})
+
+    # §6 tie rule on synthetic linear margins, margin = c0 + c1·x
+    for nm, lines, nodes in (
+        ("smallest root, not load order",
+         {"FREEZE": [2.8, -1.0], "STARVE": [1.0, 0.0], "OPAQUE": [2.2, -1.0]}, [1.0, 2.0, 3.0]),
+        ("within one tolerance: load order decides",
+         {"FREEZE": [2.20005, -1.0], "STARVE": [1.0, 0.0], "OPAQUE": [2.2, -1.0]}, [1.0, 2.0, 3.0]),
+        ("empty window", {"FREEZE": [-1.0, 0.0], "STARVE": [1.0, 0.0], "OPAQUE": [1.0, 0.0]},
+         [1.0, 2.0]),
+    ):
+        e = V.find_edge(
+            nodes,
+            lambda x, L=lines: {k: c0 + c1 * x for k, (c0, c1) in L.items()},
+            tie_tol=lambda a, b: abs(a - b) <= 1e-4,
+            refine_width=lambda lo, hi: 1e-9,
+        )
+        add(f"tie rule: {nm}", "find_edge_linear",
+            {"nodes": nodes, "lines": lines, "tie_tol": 1e-4, "refine_width": 1e-9},
+            "vessel_closed", edge_to_dict(e))
+
+    # §6 rows: P1 r_close at R 10 km, P2 R_window at 1.10 AU, every law triple
+    for key, kw in LAW_TRIPLES.items():
+        inp = V.VesselInputs(**kw)
+        for s in V.SIGMAS_PA:
+            add(f"§6 P1 {key} sigma {s:g}", "r_close",
+                {"R": 1e4, "sigma": s, "inputs": kw}, "edge_r_au",
+                edge_to_dict(V.r_close(1e4, s, ALGAL, inp)))
+        add(f"§6 P2 {key}", "r_window", {"r": 1.10, "sigma": 0.7e6, "inputs": kw},
+            "edge_R_m", edge_to_dict(V.r_window(1.10, 0.7e6, ALGAL, inp)))
+    for kw in ({"f_floor": 0.50}, {"f_floor": 0.10}, {"interior": "central"}):
+        add(f"§6 P2 variant {kw}", "r_window", {"r": 1.10, "sigma": 0.7e6, "inputs": kw},
+            "edge_R_m", edge_to_dict(V.r_window(1.10, 0.7e6, ALGAL, V.VesselInputs(**kw))))
+
+    # The prereg's registered inputs (experiments/q4_vessel/prereg.yaml `predictions`,
+    # `registered_rows`), either side of each registered edge: inside the window
+    # classify_failure returns the empty set, outside it returns the registered binding.
+    prereg = yaml.safe_load(PREREG_Q4.read_text())
+    rows = prereg["registered_rows"]
+    examples = []
+    for s_mpa, edge in zip(prereg["predictions"]["P1"]["sigma_MPa"], rows["P1_edge_au"]):
+        for side, r in (("inside", edge - 0.001), ("outside", edge + 0.001)):
+            examples.append((f"P1 sigma {s_mpa} MPa, R 10 km, r {r:.4f} AU ({side})",
+                             r, 10e3, s_mpa * 1e6, {}))
+    p2 = prereg["predictions"]["P2"]
+    for side, R in (("inside", rows["P2"]["R_km"] * 1e3 * 0.99),
+                    ("outside", rows["P2"]["R_km"] * 1e3 * 1.01)):
+        examples.append((f"P2 r {p2['fixed']['r_au']} AU, sigma {p2['fixed']['sigma_MPa']} MPa,"
+                         f" R {R / 1e3:.2f} km ({side})", p2["fixed"]["r_au"], R,
+                         p2["fixed"]["sigma_MPa"] * 1e6, {"f_floor": p2["fixed"]["f_floor"]}))
+    for name, r, R, s, kw in examples:
+        p, t, rep = V.auto_state(r, R, s, ALGAL, V.VesselInputs(**kw))
+        add(f"prereg example: {name}", "prereg_example",
+            {"p": p, "t": t, "r": r, "R": R, "sigma": s, "inputs": kw},
+            "vessel_state", {"p": p, "t": t, "report": report_to_dict(rep)})
+
+    return {
+        "organism": "algal",
+        "grid_r_au": [float(x) for x in V.GRID_R_AU],
+        "grid_r_m": [float(x) for x in V.GRID_R_M],
+        "cases": cases,
     }
 
 
@@ -252,12 +547,17 @@ def main() -> int:
         "Do not hand-edit. Regenerate and re-commit if sim/ changes.",
         "provenance": {
             "git_sha": git("rev-parse", "HEAD"),
-            "git_describe": git("rev-parse", "--abbrev-ref", "HEAD"),
+            # `git describe`, not the branch name: a branch name (M1a recorded
+            # "m1a-vessel") stops naming anything once the branch is merged or deleted.
+            "git_describe": git("describe", "--tags", "--always", "--dirty"),
             "worktree_dirty": bool(git("status", "--porcelain")),
             "generator": "tools/make_fixtures.py",
             "physiology_md5": md5(ROOT / "sim" / "physiology.py"),
             "thermal_md5": md5(ROOT / "sim" / "thermal.py"),
             "organism_md5": md5(ROOT / "sim" / "organism.py"),
+            "vessel_md5": md5(ROOT / "sim" / "vessel.py"),
+            "spectral_table_md5": md5(ROOT / "sim" / "spectral_table.csv"),
+            "prereg_q4_md5": md5(PREREG_Q4),
             "prereg_md5": md5(PREREG),
             "python": sys.version.split()[0],
             "numpy": np.__version__,
@@ -323,6 +623,34 @@ def main() -> int:
                 "atol": 1e-12,
                 "why": "same difference-through-zero reason as net_carbon",
             },
+            "vessel_closed": {
+                "rtol": 1e-9,
+                "atol": 1e-12,
+                "why": "vessel quantities with no iteration: quadratures and "
+                "interpolations on the same table, same grid, same order; only "
+                "summation order and libm differ",
+            },
+            "vessel_state": {
+                "rtol": 1e-8,
+                "atol": 1e-6,
+                "why": "downstream of the p* fixed point, whose stop rule is "
+                "|dp| < min(1e-6 Pa, 1e-9 p): one extra pass on either side moves p "
+                "by up to that residual, and BURST/BOIL margins on the auto path are "
+                "differences of equal terms (0 by construction), so atol 1e-6 in "
+                "their units (Pa)",
+            },
+            "edge_r_au": {
+                "rtol": 0.0,
+                "atol": 1e-7,
+                "why": "bisected root, refine width 1e-8 AU (EDGE_TOL_R_AU·1e-4): "
+                "ten widths",
+            },
+            "edge_R_m": {
+                "rtol": 1e-6,
+                "atol": 0.0,
+                "why": "bisected root, refine width 1e-7·lo (EDGE_TOL_R_REL·1e-4): "
+                "ten widths",
+            },
             "crossover_au": {
                 "rtol": 1e-6,
                 "atol": 1e-6,
@@ -334,6 +662,7 @@ def main() -> int:
         "grid_au": [float(r) for r in grid],
         "cases": cases,
         "edge_cases": edges,
+        "vessel": vessel_block(),
     }
 
     OUT.parent.mkdir(parents=True, exist_ok=True)
@@ -347,6 +676,7 @@ def main() -> int:
         )
         print(f"  {cls}: {ks}")
     print(f"  edge cases: {', '.join(e['name'] for e in edges)}")
+    print(f"  vessel cases: {len(doc['vessel']['cases'])}")
     # Unused-import guard: these are re-exported into the fixture's contract via
     # the constants block and the checks above; naming them here keeps linters
     # from stripping the imports the doc depends on.

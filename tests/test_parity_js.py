@@ -87,6 +87,7 @@ def test_fixture_provenance_matches_this_tree(fx):
         ("physiology", "physiology_md5"),
         ("thermal", "thermal_md5"),
         ("organism", "organism_md5"),
+        ("vessel", "vessel_md5"),
     ):
         live = hashlib.md5((ROOT / "sim" / f"{mod}.py").read_bytes()).hexdigest()
         assert live == fx["provenance"][key], (
@@ -97,6 +98,12 @@ def test_fixture_provenance_matches_this_tree(fx):
         (ROOT / "experiments" / "q1_crossover" / "prereg.yaml").read_bytes()
     ).hexdigest()
     assert prereg == fx["provenance"]["prereg_md5"]
+    q4 = hashlib.md5(
+        (ROOT / "experiments" / "q4_vessel" / "prereg.yaml").read_bytes()
+    ).hexdigest()
+    assert q4 == fx["provenance"]["prereg_q4_md5"] == "d8707a6607db6d54a006e14af9dcfe79"
+    table = hashlib.md5((ROOT / "sim" / "spectral_table.csv").read_bytes()).hexdigest()
+    assert table == fx["provenance"]["spectral_table_md5"]
 
 
 def test_js_constants_match(fx, js):
@@ -244,3 +251,138 @@ def test_js_edge_case_t_min_floor(fx, js):
         "for; note it does NOT discriminate `t < t_min` from `t <= t_min` -- "
         "at t == t_min the ramp evaluates to 0 under either spelling."
     )
+
+
+# ---------------------------------------------------------------- the vessel (M1b)
+def _cmp(fx, tol, path, ref, got, errs):
+    """Walk the expected structure; numbers within the case's tolerance, the rest exact."""
+    if isinstance(ref, bool) or ref is None or isinstance(ref, str):
+        if got != ref:
+            errs.append(f"{path}: JS {got!r} != Python {ref!r}")
+    elif isinstance(ref, (int, float)):
+        if not isinstance(got, (int, float)) or isinstance(got, bool):
+            errs.append(f"{path}: JS {got!r} is not a number (Python {ref!r})")
+            return
+        rtol, atol = tol_for(fx, tol)
+        if abs(got - ref) > atol + rtol * abs(ref):
+            errs.append(
+                f"{path}: |{got!r} - {ref!r}| = {abs(got - ref):.6g} > "
+                f"{atol + rtol * abs(ref):.6g} ({tol})"
+            )
+    elif isinstance(ref, list):
+        if not isinstance(got, list) or len(got) != len(ref):
+            errs.append(f"{path}: JS {got!r} vs Python list of {len(ref)}")
+            return
+        for i, (r, g) in enumerate(zip(ref, got)):
+            _cmp(fx, tol, f"{path}[{i}]", r, g, errs)
+    elif isinstance(ref, dict):
+        if not isinstance(got, dict) or set(got) != set(ref):
+            errs.append(
+                f"{path}: keys JS {sorted(got) if isinstance(got, dict) else got!r}"
+                f" != Python {sorted(ref)}"
+            )
+            return
+        for k in ref:
+            _cmp(fx, tol, f"{path}.{k}", ref[k], got[k], errs)
+    else:
+        raise TypeError(f"{path}: unhandled fixture type {type(ref)}")
+
+
+def _vessel_errors(fx, js, pred=lambda c: True):
+    got = {c["name"]: c["got"] for c in js["vessel"]["cases"]}
+    errs = []
+    n = 0
+    for case in fx["vessel"]["cases"]:
+        if not pred(case):
+            continue
+        n += 1
+        assert case["name"] in got, f"JS did not replay vessel case {case['name']!r}"
+        _cmp(fx, case["tol"], case["name"], case["expect"], got[case["name"]], errs)
+    assert n > 0, "predicate selected no vessel case: a test that cannot fail"
+    return errs
+
+
+VESSEL_CALLS = (
+    "shell_transmission",
+    "slab_reflectance",
+    "optics_at_t",
+    "saturation_pressure",
+    "self_consistent_pressure",
+    "closed_form_control",
+    "auto_state",
+    "classify",
+    "check_auto_path",
+    "convergence_error",
+    "same_object",
+    "find_edge_linear",
+    "r_close",
+    "r_window",
+    "prereg_example",
+)
+
+
+@pytest.mark.parametrize("call", VESSEL_CALLS)
+def test_js_vessel_matches(fx, js, call):
+    errs = _vessel_errors(fx, js, lambda c: c["call"] == call)
+    assert not errs, f"{len(errs)} vessel mismatches:\n" + "\n".join(errs[:20])
+
+
+def test_js_vessel_every_case_replayed(fx, js):
+    assert {c["call"] for c in fx["vessel"]["cases"]} == set(VESSEL_CALLS)
+    assert [c["name"] for c in js["vessel"]["cases"]] == [
+        c["name"] for c in fx["vessel"]["cases"]
+    ]
+
+
+def test_js_vessel_grids_and_table(fx, js):
+    assert js["vessel"]["grid_r_au"] == fx["vessel"]["grid_r_au"]
+    errs = []
+    _cmp(fx, "vessel_closed", "grid_r_m", fx["vessel"]["grid_r_m"], js["vessel"]["grid_r_m"], errs)
+    assert not errs, errs
+    import hashlib
+
+    data = "".join(
+        ln
+        for ln in (ROOT / "sim" / "spectral_table.csv").read_text().splitlines(keepends=True)
+        if not ln.startswith("#")
+    )
+    assert js["vessel"]["spectral_table_sha256"] == hashlib.sha256(data.encode()).hexdigest()
+
+
+def test_spectral_table_js_is_generated_from_the_csv():
+    import importlib.util
+
+    spec = importlib.util.spec_from_file_location("msj", ROOT / "tools" / "make_spectral_js.py")
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    assert (ROOT / "web" / "spectral_table.js").read_text() == mod.render(), (
+        "web/spectral_table.js is stale: run `python3 tools/make_spectral_js.py`"
+    )
+
+
+def test_prereg_example_sets(fx, js):
+    """M1b acceptance (spec §8): at the prereg's registered inputs, either side of each
+    registered edge, classifyFailure returns the empty set inside the window and the
+    registered binding outside it (P1 FREEZE at every sigma, P2 OPAQUE)."""
+    import yaml
+
+    prereg = yaml.safe_load(
+        (ROOT / "experiments" / "q4_vessel" / "prereg.yaml").read_text()
+    )
+    want = {"P1": [prereg["predictions"]["P1"]["binding"]], "P2": [prereg["predictions"]["P2"]["binding"]]}
+    got = {c["name"]: c["got"] for c in js["vessel"]["cases"]}
+    seen = 0
+    for case in fx["vessel"]["cases"]:
+        if case["call"] != "prereg_example":
+            continue
+        seen += 1
+        pred = case["name"].split(": ")[1][:2]
+        expected = [] if "(inside)" in case["name"] else want[pred]
+        assert got[case["name"]]["report"]["violated"] == expected, case["name"]
+        assert case["expect"]["report"]["violated"] == expected, case["name"]
+    assert seen == 8
+
+
+def test_vessel_case_names_are_unique(fx):
+    names = [c["name"] for c in fx["vessel"]["cases"]]
+    assert len(names) == len(set(names)), "duplicate vessel case names shadow each other"
