@@ -1,6 +1,6 @@
 # Executor brief: M1a0, the ready half (spectral table + hand rows + tests). NO prereg.
 
-Repo `/home/mjarnold/dyson-tree`, master `25c5f37`. Authority: the spec
+Repo `/home/<user>/dyson-tree`, master `25c5f37`. Authority: the spec
 `docs/superpowers/specs/2026-09-12-northstar-design.md` — §3 (vessel model, registry table
 :232-258), §4 (failure modes, census :278-310), §6 (pre-registration, rows :520-536, table checks
 :620-646), §8 M1a0 (:665-695). Read those sections fresh before writing anything; the spec wins
@@ -40,7 +40,7 @@ over this brief wherever they differ.
    `sim/vessel.py`, `web/`. Do not create them.
 
 ## Physics reference (verified scratch, read-only, for cross-checking your numbers)
-`/home/mjarnold/.claude/jobs/0276dcca/tmp/v5-dyson/v5_slab.py` (+ `v5_slab.out`): the slab
+`/home/<user>/.claude/jobs/<job>/tmp/v5-dyson/v5_slab.py` (+ `v5_slab.out`): the slab
 reflectance `R_slab(kt)` integral, solar weighting, the eight arm rows. `v5_physics.py`/`.out` and
 `v5_gridscan.py`/`.out`: P1/P2 rows, census. These are the verifier's scripts that produced the
 spec's digits; your `q4_hand_rows.py` must reproduce them independently from the table (you may
@@ -53,7 +53,7 @@ read them; you may not copy printed values into your code).
 - Every inline python gets `signal.alarm(...)`. Grid census may take minutes — fine, but run it
   once and cache the result in the `.out`.
 - Run `pytest -q` at the end; it must be green (149 existing + yours).
-- Stay inside `/home/mjarnold/dyson-tree`. Do not touch any other repo or the memory dir.
+- Stay inside `/home/<user>/dyson-tree`. Do not touch any other repo or the memory dir.
 - Final report: commits (hashes + one line each), every numeric row with spec-vs-computed
   side by side, test counts, anything that did NOT reproduce (say so plainly; do not fudge a
   digit to make it match — a mismatch is a finding).

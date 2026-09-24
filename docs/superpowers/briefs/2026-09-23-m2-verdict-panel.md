@@ -1,6 +1,6 @@
 # Executor brief: dyson M2, the verdict (inputs + readout panel, no picture).
 
-Repo `/home/mjarnold/dyson-tree`, master `ae449d6`. Authority: spec §8 M2 bullet
+Repo `/home/<user>/dyson-tree`, master `ae449d6`. Authority: spec §8 M2 bullet
 (`docs/superpowers/specs/2026-09-12-northstar-design.md`, "M2 (M): the verdict"), §4 (lines, margins,
 modes), §5 (defaults, (p, t) modes, page prints R_slab_sw live), §6. Read fresh; spec wins.
 
