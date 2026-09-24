@@ -23,8 +23,10 @@
     OUT_MIN = 100, // px at R + t = 10 m
     OUT_MAX = 148, // px at R + t = 101 km
     MIN_BAND_PX = 3,
-    FS = 15, // >= 12 px on screen at the page's figure width (smoke asserts it)
-    LH = 17,
+    FS = 17, // >= 12 px on screen at the page's figure width (smoke asserts it)
+    LH = 19,
+    PLATE_GAP = 10, // units between the organism disc and a plate
+    KEEP_PAD = 3, // units every mark keeps clear of a plate
     WRAP = 20,
     CLAMP_Y = 378;
   var NS = "http://www.w3.org/2000/svg";
@@ -169,10 +171,57 @@
     return { x0: x0, y0: y - 2, w: w, h: h };
   }
 
-  // an interior wound's killing number, on a plate inside the interior below the disc
+  // plate size for a text, before anything is drawn (marks are clipped around it)
+  function plateSize(text) {
+    var lines = wrap(text);
+    var wmax = Math.max.apply(null, lines.map(function (l) { return l.trim().length; }));
+    return { w: wmax * FS * 0.64 + 10, h: lines.length * LH + 6 };
+  }
+  // an interior wound's plate: centred above the disc with a gap, stacked upward by slot
+  function interiorBox(geo, text, slot) {
+    var sz = plateSize(text);
+    var y1 = CY - geo.rOrg - PLATE_GAP - slot * (sz.h + 6);
+    return { x0: CX - sz.w / 2, y0: y1 - sz.h, x1: CX + sz.w / 2, y1: y1 };
+  }
   function interiorLabel(g, geo, text, slot) {
-    var y = CY + Math.max(geo.rOrg + 8, geo.ri * 0.34) + slot * (3 * LH + 10);
-    label(g, CX, y, "middle", text, true);
+    var b = interiorBox(geo, text, slot);
+    label(g, CX, b.y0 + 2, "middle", text, true);
+  }
+  // the parts of segment ab outside every keep-out rect (padded), for marks near a plate
+  function outside(a, b, rects) {
+    var pieces = [[a, b]];
+    rects.forEach(function (R) {
+      var next = [];
+      pieces.forEach(function (sg) {
+        var p = sg[0], q = sg[1], dx = q[0] - p[0], dy = q[1] - p[1], t0 = 0, t1 = 1, ok = true;
+        [[-dx, p[0] - (R.x0 - KEEP_PAD)], [dx, R.x1 + KEEP_PAD - p[0]],
+         [-dy, p[1] - (R.y0 - KEEP_PAD)], [dy, R.y1 + KEEP_PAD - p[1]]].forEach(function (c) {
+          if (!ok) return;
+          if (c[0] === 0) { if (c[1] < 0) ok = false; return; }
+          var t = c[1] / c[0];
+          if (c[0] < 0) t0 = Math.max(t0, t); else t1 = Math.min(t1, t);
+        });
+        if (!ok || t0 > t1) { next.push(sg); return; }
+        var at = function (t) { return [p[0] + dx * t, p[1] + dy * t]; };
+        if (t0 > 1e-6) next.push([p, at(t0)]);
+        if (t1 < 1 - 1e-6) next.push([at(t1), q]);
+      });
+      pieces = next;
+    });
+    return pieces;
+  }
+  function segs(g, pts, attrs, rects) {
+    for (var i = 1; i < pts.length; i++)
+      outside(pts[i - 1], pts[i], rects).forEach(function (sg) {
+        var a = Object.assign({ x1: sg[0][0].toFixed(1), y1: sg[0][1].toFixed(1),
+          x2: sg[1][0].toFixed(1), y2: sg[1][1].toFixed(1) }, attrs);
+        el("line", a, g);
+      });
+  }
+  function ring(g, r, attrs, rects) {
+    var pts = [];
+    for (var i = 0; i <= 96; i++) pts.push(pt(r, (i * 2 * Math.PI) / 96));
+    segs(g, pts, attrs, rects);
   }
 
   var DRAW = {
@@ -198,7 +247,7 @@
           var rr = (out ? r1 : r0) + (out ? 1 : -1) * (len * i) / steps;
           p.push(pt(rr, side + c[0] * 0.06 * i + (i % 2 ? 0.03 : -0.03)));
         }
-        el("polyline", { points: p.map(P2).join(" "), fill: "none", stroke: FAIL, "stroke-width": 2 }, g);
+        segs(g, p, { stroke: FAIL, "stroke-width": 2, "stroke-linecap": "round" }, geo.keep);
       });
       var b = label(g, W - 4, 6, "end", text, true);
       var from = pt(r1 + 26, a);
@@ -217,6 +266,10 @@
       for (var i = 0; i < 12; i++) {
         var p = pt(geo.ri * (0.72 + 0.16 * (i % 2)), (i * 2 * Math.PI) / 12 + 0.2),
           s = Math.max(4, geo.ri * 0.07);
+        var near = geo.keep.some(function (R) {
+          return p[0] + s + KEEP_PAD > R.x0 && p[0] - s - KEEP_PAD < R.x1 && p[1] + s + KEEP_PAD > R.y0 && p[1] - s - KEEP_PAD < R.y1;
+        });
+        if (near) continue;
         for (var k = 0; k < 3; k++) {
           var bb = (k * Math.PI) / 3;
           el("line", { x1: (p[0] - s * Math.cos(bb)).toFixed(1), y1: (p[1] - s * Math.sin(bb)).toFixed(1),
@@ -231,10 +284,8 @@
       el("circle", { cx: CX, cy: CY, r: geo.ri, fill: "#b89a64", "fill-opacity": 0.75, "data-mark": "dry" }, g);
       for (var i = 0; i < 9; i++) {
         var a = (i * 2 * Math.PI) / 9 + 0.3;
-        el("polyline", {
-          points: [pt(geo.rOrg + 3, a), pt(geo.ri * 0.6, a + 0.12), pt(geo.ri * 0.97, a)].map(P2).join(" "),
-          fill: "none", stroke: "#6b5431", "stroke-width": 1.5,
-        }, g);
+        segs(g, [pt(geo.rOrg + 3, a), pt(geo.ri * 0.6, a + 0.12), pt(geo.ri * 0.97, a)],
+          { stroke: "#6b5431", "stroke-width": 1.5 }, geo.keep);
       }
       interiorLabel(g, geo, text, slot);
     },
@@ -247,22 +298,16 @@
     // under its own wall: a veil with hatching, and a ring for the declared floor
     OPAQUE: function (g, geo, text, slot) {
       el("circle", { cx: CX, cy: CY, r: geo.ri, fill: "#000000", "fill-opacity": 0.35, "data-mark": "veil" }, g);
+      // hatch in a light amber at reduced opacity, so it reads against the dark veil
+      var hg = el("g", { "data-mark": "hatch" }, g);
       for (var d = -geo.ri + 10; d < geo.ri; d += 14) {
-        var half = Math.sqrt(geo.ri * geo.ri - d * d) / Math.SQRT2; // 45° chord, inside the circle
-        var c = Math.sqrt(geo.ri * geo.ri - d * d);
-        var ux = Math.SQRT1_2,
-          uy = -Math.SQRT1_2; // along the chord
-        var nx = Math.SQRT1_2,
-          ny = Math.SQRT1_2; // normal
-        void half;
-        el("line", {
-          x1: (CX + d * nx - c * ux).toFixed(1), y1: (CY + d * ny - c * uy).toFixed(1),
-          x2: (CX + d * nx + c * ux).toFixed(1), y2: (CY + d * ny + c * uy).toFixed(1),
-          stroke: "#000000", "stroke-opacity": 0.45, "stroke-width": 1.2,
-        }, g);
+        var c = Math.sqrt(geo.ri * geo.ri - d * d); // half-chord at offset d along the 45° normal
+        var S = Math.SQRT1_2;
+        segs(hg, [[CX + d * S - c * S, CY + d * S + c * S], [CX + d * S + c * S, CY + d * S - c * S]],
+          { stroke: "#f2c86a", "stroke-opacity": 0.6, "stroke-width": 1.5 }, geo.keep);
       }
-      el("circle", { cx: CX, cy: CY, r: (geo.ri - 4).toFixed(2), fill: "none", stroke: "#d9a441",
-        "stroke-width": 2, "stroke-dasharray": "6 4", "data-mark": "floor-ring" }, g);
+      var fr = el("g", { "data-mark": "floor-ring" }, g);
+      ring(fr, geo.ri - 4, { stroke: "#f2c86a", "stroke-width": 2.5 }, geo.keep);
       interiorLabel(g, geo, text, slot);
     },
   };
@@ -286,6 +331,10 @@
     var rOrg = Math.max(6, 0.28 * ri);
     var geo = { ro: ro, ri: ri, rOrg: rOrg };
     var bad = rep.violated.slice();
+    var ks = 0;
+    geo.keep = bad
+      .filter(function (n) { return n !== "BURST"; })
+      .map(function (n) { return interiorBox(geo, texts[n], ks++); });
     svg.setAttribute("viewBox", "0 0 " + W + " " + H);
 
     el("title", {}, svg, "Cross-section of the vessel");

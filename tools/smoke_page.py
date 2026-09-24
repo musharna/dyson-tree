@@ -473,6 +473,9 @@ def exercise_picture(page, label: str, shoot: bool) -> None:
         return sorted(page.eval_on_selector_all("#pic-overlays > g", "els => els.map(e => e.dataset.line)"))
 
     def shot(name):
+        settle()
+        busy = "computing" in page.locator("#vessel").inner_text()
+        check(not busy, f"[{label}] shot {name}: taken after the panel finished computing")
         if shoot:
             SHOTS.mkdir(parents=True, exist_ok=True)
             page.locator("#vessel").screenshot(path=str(SHOTS / f"{name}.png"))
@@ -536,6 +539,88 @@ def exercise_picture(page, label: str, shoot: bool) -> None:
             check(ok, f"[{label}] {tag}: clamp label beside the band ({d:.1f} px off the rim) with a leader")
         return m
 
+
+    def overlap_check(tag):
+        """Critic round 2: no overlay mark or leader crosses a label plate; plates clear the disc."""
+        g = page.evaluate(
+            """() => { const svg = document.getElementById('pic'); const n = (e, a) => parseFloat(e.getAttribute(a));
+              const plates = [...svg.querySelectorAll('#pic-overlays rect')].map(r => ({owner: r.parentNode.id,
+                x0: n(r,'x'), y0: n(r,'y'), x1: n(r,'x') + n(r,'width'), y1: n(r,'y') + n(r,'height')}));
+              const segs = [];
+              const add = (e, pts) => { for (let i = 1; i < pts.length; i++) segs.push({id: (e.id || e.parentNode.id) + ':' + e.tagName, a: pts[i-1], b: pts[i]}); };
+              svg.querySelectorAll('#pic-overlays line, #pic-clamp-leader').forEach(e =>
+                add(e, [[n(e,'x1'), n(e,'y1')], [n(e,'x2'), n(e,'y2')]]));
+              svg.querySelectorAll('#pic-overlays polyline').forEach(e =>
+                add(e, e.getAttribute('points').trim().split(/\\s+/).map(p => p.split(',').map(Number))));
+              const rings = [...svg.querySelectorAll('#pic-overlays circle')].filter(c => c.getAttribute('fill') === 'none')
+                .map(c => ({id: c.parentNode.id + ':ring', cx: n(c,'cx'), cy: n(c,'cy'), r: n(c,'r')}));
+              const o = document.getElementById('pic-organism');
+              return {plates, segs, rings, disc: {cx: n(o,'cx'), cy: n(o,'cy'), r: n(o,'r')}}; }"""
+        )
+
+        def seg_hits(a, b, R):
+            # Liang-Barsky clip of segment ab against rect R shrunk by 1 unit (a leader may touch the edge)
+            x0, y0, x1, y1 = R["x0"] + 1, R["y0"] + 1, R["x1"] - 1, R["y1"] - 1
+            dx, dy = b[0] - a[0], b[1] - a[1]
+            t0, t1 = 0.0, 1.0
+            for p_, q_ in ((-dx, a[0] - x0), (dx, x1 - a[0]), (-dy, a[1] - y0), (dy, y1 - a[1])):
+                if p_ == 0:
+                    if q_ < 0:
+                        return False
+                else:
+                    t = q_ / p_
+                    if p_ < 0:
+                        t0 = max(t0, t)
+                    else:
+                        t1 = min(t1, t)
+            return t0 <= t1
+
+        def ring_hits(c, R):
+            nx = min(max(c["cx"], R["x0"]), R["x1"]) - c["cx"]
+            ny = min(max(c["cy"], R["y0"]), R["y1"]) - c["cy"]
+            near = (nx * nx + ny * ny) ** 0.5
+            far = max(((x - c["cx"]) ** 2 + (y - c["cy"]) ** 2) ** 0.5 for x in (R["x0"], R["x1"]) for y in (R["y0"], R["y1"]))
+            return near <= c["r"] <= far
+
+        hits = [f"{s_['id']} x plate {R['owner']}" for R in g["plates"] for s_ in g["segs"] if seg_hits(s_["a"], s_["b"], R)]
+        hits += [f"{c['id']} x plate {R['owner']}" for R in g["plates"] for c in g["rings"] if ring_hits(c, R)]
+        check(not hits, f"[{label}] {tag}: no overlay mark or leader crosses a label plate: {sorted(set(hits))[:6]}")
+        d = g["disc"]
+        for R in g["plates"]:
+            if R["owner"] == "pic-ov-BURST":
+                continue
+            nx = min(max(d["cx"], R["x0"]), R["x1"]) - d["cx"]
+            ny = min(max(d["cy"], R["y0"]), R["y1"]) - d["cy"]
+            gap = (nx * nx + ny * ny) ** 0.5 - d["r"]
+            check(gap >= 3, f"[{label}] {tag}: plate {R['owner']} clears the disc by {gap:.1f} >= 3 units")
+
+    def hatch_contrast():
+        m = page.evaluate(
+            """() => { const g = document.getElementById('pic-ov-OPAQUE');
+              const cs = (e, p) => getComputedStyle(e)[p];
+              const hatch = [...g.querySelectorAll('line')].map(l => ({c: cs(l, 'stroke'), a: parseFloat(cs(l, 'strokeOpacity'))}));
+              const veil = g.querySelector('[data-mark=veil]');
+              return {hatch, inner: cs(document.getElementById('pic-inner'), 'fill'),
+                      veil: veil ? {c: cs(veil, 'fill'), a: parseFloat(cs(veil, 'fillOpacity'))} : null}; }"""
+        )
+
+        def rgb(s_):
+            return [int(x) / 255 for x in re.findall(r"\d+", s_)[:3]]
+
+        def over(top, a, base):
+            return [a * t + (1 - a) * b for t, b in zip(top, base)]
+
+        def lum(c):
+            lin = [x / 12.92 if x <= 0.04045 else ((x + 0.055) / 1.055) ** 2.4 for x in c]
+            return 0.2126 * lin[0] + 0.7152 * lin[1] + 0.0722 * lin[2]
+
+        under = rgb(m["inner"])
+        if m["veil"]:
+            under = over(rgb(m["veil"]["c"]), m["veil"]["a"], under)
+        diffs = [abs(lum(over(rgb(h["c"]), h["a"], under)) - lum(under)) for h in m["hatch"]]
+        check(bool(diffs) and min(diffs) >= 0.15,
+              f"[{label}] OPAQUE hatch contrasts with the fill under it: min luminance difference {min(diffs) if diffs else None} (>= 0.15)")
+
     reload()
     tr = float(page.locator("#v-tR").inner_text())
     g = geom()
@@ -548,6 +633,7 @@ def exercise_picture(page, label: str, shoot: bool) -> None:
                  f"(ratio {band / g['ri']:.4f} vs true t/R {tr:.3e})")
     check(overlays() == [], f"[{label}] picture defaults: no overlay, got {overlays()}")
     measure("defaults")
+    overlap_check("defaults")
     shot("01_defaults_clamped")
 
     # input -> picture latency: the picture is redrawn synchronously with the lines
@@ -573,6 +659,7 @@ def exercise_picture(page, label: str, shoot: bool) -> None:
           f"[{label}] unclamped: drawn band/inner {ratio:.4f} equals readout t/R {tr:.4f} to 2 dp")
     check(page.locator("#pic-clamp").count() == 0, f"[{label}] unclamped: no clamp label")
     m2 = measure("unclamped")
+    overlap_check("unclamped")
     rgb2 = [int(x) for x in re.findall(r"\d+", m2["inner"])[:3]]
     check(rgb2[2] == max(rgb2) and rgb2[2] - min(rgb2) >= 40 and max(rgb2) >= 120,
           f"[{label}] unclamped (alive, f_photon above the floor): interior visibly blue and not crushed, {rgb2}")
@@ -600,6 +687,9 @@ def exercise_picture(page, label: str, shoot: bool) -> None:
         )
         check(box and all(box), f"[{label}] gesture {line}: wound label inside the picture {box}")
         measure(line, line)
+        overlap_check(line)
+        if line == "OPAQUE":
+            hatch_contrast()
         if line == "OPAQUE":
             marks = page.eval_on_selector_all("#pic-ov-OPAQUE [data-mark]", "els => els.map(e => e.dataset.mark)")
             check("veil" in marks and "floor-ring" in marks, f"[{label}] OPAQUE has its own veil and floor ring, not luminance only: {marks}")
