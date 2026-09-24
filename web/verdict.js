@@ -22,6 +22,17 @@
   var P2 = { band_km: [60, 300], r_au: 1.1, sigma_MPa: 0.7 };
   var EDGE_DEBOUNCE_MS = 300;
 
+  // The committed Q4 run (experiments/q4_vessel/RESULTS.md, edges.csv), COPIED here, never
+  // recomputed on the page; tests/test_q4_runner.py pins these to RESULTS.md.
+  var Q4_RESULT = {
+    P1: "HELD",
+    P2: "HELD",
+    P1_band_au: [1.19, 1.27],
+    sigma_MPa: [0.7, 1.5, 3.1],
+    r_close_au: [1.2049, 1.2303, 1.2543],
+    R_window_km: 95.6,
+  };
+
   // Control defaults (§5). Log sliders carry log10 of the value.
   var DEFAULTS = {
     "v-R": "3", // log10 m: 1 km
@@ -350,7 +361,10 @@
       P2.band_km[0] +
       ", " +
       P2.band_km[1] +
-      "] km — provisional until M4";
+      "] km — measured " +
+      Q4_RESULT.R_window_km.toFixed(1) +
+      " km, OPAQUE: " +
+      Q4_RESULT.P2;
 
     var pending =
       !(edgeKey("rClose", res) in edgeCache) ||
@@ -364,6 +378,55 @@
       renderEdges();
     }
   }
+
+  // Q4 P1: the registered band drawn hatched as Q1's is (web/app.js), the measured r_close
+  // beside it. Drawn once: it is a record of the run, not a function of the inputs.
+  function drawQ4Band() {
+    var svg = $("q4-band");
+    var NS = "http://www.w3.org/2000/svg";
+    function mk(name, attrs, text) {
+      var n = document.createElementNS(NS, name);
+      for (var k in attrs) n.setAttribute(k, attrs[k]);
+      if (text !== undefined) n.textContent = text;
+      svg.appendChild(n);
+      return n;
+    }
+    var X0 = 1.1, X1 = 1.35, L = 30, Rt = 385, TOP = 22, BOT = 88;
+    var x = function (r) { return L + ((r - X0) / (X1 - X0)) * (Rt - L); };
+    var defs = mk("defs", {});
+    var pat = document.createElementNS(NS, "pattern");
+    [["id", "q4hatch"], ["width", "8"], ["height", "8"], ["patternUnits", "userSpaceOnUse"],
+     ["patternTransform", "rotate(45)"]].forEach(function (kv) { pat.setAttribute(kv[0], kv[1]); });
+    var ln = document.createElementNS(NS, "line");
+    [["x1", "0"], ["y1", "0"], ["x2", "0"], ["y2", "8"], ["stroke", "#8a8378"],
+     ["stroke-width", "2"], ["opacity", "0.45"]].forEach(function (kv) { ln.setAttribute(kv[0], kv[1]); });
+    pat.appendChild(ln);
+    defs.appendChild(pat);
+    var b = Q4_RESULT.P1_band_au;
+    mk("rect", { id: "q4-band-rect", x: x(b[0]), y: TOP, width: x(b[1]) - x(b[0]), height: BOT - TOP,
+      fill: "url(#q4hatch)", stroke: "#8a8378", "stroke-dasharray": "4 3", "stroke-width": "1" });
+    mk("text", { id: "q4-band-label", x: (x(b[0]) + x(b[1])) / 2, y: TOP - 6, "text-anchor": "middle",
+      "font-size": "11", fill: "#6b655c" }, "pre-registered [" + b[0] + ", " + b[1] + "] AU (" + Q4_RESULT.P1 + ")");
+    Q4_RESULT.r_close_au.forEach(function (r, i) {
+      var y = TOP + 14 + i * 20;
+      mk("circle", { "data-mark": "q4-measured", cx: x(r), cy: y, r: 4, fill: "#1565C0" });
+      mk("text", { x: x(r) + 8, y: y + 4, "font-size": "11", fill: "#1f1f1f" },
+        "σ " + Q4_RESULT.sigma_MPa[i] + " MPa: " + r.toFixed(4) + " AU");
+    });
+    mk("line", { x1: L, y1: BOT, x2: Rt, y2: BOT, stroke: "#9a948b" });
+    [1.1, 1.15, 1.2, 1.25, 1.3, 1.35].forEach(function (t) {
+      mk("line", { x1: x(t), y1: BOT, x2: x(t), y2: BOT + 4, stroke: "#9a948b" });
+      mk("text", { x: x(t), y: BOT + 16, "text-anchor": "middle", "font-size": "10", fill: "#5d5d5d" },
+        t.toFixed(2));
+    });
+    mk("text", { x: (L + Rt) / 2, y: BOT + 30, "text-anchor": "middle", "font-size": "11", fill: "#5d5d5d" },
+      "r (AU): measured r_close, model output");
+    var v = $("q4-verdict");
+    v.textContent = "P1 " + Q4_RESULT.P1 + " (binding FREEZE) · P2 " + Q4_RESULT.P2 +
+      " (R_window " + Q4_RESULT.R_window_km.toFixed(1) + " km, OPAQUE)";
+    v.className = Q4_RESULT.P1 === "HELD" ? "verdict-held" : "verdict-failed";
+  }
+  drawQ4Band();
 
   Object.keys(DEFAULTS).forEach(function (id) {
     $(id).value = DEFAULTS[id];
@@ -385,6 +448,6 @@
   });
   $("v-summary").setAttribute("aria-live", "polite");
 
-  window.DysonVerdict = { resolve: resolve, read: read, render: render };
+  window.DysonVerdict = { resolve: resolve, read: read, render: render, Q4_RESULT: Q4_RESULT };
   render();
 })();
