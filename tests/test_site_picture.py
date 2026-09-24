@@ -88,7 +88,7 @@ T50 = "1.69897"  # log10(50 m)
 SCENARIOS = {
     "defaults": [],
     "t50": [{"id": "v-t-mode", "value": "manual"}, {"id": "v-t", "value": T50}],
-    "freeze": [{"id": "v-R", "value": "4"}, {"id": "v-r", "value": "1.21"}],
+    "freeze": [{"id": "v-R", "value": "4"}, {"id": "v-r", "value": "0.0828"}],
     "burst": [{"id": "v-p-mode", "value": "manual"}, {"id": "v-p", "value": "3.35"}],
     "boil": [{"id": "v-p-mode", "value": "manual"}, {"id": "v-p", "value": "3.25"}],
     "opaque": [{"id": "v-t-mode", "value": "manual"}, {"id": "v-t", "value": "2"}],

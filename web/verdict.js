@@ -29,7 +29,7 @@
     "v-t": "0", // log10 m, used when manual
     "v-p-mode": "auto",
     "v-p": "3", // log10 Pa, used when manual
-    "v-r": "1.10",
+    "v-r": "0.0414", // log10 AU on the 1e-4 grid from -0.3011: 1.100 AU (§5 range 0.5 to 100 AU)
     "v-sigma": "0.7",
     "v-org": "algal",
     "v-wall": "ice",
@@ -82,7 +82,7 @@
     if (!fr) throw new RangeError("unknown Fresnel setting " + v("v-fresnel"));
     return {
       R: Math.pow(10, Number(v("v-R"))),
-      r: Math.round(Number(v("v-r")) * 1000) / 1000,
+      r: Math.round(Math.pow(10, Number(v("v-r"))) * 1000) / 1000,
       sigma: Number(v("v-sigma")) * 1e6,
       org: v("v-org"),
       wall: v("v-wall"),

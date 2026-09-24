@@ -84,8 +84,8 @@ process.stdout.write(JSON.stringify({ scripts: srcs, res }));
 SCENARIOS = {
     "defaults": [],
     # spec §8 M2: drag r past the registered r_close at R = 10 km (P1, sigma 0.7: 1.2049 AU)
-    "R10km_r1.20": [{"id": "v-R", "value": "4"}, {"id": "v-r", "value": "1.20"}],
-    "R10km_r1.21": [{"id": "v-R", "value": "4"}, {"id": "v-r", "value": "1.21"}],
+    "R10km_r1.20": [{"id": "v-R", "value": "4"}, {"id": "v-r", "value": "0.0792"}],
+    "R10km_r1.21": [{"id": "v-R", "value": "4"}, {"id": "v-r", "value": "0.0828"}],
     # manual p above / below p* (1960.5 Pa at the defaults), t frozen at t_min(p*)
     "p_above": [{"id": "v-p-mode", "value": "manual"}, {"id": "v-p", "value": "3.35"}],
     "p_below": [{"id": "v-p-mode", "value": "manual"}, {"id": "v-p", "value": "3.25"}],
@@ -96,13 +96,13 @@ SCENARIOS = {
         {"id": "v-R", "value": "4"},
         {"id": "deck-0-count", "value": "1"},
         {"id": "deck-0-value", "value": "1.3"},
-        {"id": "v-r", "value": "1.21"},
+        {"id": "v-r", "value": "0.0828"},
     ],
     "afp13_r1.22": [
         {"id": "v-R", "value": "4"},
         {"id": "deck-0-count", "value": "1"},
         {"id": "deck-0-value", "value": "1.3"},
-        {"id": "v-r", "value": "1.22"},
+        {"id": "v-r", "value": "0.0864"},
     ],
     # two 0.8 K cards: 1.6 K total, clipped at 1.3 K and the clip printed
     "afp_2x08": [

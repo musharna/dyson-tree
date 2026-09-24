@@ -389,7 +389,7 @@ def exercise_vessel(page, label: str) -> None:
     # input-to-readout latency: dragging r, the five lines are recomputed synchronously
     lat = page.evaluate(
         """() => { const s = document.getElementById('v-r'); const out = [];
-                   for (let i = 0; i < 40; i++) { s.value = (1.05 + i * 0.005).toFixed(3);
+                   for (let i = 0; i < 40; i++) { s.value = Math.log10(1.05 + i * 0.005).toFixed(4);
                      const t0 = performance.now(); s.dispatchEvent(new Event('input'));
                      void document.getElementById('v-status-FREEZE').textContent;
                      out.push(performance.now() - t0); }
@@ -399,11 +399,21 @@ def exercise_vessel(page, label: str) -> None:
     notes.append(f"NOTE  [{label}] r-drag input-to-readout latency: median {lat['median']:.1f} ms, max {lat['max']:.1f} ms (40 inputs)")
     check(lat["max"] < 100, f"[{label}] r-drag input-to-readout under 100 ms (max {lat['max']:.1f} ms)")
 
+    # spec §5: the distance slider spans 0.5 to 100 AU (the M2 page stopped at 0.9 to 3)
+    reload()
+    for end, want in (("min", "0.500 AU"), ("max", "100.000 AU")):
+        lim = page.locator("#v-r").get_attribute(end)
+        set_range("#v-r", lim)
+        settle()
+        got = page.locator("#v-r-out").inner_text().strip()
+        err = page.locator("#v-error").inner_text().strip()
+        check(got == want and not err, f"[{label}] r slider {end} reads {want} with no error (got {got!r}, error {err!r})")
+
     reload()
     set_range("#v-R", 4)
-    set_range("#v-r", 1.20)
+    set_range("#v-r", 0.0792)
     check(violated() == [], f"[{label}] R 10 km, r 1.20 AU: all hold, got {violated()}")
-    set_range("#v-r", 1.21)
+    set_range("#v-r", 0.0828)
     check(violated() == ["FREEZE"], f"[{label}] R 10 km, r 1.21 AU (past r_close 1.2049): exactly FREEZE, got {violated()}")
 
     reload()
@@ -426,7 +436,7 @@ def exercise_vessel(page, label: str) -> None:
     check(page.locator("#deck-1-badge").inner_text() == "DECLARED", f"[{label}] respiration badge DECLARED")
     check(page.locator("#deck-0-count option").count() == 4, f"[{label}] antifreeze stacks 0-3 cards")
     set_range("#v-R", 4)
-    set_range("#v-r", 1.21)
+    set_range("#v-r", 0.0828)
     check(violated() == ["FREEZE"], f"[{label}] deck: no card, R 10 km, r 1.21: FREEZE, got {violated()}")
     page.select_option("#deck-0-count", "1")
     set_range("#deck-0-value", 1.3)
@@ -639,7 +649,7 @@ def exercise_picture(page, label: str, shoot: bool) -> None:
     # input -> picture latency: the picture is redrawn synchronously with the lines
     lat = page.evaluate(
         """() => { const s = document.getElementById('v-r'); const out = [];
-                   for (let i = 0; i < 40; i++) { s.value = (1.05 + i * 0.005).toFixed(3);
+                   for (let i = 0; i < 40; i++) { s.value = Math.log10(1.05 + i * 0.005).toFixed(4);
                      const t0 = performance.now(); s.dispatchEvent(new Event('input'));
                      void document.getElementById('pic-inner').getBoundingClientRect();
                      out.push(performance.now() - t0); }
@@ -667,7 +677,7 @@ def exercise_picture(page, label: str, shoot: bool) -> None:
     settle()
 
     gestures = [
-        ("03_freeze", "FREEZE", lambda: (set_range("#v-R", 4), set_range("#v-r", 1.21))),
+        ("03_freeze", "FREEZE", lambda: (set_range("#v-R", 4), set_range("#v-r", 0.0828))),
         ("04_burst", "BURST", lambda: (page.select_option("#v-p-mode", "manual"), set_range("#v-p", 3.35))),
         ("05_boil", "BOIL", lambda: (page.select_option("#v-p-mode", "manual"), set_range("#v-p", 3.25))),
         ("06_opaque", "OPAQUE", lambda: (page.select_option("#v-t-mode", "manual"), set_range("#v-t", 2))),
