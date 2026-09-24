@@ -6,10 +6,11 @@ organism at a distance `r` from the Sun, write down what you expect BEFORE runni
 it, and then report what happened — including when what happened was that the
 prediction was wrong.
 
-**Three questions were registered and run (Q1, Q2, Q2b); a fourth (Q3) was
+**Four questions were registered and run (Q1, Q2, Q2b, Q4); one more (Q3) was
 specified, and its premise was falsified before it could be registered.** Of the
-registered predictions exactly one held — Q1's vascular crossover, judged as the
-repository judges them, at each class's registered default `k`. Q1's algal
+registered predictions three held — Q1's vascular crossover, judged as the
+repository judges them, at each class's registered default `k`, and both of Q4's
+vessel edges (§5). Q1's algal
 prediction missed its band, Q2b's prediction was falsified outright **for the
 algal class — the only class that run answered, and whether it generalises is
 open** (§1), and Q2's was never tested at all because Q2's own held-out gate
@@ -277,6 +278,42 @@ inside the registered pressure bracket.
 
 ## What holds
 
+### 5. The vessel has a window, and both registered edges held (Q4)
+
+Q4 asked whether any sphere of ice, sized to hold its own self-consistent vapour
+pressure, keeps its interior liquid and still passes the declared photon floor, and
+where that window closes. Both predictions were written by hand into
+`experiments/q4_vessel/prereg.yaml` (md5 `d8707a66…`, committed alone at `ab1030e`)
+before any runner existed, and both **held**:
+
+| prediction | band | measured | binding | verdict |
+| --- | --- | --- | --- | --- |
+| P1 `r_close(10 km, σ)` | [1.19, 1.27] AU | 1.2049 / 1.2303 / 1.2543 AU (σ 0.7 / 1.5 / 3.1 MPa) | FREEZE ×3 | **HELD** |
+| P2 `R_window(1.10 AU, 0.7 MPa)` | [60, 300] km | 95.55 km (FREEZE counterfactual 532.6 km) | OPAQUE | **HELD** |
+
+Gates A (T_eq 278.31 K) and C (611.654 Pa at the triple point; 882.22 Pa regression)
+passed. BURST and BOIL held on the auto path at all 59,691 grid nodes (a violation
+would have been exit 2). The control law, the `central` variant, both `f_floor` arms and
+all eight Fresnel-arm rows reproduce the prereg's printed digits with the expected
+binding in every row, including the two the prereg flagged: the (ii)-vapour row
+flips P2's binding to FREEZE (78.39 km, OPAQUE 102.28 km), and the (ii)-water row puts
+OPAQUE (109.76 km) and FREEZE (111.56 km) in one bracket, decided by the smallest root.
+One row sits outside the prereg's edge tolerance as written: the `f_floor` 0.50
+OPAQUE crossing, 10.584 km against the printed 10.6 km, a delta of −0.016 km against a
+tolerance of 1e-3 × 10.6 = 0.011 km. The prereg prints that row to 0.1 km, coarser than
+its own tolerance, so the row matches its printed digits and misses the tolerance; it
+is an unregistered arm and moves no verdict. The census of the grid (first violated:
+FREEZE 52,816, OPAQUE 394, STARVE 0, HELD 6,481) equals `tools/q4_hand_rows.out`.
+
+What the pass means, and does not: under the declared shell law without reflectance,
+the vessel lives only in a thin band between the ice-melt door (1.038 AU) and about
+1.2 AU at 10 km, and the Fresnel arm moves P1's σ 0.7 edge outside the band on three
+of its four combinations, exactly as registered. The declaration carries that cost.
+
+- Lives in: `experiments/q4_vessel/RESULTS.md`, `edges.csv`, `sweep.csv`; figures in
+  `experiments/q4_vessel/figures/`
+- Produced by: `python3 experiments/q4_vessel/run.py` (exits 0, ~40 s on 3 workers)
+
 **The vascular crossover prediction held.** At the registered default `k = 100`,
 r\* = **12.7058 AU**, inside the pre-registered [12, 22] AU. The calibration gate
 passed for both classes: vascular compensation irradiance 6.9519 µmol m⁻² s⁻¹ in
@@ -445,6 +482,7 @@ python -m pytest -q              # 149 passed
 python3 experiments/q1_crossover/run.py    # exits 0
 python3 experiments/q2_thermal/run.py      # exits 2 -- the gate fails, by design
 python3 experiments/q2b_adapted/run.py     # exits 0
+python3 experiments/q4_vessel/run.py       # exits 0
 python3 tools/derive_q2b_candidates.py     # the two classify_limit tables
 python3 tools/derive_q2b_floor_response.py # the response at the thermal floor
 python3 tools/derive_q1_reachability.py    # the gate-reachability scan
@@ -467,7 +505,7 @@ through `tests/test_parity_js.py`, whose crossover values are checked against
 the repository's own committed results do not.
 
 The figures are R + ggplot2: `Rscript experiments/q1_crossover/plot.R`,
-`Rscript experiments/q2b_adapted/plot.R`.
+`Rscript experiments/q2b_adapted/plot.R`, `Rscript experiments/q4_vessel/plot.R`.
 
 Code is MIT; documents and figures are CC-BY-4.0. See `LICENSE`, `LICENSE-docs`
 and `docs/THIRD-PARTY.md`.

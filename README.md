@@ -3,11 +3,13 @@
 **Can a tree grow in space?** This repository builds the smallest honest carbon
 budget for one photosynthetic organism at a distance `r` from the Sun — light in,
 respiration out — registers what it expects before each run, and reports what
-happened. Three questions were registered and run; **exactly one of their
-predictions held.** One missed its band, one was falsified outright — for the
+happened. Four questions were registered and run (Q1, Q2, Q2b, Q4); **three of
+their predictions held**: Q1's vascular crossover and both of Q4's vessel edges
+(the ice sphere's window closes at 1.20–1.25 AU at 10 km, and at 95.6 km at
+1.10 AU, OPAQUE-bound). One missed its band, one was falsified outright — for the
 algal class, the only class that run answered, and whether it generalises is open
-— and one was never tested because its own held-out gate failed. A fourth question was specified
-and then falsified before registration: it asked for a single attenuation
+— and one was never tested because its own held-out gate failed. One more question
+(Q3) was specified and then falsified before registration: it asked for a single attenuation
 coefficient for a wall whose absorption spans a factor of 701 across PAR, which is
 a quantity that cannot exist. The falsifications are the result worth reading.
 
