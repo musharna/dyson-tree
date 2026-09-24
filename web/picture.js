@@ -16,16 +16,22 @@
 
   var M = window.DysonModel;
   if (!M) throw new Error("picture: DysonModel not loaded");
-  var NS = "http://www.w3.org/2000/svg";
-  var W = 420,
-    CX = 210,
-    CY = 200,
-    OUT_MIN = 80, // px at R + t = 10 m
-    OUT_MAX = 170, // px at R + t = 101 km
+  var W = 400,
+    H = 440,
+    CX = 200,
+    CY = 222,
+    OUT_MIN = 100, // px at R + t = 10 m
+    OUT_MAX = 148, // px at R + t = 101 km
     MIN_BAND_PX = 3,
-    LABEL_Y0 = 396,
-    LABEL_DY = 32;
-  var BG = "#faf8f4";
+    FS = 15, // >= 12 px on screen at the page's figure width (smoke asserts it)
+    LH = 17,
+    WRAP = 20,
+    CLAMP_Y = 378;
+  var NS = "http://www.w3.org/2000/svg";
+  var BG = "#faf8f4",
+    INK = "#1b1b1b",
+    MUTED = "#5d5d5d",
+    FAIL = "#8a3b2a";
 
   function el(tag, attrs, parent, text) {
     var e = document.createElementNS(NS, tag);
@@ -101,11 +107,12 @@
       c[2] += w * q[2];
     }
     var mx = Math.max(c[0], c[1], c[2]);
-    var v = Math.max(0, Math.min(1, res.report.f_photon)); // brightness = f_photon
+    // brightness: a monotone map of the model's f_photon (sqrt, so the declared floor 0.25
+    // sits at mid-dark 0.5 and an alive interior above it is visibly brighter)
+    var v = Math.sqrt(Math.max(0, Math.min(1, res.report.f_photon)));
     return c.map(function (x) {
-      // a pale tint of the transmitted colour, scaled by f_photon
-      var chroma = mx > 0 ? x / mx : 0;
-      return Math.round(255 * v * (0.55 + 0.45 * chroma));
+      var chroma = mx > 0 ? x / mx : 0; // hue of the transmitted PAR photon spectrum
+      return Math.round(255 * v * (0.2 + 0.8 * chroma));
     });
   }
 
@@ -117,155 +124,146 @@
   function fmtE(x) {
     return x.toExponential(2);
   }
+  function pt(r, a) {
+    return [CX + r * Math.cos(a), CY + r * Math.sin(a)];
+  }
+  function P2(p) {
+    return p[0].toFixed(1) + "," + p[1].toFixed(1);
+  }
 
-  function label(parent, x, y, anchor, text) {
-    // both sides on two lines, split at " vs " so the concatenated text is the panel's
-    var cut = text.indexOf(" vs ");
-    var tx = el(
-      "text",
-      {
-        x: x,
-        y: y,
-        "text-anchor": anchor,
-        "font-size": 11,
-        fill: "#1b1b1b",
-      },
-      parent,
-    );
-    el("tspan", { x: x, dy: 0 }, tx, cut < 0 ? text : text.slice(0, cut));
-    if (cut >= 0) el("tspan", { x: x, dy: 13 }, tx, text.slice(cut));
-    return tx;
+  // Break text into lines of <= WRAP chars at spaces; each later line keeps its leading
+  // space, so the concatenated textContent is exactly the input (the panel's string).
+  function wrap(text) {
+    var out = [],
+      cur = "";
+    text.split(/(?= )/).forEach(function (w) {
+      if (cur && (cur + w).length > WRAP) {
+        out.push(cur);
+        cur = w;
+      } else cur += w;
+    });
+    if (cur) out.push(cur);
+    return out;
+  }
+
+  // The killing text: first line (the violated side) bold in the failure colour.
+  // (x, y) is the top-left for anchor "start", top-right for "end", top-centre for "middle".
+  function label(parent, x, y, anchor, text, plate) {
+    var lines = wrap(text);
+    var wmax = Math.max.apply(null, lines.map(function (l) { return l.trim().length; }));
+    var w = wmax * FS * 0.64 + 10,
+      h = lines.length * LH + 6;
+    var x0 = anchor === "end" ? x - w : anchor === "middle" ? x - w / 2 : x;
+    if (plate)
+      el("rect", { x: x0.toFixed(1), y: (y - 2).toFixed(1), width: w.toFixed(1), height: h.toFixed(1),
+        rx: 4, fill: "#ffffff", "fill-opacity": 0.92, stroke: FAIL, "stroke-width": 1 }, parent);
+    var tx = el("text", { x: x0 + 5, y: y + FS - 1, "font-size": FS, fill: INK }, parent);
+    lines.forEach(function (l, i) {
+      var a = { x: (x0 + 5).toFixed(1), dy: i ? LH : 0 };
+      if (i === 0) {
+        a["font-weight"] = 700;
+        a.fill = FAIL;
+      }
+      el("tspan", a, tx, l);
+    });
+    return { x0: x0, y0: y - 2, w: w, h: h };
+  }
+
+  // an interior wound's killing number, on a plate inside the interior below the disc
+  function interiorLabel(g, geo, text, slot) {
+    var y = CY + Math.max(geo.rOrg + 8, geo.ri * 0.34) + slot * (3 * LH + 10);
+    label(g, CX, y, "middle", text, true);
   }
 
   var DRAW = {
-    // fracture across the wall at the upper right; the break is where the numbers sit
+    // a gap through the whole wall band at the upper right, cracks radiating from it, and
+    // the killing numbers outside the rim on a leader
     BURST: function (g, geo, text) {
-      var a = -Math.PI / 4;
-      var pts = [];
-      var r0 = geo.ri - 10,
-        r1 = geo.ro + 10;
-      for (var i = 0; i <= 6; i++) {
-        var rr = r0 + ((r1 - r0) * i) / 6;
-        var j = (i % 2 ? 1 : -1) * 0.05;
-        pts.push(
-          (CX + rr * Math.cos(a + j)).toFixed(1) +
-            "," +
-            (CY + rr * Math.sin(a + j)).toFixed(1),
-        );
-      }
-      el(
-        "polyline",
-        { points: pts.join(" "), fill: "none", stroke: BG, "stroke-width": 6 },
-        g,
-      );
-      el(
-        "polyline",
-        {
-          points: pts.join(" "),
-          fill: "none",
-          stroke: "#8a3b2a",
-          "stroke-width": 2,
-        },
-        g,
-      );
-      var ex = CX + (r1 + 4) * Math.cos(a),
-        ey = CY + (r1 + 4) * Math.sin(a);
-      label(g, Math.min(W - 4, ex + 4), Math.max(14, ey - 16), "end", text);
+      var a = -0.9,
+        da = 0.05;
+      var r0 = geo.ri - 1,
+        r1 = geo.ro + 1;
+      el("path", {
+        d: "M" + P2(pt(r0, a - da)) + " L" + P2(pt(r1, a - da * 1.6)) + " L" + P2(pt(r1, a + da * 1.6)) +
+          " L" + P2(pt(r0, a + da)) + " Z",
+        fill: BG, "data-mark": "gap",
+      }, g);
+      [[-1, 0.6], [1, 0.6], [-1, -0.5], [1, -0.5], [0, 1], [0, -0.9]].forEach(function (c) {
+        var side = a + c[0] * da * 1.3,
+          out = c[1] > 0;
+        var p = [pt(out ? r1 : r0, side)];
+        var steps = 3,
+          len = 16 + 10 * Math.abs(c[1]);
+        for (var i = 1; i <= steps; i++) {
+          var rr = (out ? r1 : r0) + (out ? 1 : -1) * (len * i) / steps;
+          p.push(pt(rr, side + c[0] * 0.06 * i + (i % 2 ? 0.03 : -0.03)));
+        }
+        el("polyline", { points: p.map(P2).join(" "), fill: "none", stroke: FAIL, "stroke-width": 2 }, g);
+      });
+      var b = label(g, W - 4, 6, "end", text, true);
+      var from = pt(r1 + 26, a);
+      el("line", { x1: P2(from).split(",")[0], y1: P2(from).split(",")[1],
+        x2: (b.x0 + b.w / 2).toFixed(1), y2: (b.y0 + b.h).toFixed(1), stroke: FAIL, "stroke-width": 1.5 }, g);
     },
-    // frost over the interior
+    // frost at the wall, inward to the disc's edge: it never covers the organism
     FREEZE: function (g, geo, text, slot) {
-      el(
-        "circle",
-        { cx: CX, cy: CY, r: geo.ri, fill: "#ffffff", "fill-opacity": 0.55 },
-        g,
-      );
-      for (var i = 0; i < 9; i++) {
-        var a = (i * 2 * Math.PI) / 9,
-          rr = geo.ri * (0.55 + 0.3 * (i % 2));
-        var x = CX + rr * Math.cos(a),
-          y = CY + rr * Math.sin(a),
-          s = Math.max(3, geo.ri * 0.08);
+      var inner = geo.rOrg + 4;
+      el("path", {
+        d: "M" + (CX - geo.ri) + "," + CY + " a" + geo.ri + "," + geo.ri + " 0 1,0 " + 2 * geo.ri + ",0 a" +
+          geo.ri + "," + geo.ri + " 0 1,0 " + -2 * geo.ri + ",0 Z M" + (CX - inner) + "," + CY + " a" + inner + "," +
+          inner + " 0 1,1 " + 2 * inner + ",0 a" + inner + "," + inner + " 0 1,1 " + -2 * inner + ",0 Z",
+        fill: "#ffffff", "fill-opacity": 0.6, "fill-rule": "evenodd", "data-mark": "frost",
+      }, g);
+      for (var i = 0; i < 12; i++) {
+        var p = pt(geo.ri * (0.72 + 0.16 * (i % 2)), (i * 2 * Math.PI) / 12 + 0.2),
+          s = Math.max(4, geo.ri * 0.07);
         for (var k = 0; k < 3; k++) {
-          var b = (k * Math.PI) / 3;
-          el(
-            "line",
-            {
-              x1: (x - s * Math.cos(b)).toFixed(1),
-              y1: (y - s * Math.sin(b)).toFixed(1),
-              x2: (x + s * Math.cos(b)).toFixed(1),
-              y2: (y + s * Math.sin(b)).toFixed(1),
-              stroke: "#7aa7c7",
-              "stroke-width": 1.2,
-            },
-            g,
-          );
+          var bb = (k * Math.PI) / 3;
+          el("line", { x1: (p[0] - s * Math.cos(bb)).toFixed(1), y1: (p[1] - s * Math.sin(bb)).toFixed(1),
+            x2: (p[0] + s * Math.cos(bb)).toFixed(1), y2: (p[1] + s * Math.sin(bb)).toFixed(1),
+            stroke: "#5f8fb3", "stroke-width": 1.5 }, g);
         }
       }
-      label(g, CX, LABEL_Y0 + slot * LABEL_DY, "middle", text);
+      interiorLabel(g, geo, text, slot);
     },
-    // dried: the interior goes to a cracked tan
+    // dried: a cracked tan floor around the disc
     BOIL: function (g, geo, text, slot) {
-      el(
-        "circle",
-        { cx: CX, cy: CY, r: geo.ri, fill: "#b89a64", "fill-opacity": 0.7 },
-        g,
-      );
-      for (var i = 0; i < 7; i++) {
-        var a = (i * 2 * Math.PI) / 7 + 0.3;
-        el(
-          "path",
-          {
-            d:
-              "M" +
-              CX +
-              "," +
-              CY +
-              " L" +
-              (CX + geo.ri * 0.5 * Math.cos(a + 0.15)).toFixed(1) +
-              "," +
-              (CY + geo.ri * 0.5 * Math.sin(a + 0.15)).toFixed(1) +
-              " L" +
-              (CX + geo.ri * 0.95 * Math.cos(a)).toFixed(1) +
-              "," +
-              (CY + geo.ri * 0.95 * Math.sin(a)).toFixed(1),
-            fill: "none",
-            stroke: "#6b5431",
-            "stroke-width": 1,
-          },
-          g,
-        );
+      el("circle", { cx: CX, cy: CY, r: geo.ri, fill: "#b89a64", "fill-opacity": 0.75, "data-mark": "dry" }, g);
+      for (var i = 0; i < 9; i++) {
+        var a = (i * 2 * Math.PI) / 9 + 0.3;
+        el("polyline", {
+          points: [pt(geo.rOrg + 3, a), pt(geo.ri * 0.6, a + 0.12), pt(geo.ri * 0.97, a)].map(P2).join(" "),
+          fill: "none", stroke: "#6b5431", "stroke-width": 1.5,
+        }, g);
       }
-      label(g, CX, LABEL_Y0 + slot * LABEL_DY, "middle", text);
+      interiorLabel(g, geo, text, slot);
     },
-    // the disc fades
+    // the disc fades (draw() lowers its opacity); a dashed ring marks it
     STARVE: function (g, geo, text, slot) {
-      el(
-        "circle",
-        { cx: CX, cy: CY, r: geo.rOrg, fill: BG, "fill-opacity": 0.7 },
-        g,
-      );
-      el(
-        "circle",
-        {
-          cx: CX,
-          cy: CY,
-          r: geo.rOrg,
-          fill: "none",
-          stroke: "#5d5d5d",
-          "stroke-dasharray": "3 3",
-        },
-        g,
-      );
-      label(g, CX, LABEL_Y0 + slot * LABEL_DY, "middle", text);
+      el("circle", { cx: CX, cy: CY, r: geo.rOrg + 5, fill: "none", stroke: FAIL, "stroke-dasharray": "4 3",
+        "stroke-width": 1.5, "data-mark": "fade-ring" }, g);
+      interiorLabel(g, geo, text, slot);
     },
-    // the interior darkens under its own wall
+    // under its own wall: a veil with hatching, and a ring for the declared floor
     OPAQUE: function (g, geo, text, slot) {
-      el(
-        "circle",
-        { cx: CX, cy: CY, r: geo.ri, fill: "#000000", "fill-opacity": 0.6 },
-        g,
-      );
-      label(g, CX, LABEL_Y0 + slot * LABEL_DY, "middle", text);
+      el("circle", { cx: CX, cy: CY, r: geo.ri, fill: "#000000", "fill-opacity": 0.35, "data-mark": "veil" }, g);
+      for (var d = -geo.ri + 10; d < geo.ri; d += 14) {
+        var half = Math.sqrt(geo.ri * geo.ri - d * d) / Math.SQRT2; // 45° chord, inside the circle
+        var c = Math.sqrt(geo.ri * geo.ri - d * d);
+        var ux = Math.SQRT1_2,
+          uy = -Math.SQRT1_2; // along the chord
+        var nx = Math.SQRT1_2,
+          ny = Math.SQRT1_2; // normal
+        void half;
+        el("line", {
+          x1: (CX + d * nx - c * ux).toFixed(1), y1: (CY + d * ny - c * uy).toFixed(1),
+          x2: (CX + d * nx + c * ux).toFixed(1), y2: (CY + d * ny + c * uy).toFixed(1),
+          stroke: "#000000", "stroke-opacity": 0.45, "stroke-width": 1.2,
+        }, g);
+      }
+      el("circle", { cx: CX, cy: CY, r: (geo.ri - 4).toFixed(2), fill: "none", stroke: "#d9a441",
+        "stroke-width": 2, "stroke-dasharray": "6 4", "data-mark": "floor-ring" }, g);
+      interiorLabel(g, geo, text, slot);
     },
   };
 
@@ -285,85 +283,25 @@
     var riTrue = (ro * R) / (R + t);
     var clamped = ro - riTrue < MIN_BAND_PX;
     var ri = clamped ? ro - MIN_BAND_PX : riTrue;
-    var rOrg = Math.max(4, 0.3 * ri);
+    var rOrg = Math.max(6, 0.28 * ri);
     var geo = { ro: ro, ri: ri, rOrg: rOrg };
     var bad = rep.violated.slice();
-    var lowSlots = bad.filter(function (n) {
-      return n !== "BURST";
-    }).length;
-    var H = LABEL_Y0 + Math.max(1, lowSlots) * LABEL_DY + 4;
     svg.setAttribute("viewBox", "0 0 " + W + " " + H);
 
     el("title", {}, svg, "Cross-section of the vessel");
-    el(
-      "desc",
-      {},
-      svg,
-      "Ice sphere, radius R " +
-        (R >= 1000 ? (R / 1000).toFixed(3) + " km" : R.toFixed(1) + " m") +
-        ", wall t " +
-        t.toPrecision(4) +
-        " m, t/R " +
-        fmtE(t / R) +
+    el("desc", {}, svg,
+      "Ice sphere, radius R " + (R >= 1000 ? (R / 1000).toFixed(3) + " km" : R.toFixed(1) + " m") +
+        ", wall t " + t.toPrecision(4) + " m, t/R " + fmtE(t / R) +
         (clamped ? " (wall drawn at a " + MIN_BAND_PX + " px minimum)" : "") +
-        "; f_photon " +
-        rep.f_photon.toFixed(3) +
-        "; " +
-        (bad.length ? "violated: " + bad.join(", ") : "every line holds") +
-        ".",
-    );
+        "; f_photon " + rep.f_photon.toFixed(3) +
+        "; " + (bad.length ? "violated: " + bad.join(", ") : "every line holds") + ".");
 
     var rgb = interiorColour(res);
-    el(
-      "circle",
-      { id: "pic-outer", cx: CX, cy: CY, r: ro.toFixed(4), fill: "#b9d3e3" },
-      svg,
-    );
-    el(
-      "circle",
-      {
-        id: "pic-inner",
-        cx: CX,
-        cy: CY,
-        r: ri.toFixed(4),
-        fill: "rgb(" + rgb[0] + ", " + rgb[1] + ", " + rgb[2] + ")",
-      },
-      svg,
-    );
-    var sat = Math.max(0, Math.min(1, rep.lines.STARVE.lhs / res.org.a_max));
-    el(
-      "circle",
-      {
-        id: "pic-organism",
-        cx: CX,
-        cy: CY,
-        r: rOrg.toFixed(2),
-        fill: "hsl(120, " + (100 * sat).toFixed(1) + "%, 32%)",
-        "data-saturation": sat.toFixed(4),
-      },
-      svg,
-    );
+    el("circle", { id: "pic-outer", cx: CX, cy: CY, r: ro.toFixed(4), fill: "#b9d3e3" }, svg);
+    el("circle", { id: "pic-inner", cx: CX, cy: CY, r: ri.toFixed(4),
+      fill: "rgb(" + rgb[0] + ", " + rgb[1] + ", " + rgb[2] + ")" }, svg);
 
-    el(
-      "text",
-      { x: 6, y: 16, "font-size": 11, fill: "#5d5d5d" },
-      svg,
-      "t/R " + fmtE(t / R) + " · drawn size log-scaled in R + t",
-    );
-    if (clamped)
-      el(
-        "text",
-        { id: "pic-clamp", x: 6, y: 30, "font-size": 11, fill: "#8a3b2a" },
-        svg,
-        "wall clamped to " +
-          MIN_BAND_PX +
-          " px; at true t/R " +
-          fmtE(t / R) +
-          " it would be " +
-          (ro - riTrue).toFixed(2) +
-          " px",
-      );
-
+    // overlays sit under the organism, so no mark recolours the disc
     var g = el("g", { id: "pic-overlays" }, svg);
     var slot = 0;
     bad.forEach(function (n) {
@@ -372,6 +310,26 @@
       var og = el("g", { id: "pic-ov-" + n, "data-line": n }, g);
       fn(og, geo, texts[n], n === "BURST" ? 0 : slot++);
     });
+
+    var net = rep.lines.STARVE.lhs;
+    var sat = Math.max(0, Math.min(1, net / res.org.a_max));
+    el("circle", { id: "pic-organism", cx: CX, cy: CY, r: rOrg.toFixed(2),
+      fill: "hsl(120, " + (100 * sat).toFixed(1) + "%, 32%)",
+      stroke: net > 0 ? "#1f7a1f" : "#8a8a8a", "stroke-width": 2.5,
+      "fill-opacity": rep.lines.STARVE.violated ? 0.35 : 1,
+      "data-saturation": sat.toFixed(4) }, svg);
+
+    if (clamped) {
+      var tip = pt(ro, (3 * Math.PI) / 4);
+      el("line", { id: "pic-clamp-leader", x1: tip[0].toFixed(1), y1: tip[1].toFixed(1), x2: 40, y2: CLAMP_Y - 4,
+        stroke: MUTED, "stroke-width": 1.2 }, svg);
+      var ct = el("text", { id: "pic-clamp", x: 6, y: CLAMP_Y + FS, "font-size": FS, fill: FAIL }, svg);
+      el("tspan", { x: 6, dy: 0 }, ct, "wall clamped to " + MIN_BAND_PX + " px;");
+      el("tspan", { x: 6, dy: LH }, ct,
+        " true t/R " + fmtE(t / R) + " would draw " + (ro - riTrue).toFixed(2) + " px");
+    }
+    el("text", { x: 6, y: H - 6, "font-size": FS, fill: MUTED }, svg,
+      "t/R " + fmtE(t / R) + " · size log-scaled in R + t");
   }
 
   function blank(msg) {

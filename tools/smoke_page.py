@@ -481,6 +481,61 @@ def exercise_picture(page, label: str, shoot: bool) -> None:
         page.reload(wait_until="load")
         settle()
 
+    def measure(tag, line=None):
+        """Critic round 1: text size, wound anchoring, rim clearance, disc colour, clamp leader."""
+        m = page.evaluate(
+            """(line) => { const svg = document.getElementById('pic');
+              svg.scrollIntoView({block: 'center'});
+              const s = svg.getBoundingClientRect(), vb = svg.viewBox.baseVal, k = s.width / vb.width;
+              const o = document.getElementById('pic-outer').getBoundingClientRect();
+              const i = document.getElementById('pic-inner').getBoundingClientRect();
+              const C = {x: o.left + o.width / 2, y: o.top + o.height / 2, ro: o.width / 2, ri: i.width / 2};
+              const rect = (b) => ({l: b.left, r: b.right, t: b.top, b: b.bottom});
+              const fonts = [...svg.querySelectorAll('text')].map(t =>
+                ({t: t.textContent.slice(0, 30), px: parseFloat(getComputedStyle(t).fontSize) * k}));
+              const org = document.getElementById('pic-organism'), ob = org.getBoundingClientRect();
+              const top = document.elementFromPoint(ob.left + ob.width / 2, ob.top + ob.height / 2);
+              const lab = line ? [...document.querySelectorAll('#pic-ov-' + line + ' text')].map(t => rect(t.getBoundingClientRect())) : [];
+              const cl = document.getElementById('pic-clamp');
+              const lead = document.getElementById('pic-clamp-leader');
+              let leadEnd = null;
+              if (lead) { const b = lead.getBoundingClientRect(); leadEnd = [rect(b)]; }
+              return {C, fonts, fill: getComputedStyle(org).fill, topId: top ? top.id : null,
+                      lab, clamp: cl ? rect(cl.getBoundingClientRect()) : null, leadEnd,
+                      inner: getComputedStyle(document.getElementById('pic-inner')).fill,
+                      amax: DysonModel.PRESETS[document.getElementById('v-org').value].a_max}; }""",
+            line,
+        )
+        C = m["C"]
+        small = [f for f in m["fonts"] if f["px"] < 12]
+        check(not small, f"[{label}] {tag}: every picture text >= 12 px effective: {small}")
+
+        def dist_rect(b):  # centre-to-rectangle nearest distance
+            dx = max(b["l"] - C["x"], 0, C["x"] - b["r"])
+            dy = max(b["t"] - C["y"], 0, C["y"] - b["b"])
+            return (dx * dx + dy * dy) ** 0.5
+
+        if line == "BURST":
+            near = min(dist_rect(b) for b in m["lab"])
+            check(near > C["ro"] + 2, f"[{label}] {tag}: fracture label clear of the rim (nearest {near:.1f} px, rim {C['ro']:.1f} px)")
+        elif line in ("FREEZE", "BOIL", "OPAQUE"):
+            cy = [((b["l"] + b["r"]) / 2 - C["x"], (b["t"] + b["b"]) / 2 - C["y"]) for b in m["lab"]]
+            inside = all((x * x + y * y) ** 0.5 < C["ri"] for x, y in cy)
+            check(inside, f"[{label}] {tag}: killing number anchored inside the interior wound {cy} (ri {C['ri']:.1f})")
+        rgb = [int(x) for x in re.findall(r"\d+", m["fill"])[:3]]
+        mx, mn = max(rgb) / 255, min(rgb) / 255
+        lum = (mx + mn) / 2
+        sat = 0 if mx == mn else (mx - mn) / (1 - abs(2 * lum - 1))
+        net = number_in(page.locator("#v-cmp-STARVE").inner_text())
+        want = max(0.0, min(1.0, net / m["amax"]))
+        check(m["topId"] == "pic-organism" and abs(sat - want) < 0.02,
+              f"[{label}] {tag}: disc on top ({m['topId']}) with saturation {sat:.3f} = net/a_max {want:.3f}")
+        if m["clamp"] is not None:
+            d = dist_rect(m["clamp"]) - C["ro"]
+            ok = m["leadEnd"] is not None and d < 60
+            check(ok, f"[{label}] {tag}: clamp label beside the band ({d:.1f} px off the rim) with a leader")
+        return m
+
     reload()
     tr = float(page.locator("#v-tR").inner_text())
     g = geom()
@@ -492,6 +547,7 @@ def exercise_picture(page, label: str, shoot: bool) -> None:
     notes.append(f"NOTE  [{label}] defaults drawn band {band:.3f} px on inner {g['ri']:.2f} px "
                  f"(ratio {band / g['ri']:.4f} vs true t/R {tr:.3e})")
     check(overlays() == [], f"[{label}] picture defaults: no overlay, got {overlays()}")
+    measure("defaults")
     shot("01_defaults_clamped")
 
     # input -> picture latency: the picture is redrawn synchronously with the lines
@@ -516,6 +572,10 @@ def exercise_picture(page, label: str, shoot: bool) -> None:
     check(round(tr, 3) == 0.050 and round(ratio, 2) == round(tr, 2),
           f"[{label}] unclamped: drawn band/inner {ratio:.4f} equals readout t/R {tr:.4f} to 2 dp")
     check(page.locator("#pic-clamp").count() == 0, f"[{label}] unclamped: no clamp label")
+    m2 = measure("unclamped")
+    rgb2 = [int(x) for x in re.findall(r"\d+", m2["inner"])[:3]]
+    check(rgb2[2] == max(rgb2) and rgb2[2] - min(rgb2) >= 40 and max(rgb2) >= 120,
+          f"[{label}] unclamped (alive, f_photon above the floor): interior visibly blue and not crushed, {rgb2}")
     shot("02_unclamped_t50m")
     settle()
 
@@ -539,6 +599,10 @@ def exercise_picture(page, label: str, shoot: bool) -> None:
                           return b.left >= s.left - 0.5 && b.right <= s.right + 0.5 && b.top >= s.top - 0.5 && b.bottom <= s.bottom + 0.5; }}); }}"""
         )
         check(box and all(box), f"[{label}] gesture {line}: wound label inside the picture {box}")
+        measure(line, line)
+        if line == "OPAQUE":
+            marks = page.eval_on_selector_all("#pic-ov-OPAQUE [data-mark]", "els => els.map(e => e.dataset.mark)")
+            check("veil" in marks and "floor-ring" in marks, f"[{label}] OPAQUE has its own veil and floor ring, not luminance only: {marks}")
         shot(name)
         settle()
     reload()
