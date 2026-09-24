@@ -1,6 +1,6 @@
 # Executor brief: dyson spec pass 6 (round-6 fixes), then prereg.yaml, then the hand rows on top.
 
-Repo `/home/mjarnold/dyson-tree`, master `ae56554`+brief. Authority: spec
+Repo `/home/<user>/dyson-tree`, master `ae56554`+brief. Authority: spec
 `docs/superpowers/specs/2026-09-12-northstar-design.md` (25c5f37, 1177 lines) as amended by THIS brief;
 the codex round-6 review `~/.cache/llm-panel/runs/dyson-tree-6e0926de3dc8/20260922-205412-2638298/codex.md`
 (read it in full). User approved: fix, then commit the prereg, NO further audit round.
@@ -11,7 +11,7 @@ the codex round-6 review `~/.cache/llm-panel/runs/dyson-tree-6e0926de3dc8/202609
    `T_shell⁴ = (1 − R_slab_sw)·T_eq⁴`, `T_int⁴ = (1 − R_slab_sw + T_sw)·T_eq⁴`; state the derivation in
    two lines (interior: T_int⁴ = T·T_eq⁴ + T_shell⁴; shell: 2T_shell⁴ = A·T_eq⁴ + T_int⁴, A = 1−R−T) and
    that it reduces to the registered (1+τ) at R = 0. Replace the eight arm rows with these VERIFIED
-   values (`/home/mjarnold/.claude/jobs/0276dcca/tmp/v7-dyson/v7_slab.out`, script `v7_slab.py` beside it):
+   values (`/home/<user>/.claude/jobs/<job>/tmp/v7-dyson/v7_slab.out`, script `v7_slab.py` beside it):
    P1 (ii) vapour 1.1540 / 1.1766 / 1.1980 AU, water 1.1668 / 1.1914 / 1.2146 (variant (i) rows and all
    doors unchanged); P2 (ii) vapour FREEZE 78.4 km (t 34.2 m) before OPAQUE 102.3 km, water OPAQUE
    109.8 km before FREEZE 111.6 km (binding OPAQUE, margin 1.8 km — say it is the closest pair in the

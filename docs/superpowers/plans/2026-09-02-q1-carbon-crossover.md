@@ -19,7 +19,7 @@
 ## Global Constraints
 
 - All work in `~/dyson-tree` on `master`. Run commands from the repo root.
-- Every commit message ends with the line `Claude-Session: https://claude.ai/code/session_01JCjkg29wRHsrygFNa2Q68M`.
+- Every commit message ends with the line `Claude-Session: <session-url>`.
 - Fail loud: no try/except that defaults, no clamping. Out-of-range inputs raise `ValueError` naming the offending value.
 - Units: irradiance in µmol photons m⁻² s⁻¹; assimilation and respiration in µmol CO₂ m⁻² s⁻¹ per unit photosynthetic area; temperature in K; distance in AU.
 - Constants: TSI = 1360.8 W m⁻²; PAR_FRACTION = 0.45; PHOTONS_PER_J = 4.57; T_ref = 293.0 K; Q10 = 2.0. `irradiance(1.0)` = 1360.8 × 0.45 × 4.57 = 2798.5 (top-of-atmosphere, NOT 2000).
@@ -239,7 +239,7 @@ git add pyproject.toml .gitignore sim/__init__.py sim/physiology.py tests/test_p
 git rm -q --cached sim/.gitkeep tests/.gitkeep 2>/dev/null; rm -f sim/.gitkeep tests/.gitkeep
 git commit -m "feat(sim): physics functions with identity tests
 
-Claude-Session: https://claude.ai/code/session_01JCjkg29wRHsrygFNa2Q68M"
+Claude-Session: <session-url>"
 ```
 
 ---
@@ -444,7 +444,7 @@ Expected: 11 passed. If a calibration gate fails, the ONLY permitted change is `
 git add sim/organism.py tests/test_organism.py
 git commit -m "feat(sim): Organism dataclass, compensation solver, calibrated presets
 
-Claude-Session: https://claude.ai/code/session_01JCjkg29wRHsrygFNa2Q68M"
+Claude-Session: <session-url>"
 ```
 
 ---
@@ -521,7 +521,7 @@ Expected: 24 passed
 git add tests/test_crossover.py
 git commit -m "test(sim): crossover controls (no-respiration raises, 2x R_d inward, k sensitivity)
 
-Claude-Session: https://claude.ai/code/session_01JCjkg29wRHsrygFNa2Q68M"
+Claude-Session: <session-url>"
 ```
 
 ---
@@ -825,7 +825,7 @@ Expected: 28 passed
 git add experiments/q1_crossover/prereg.yaml experiments/q1_crossover/run.py tests/test_runner.py
 git commit -m "feat(q1): pre-registration and gated sweep runner with provenance headers
 
-Claude-Session: https://claude.ai/code/session_01JCjkg29wRHsrygFNa2Q68M"
+Claude-Session: <session-url>"
 ```
 
 ---
@@ -935,7 +935,7 @@ cmd.exe /c start /mnt/c/Users/<windows-user>/Downloads/net_carbon_vs_distance.pn
 git add docs/analysis/theme.R experiments/q1_crossover/plot.R
 git commit -m "feat(q1): house ggplot2 theme and two-figure plot script
 
-Claude-Session: https://claude.ai/code/session_01JCjkg29wRHsrygFNa2Q68M"
+Claude-Session: <session-url>"
 ```
 
 ---
@@ -1062,7 +1062,7 @@ python3 -m pytest tests/ -q
 git add experiments/q1_crossover/ docs/ROADMAP.md
 git commit -m "exp(q1): run registered carbon-crossover sweep; record results; roadmap
 
-Claude-Session: https://claude.ai/code/session_01JCjkg29wRHsrygFNa2Q68M"
+Claude-Session: <session-url>"
 ```
 Expected: 28 passed; commit lands. Do not push unless asked.
 
