@@ -32,7 +32,7 @@ jobs:
           # shallow checkout an ancestor SHA is absent and the guard fails on a clone
           # artefact, not a provenance defect (run 34578387898).
           fetch-depth: 0
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v7
         with:
           # Exact patch version, not "3.13": the committed experiment CSVs carry a
           # `# python=3.13.2` provenance line and the regenerate-exactly guards diff
