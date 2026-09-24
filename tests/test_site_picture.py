@@ -176,7 +176,8 @@ def test_unclamped_band_ratio_equals_readout_t_over_R(page):
 
 def test_defaults_clamp_is_active_and_labelled(page):
     d = page["defaults"]
-    assert abs(num(d["tR"]) - 1.45e-3) < 0.05e-3, d["tR"]
+    # spec §8 prints 1.45e-3 (normal-incidence t_min 1.453 m); the shell-law page has t_min 1.400 m
+    assert abs(num(d["tR"]) - 1.400e-3) < 5e-7, d["tR"]
     clamp = by_id(d["pic"], "pic-clamp")
     assert clamp is not None, "no clamp label at the defaults"
     t = text_of(clamp)

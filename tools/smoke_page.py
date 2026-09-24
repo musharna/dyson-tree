@@ -442,6 +442,108 @@ def exercise_vessel(page, label: str) -> None:
     settle()
     reload()
 
+SHOTS = ROOT / "docs" / "m3_shots"
+
+
+def exercise_picture(page, label: str, shoot: bool) -> None:
+    """M3: the cross-section, measured from the RENDERED DOM (spec §8 M3, §9 risk 3)."""
+
+    def settle():
+        page.wait_for_function(
+            "() => !['v-rauto','v-Rwin'].some(i => document.getElementById(i).textContent.includes('computing'))",
+            timeout=60000,
+        )
+
+    def set_range(sel, value):
+        page.locator(sel).fill(str(value))
+        page.locator(sel).dispatch_event("input")
+
+    def violated():
+        return [n for n in VLINES if page.locator(f"#v-status-{n}").inner_text().strip() == "VIOLATED"]
+
+    def geom():
+        # client rects of the two circles, in CSS px: what the reader sees
+        return page.evaluate(
+            """() => { const o = document.getElementById('pic-outer').getBoundingClientRect();
+                       const i = document.getElementById('pic-inner').getBoundingClientRect();
+                       return {ro: o.width / 2, ri: i.width / 2}; }"""
+        )
+
+    def overlays():
+        return sorted(page.eval_on_selector_all("#pic-overlays > g", "els => els.map(e => e.dataset.line)"))
+
+    def shot(name):
+        if shoot:
+            SHOTS.mkdir(parents=True, exist_ok=True)
+            page.locator("#vessel").screenshot(path=str(SHOTS / f"{name}.png"))
+
+    def reload():
+        page.reload(wait_until="load")
+        settle()
+
+    reload()
+    tr = float(page.locator("#v-tR").inner_text())
+    g = geom()
+    check(abs(tr - 1.400e-3) < 5e-7, f"[{label}] picture defaults: readout t/R {tr:.3e} is t_min 1.400 m / 1 km (spec §8 prints 1.45e-3, the normal-incidence t_min)")
+    clamp = page.locator("#pic-clamp")
+    check(clamp.count() == 1 and clamp.is_visible() and "clamped" in clamp.text_content(),
+          f"[{label}] picture defaults: clamp label present and visible")
+    band = g["ro"] - g["ri"]
+    notes.append(f"NOTE  [{label}] defaults drawn band {band:.3f} px on inner {g['ri']:.2f} px "
+                 f"(ratio {band / g['ri']:.4f} vs true t/R {tr:.3e})")
+    check(overlays() == [], f"[{label}] picture defaults: no overlay, got {overlays()}")
+    shot("01_defaults_clamped")
+
+    # input -> picture latency: the picture is redrawn synchronously with the lines
+    lat = page.evaluate(
+        """() => { const s = document.getElementById('v-r'); const out = [];
+                   for (let i = 0; i < 40; i++) { s.value = (1.05 + i * 0.005).toFixed(3);
+                     const t0 = performance.now(); s.dispatchEvent(new Event('input'));
+                     void document.getElementById('pic-inner').getBoundingClientRect();
+                     out.push(performance.now() - t0); }
+                   out.sort((a, b) => a - b); return {median: out[20], max: out[39]}; }"""
+    )
+    notes.append(f"NOTE  [{label}] r-drag input-to-picture latency (layout forced): median {lat['median']:.1f} ms, max {lat['max']:.1f} ms")
+    check(lat["max"] < 100, f"[{label}] input-to-picture under 100 ms (max {lat['max']:.1f} ms)")
+
+    reload()
+    page.select_option("#v-t-mode", "manual")
+    set_range("#v-t", "1.699")  # 50.003 m (the slider step is 1e-4)
+    tr = float(page.locator("#v-tR").inner_text())
+    g = geom()
+    ratio = (g["ro"] - g["ri"]) / g["ri"]
+    notes.append(f"NOTE  [{label}] unclamped R 1 km t 50 m: drawn band/inner {ratio:.5f} (ro {g['ro']:.3f}, ri {g['ri']:.3f} px) vs readout t/R {tr:.5f}")
+    check(round(tr, 3) == 0.050 and round(ratio, 2) == round(tr, 2),
+          f"[{label}] unclamped: drawn band/inner {ratio:.4f} equals readout t/R {tr:.4f} to 2 dp")
+    check(page.locator("#pic-clamp").count() == 0, f"[{label}] unclamped: no clamp label")
+    shot("02_unclamped_t50m")
+    settle()
+
+    gestures = [
+        ("03_freeze", "FREEZE", lambda: (set_range("#v-R", 4), set_range("#v-r", 1.21))),
+        ("04_burst", "BURST", lambda: (page.select_option("#v-p-mode", "manual"), set_range("#v-p", 3.35))),
+        ("05_boil", "BOIL", lambda: (page.select_option("#v-p-mode", "manual"), set_range("#v-p", 3.25))),
+        ("06_opaque", "OPAQUE", lambda: (page.select_option("#v-t-mode", "manual"), set_range("#v-t", 2))),
+    ]
+    for name, line, act in gestures:
+        reload()
+        act()
+        v, ov = violated(), overlays()
+        check(v == [line] and ov == [line], f"[{label}] gesture {line}: violated {v}, overlays {ov} (want exactly [{line}])")
+        cmp = page.locator(f"#v-cmp-{line}").inner_text().split(" — ")[0]
+        lab = page.locator(f"#pic-ov-{line}").text_content()
+        check(cmp in lab, f"[{label}] gesture {line}: wound prints the panel's both sides {cmp!r}")
+        box = page.evaluate(
+            f"""() => {{ const s = document.getElementById('pic').getBoundingClientRect();
+                        return [...document.querySelectorAll('#pic-ov-{line} text')].map(t => {{ const b = t.getBoundingClientRect();
+                          return b.left >= s.left - 0.5 && b.right <= s.right + 0.5 && b.top >= s.top - 0.5 && b.bottom <= s.bottom + 0.5; }}); }}"""
+        )
+        check(box and all(box), f"[{label}] gesture {line}: wound label inside the picture {box}")
+        shot(name)
+        settle()
+    reload()
+
+
 
 def main() -> int:
     assert SITE.is_dir(), "site/ not built — run tools/build_site.sh first"
@@ -487,6 +589,7 @@ def main() -> int:
             )
             exercise(page, label)
             exercise_vessel(page, label)
+            exercise_picture(page, label, shoot=url.startswith("http"))
             page.close()
         browser.close()
     httpd.shutdown()
