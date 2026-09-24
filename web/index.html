@@ -65,6 +65,14 @@
       .vsummary { font-weight: 600; min-height: 1.5em; }
       .vreadout td { padding-right: 10px; }
       caption { text-align: left; }
+      .deck { border: 1px solid var(--rule); border-radius: 6px; padding: 8px 10px; margin: 0 0 10px; }
+      .deck legend { font-size: 12px; letter-spacing: 0.04em; color: var(--muted); }
+      .card { border-top: 1px solid var(--rule); padding-top: 6px; margin-top: 6px; }
+      .card p { margin: 0 0 4px; }
+      .badge { font-size: 11px; font-weight: 600; letter-spacing: 0.05em; padding: 1px 5px; border-radius: 3px; border: 1px solid currentColor; }
+      .badge-MEASURED { color: var(--curve); }
+      .badge-DEMONSTRATED { color: #3d6b35; }
+      .badge-DECLARED { color: var(--warn); }
       @media (max-width: 820px) { .vgrid { grid-template-columns: minmax(0, 1fr); } }
       @media (max-width: 820px) { .layout { grid-template-columns: minmax(0, 1fr); } }
     </style>
@@ -134,6 +142,35 @@
                 <option value="ice">ice (the only grounded option)</option>
               </select>
             </div>
+            <fieldset class="deck" id="deck" aria-describedby="deck-rule">
+              <legend>The gene deck</legend>
+              <p class="note" id="deck-rule">A card moves an input; it never moves an inequality. Badges:
+                MEASURED (a number with a source in this repository), DEMONSTRATED (done in a lab, cited),
+                DECLARED (fantasy, labelled; allowed here, refused in a registered run).</p>
+              <div class="card" id="deck-0" role="group" aria-labelledby="deck-0-trait">
+                <p><span class="badge" id="deck-0-badge"></span> <strong id="deck-0-trait"></strong>
+                  <span class="note">from <span id="deck-0-organism"></span></span></p>
+                <p class="note">moves <code id="deck-0-input"></code>: <span id="deck-0-delta"></span></p>
+                <p class="note">cost: <span id="deck-0-cost"></span></p>
+                <p class="note">source: <span id="deck-0-source"></span></p>
+                <div class="control"><label for="deck-0-count">cards played</label>
+                  <select id="deck-0-count"></select></div>
+                <div class="control"><label for="deck-0-value" id="deck-0-value-label">value per card</label>
+                  <input id="deck-0-value" type="number" /></div>
+              </div>
+              <div class="card" id="deck-1" role="group" aria-labelledby="deck-1-trait">
+                <p><span class="badge" id="deck-1-badge"></span> <strong id="deck-1-trait"></strong>
+                  <span class="note">from <span id="deck-1-organism"></span></span></p>
+                <p class="note">moves <code id="deck-1-input"></code>: <span id="deck-1-delta"></span></p>
+                <p class="note">cost: <span id="deck-1-cost"></span></p>
+                <p class="note">source: <span id="deck-1-source"></span></p>
+                <div class="control"><label for="deck-1-count">cards played</label>
+                  <select id="deck-1-count"></select></div>
+                <div class="control"><label for="deck-1-value" id="deck-1-value-label">value per card</label>
+                  <input id="deck-1-value" type="number" /></div>
+              </div>
+              <p class="note" id="deck-status" role="status" aria-live="polite"></p>
+            </fieldset>
             <details>
               <summary>Declared assumptions</summary>
               <div class="control">
@@ -299,6 +336,8 @@
     <script src="./spectral_table.js"></script>
     <script src="./model.js"></script>
     <script src="./app.js"></script>
+    <script src="./deck_rows.js"></script>
+    <script src="./deck.js"></script>
     <script src="./verdict.js"></script>
   </body>
 </html>

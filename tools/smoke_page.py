@@ -421,6 +421,27 @@ def exercise_vessel(page, label: str) -> None:
     settle()
     reload()
 
+    # M2b: the deck (§12). Badges render; playing antifreeze 1.3 K moves the R 10 km edge.
+    check(page.locator("#deck-0-badge").inner_text() == "DEMONSTRATED", f"[{label}] antifreeze badge DEMONSTRATED")
+    check(page.locator("#deck-1-badge").inner_text() == "DECLARED", f"[{label}] respiration badge DECLARED")
+    check(page.locator("#deck-0-count option").count() == 4, f"[{label}] antifreeze stacks 0-3 cards")
+    set_range("#v-R", 4)
+    set_range("#v-r", 1.21)
+    check(violated() == ["FREEZE"], f"[{label}] deck: no card, R 10 km, r 1.21: FREEZE, got {violated()}")
+    page.select_option("#deck-0-count", "1")
+    set_range("#deck-0-value", 1.3)
+    check(violated() == [], f"[{label}] deck: antifreeze 1.3 K, r 1.21: all hold, got {violated()}")
+    settle()
+    rauto = page.locator("#v-rauto").inner_text()
+    check("1.2197" in rauto, f"[{label}] deck: antifreeze 1.3 K edge 1.2197 AU: {rauto!r}")
+    page.select_option("#deck-0-count", "2")
+    set_range("#deck-0-value", 0.8)
+    st = page.locator("#deck-status").inner_text()
+    check("CLIPPED" in st and "1.3" in st, f"[{label}] deck: 2 x 0.8 K clipped at 1.3, printed: {st!r}")
+    check(page.locator("#deck-status").get_attribute("aria-live") == "polite", f"[{label}] deck status is a polite live region")
+    settle()
+    reload()
+
 
 def main() -> int:
     assert SITE.is_dir(), "site/ not built — run tools/build_site.sh first"

@@ -10,6 +10,7 @@
   "use strict";
 
   var M = window.DysonModel;
+  var DECK = window.DysonDeck; // web/deck.js: the played cards' inputs
   var $ = function (id) {
     var e = document.getElementById(id);
     if (!e) throw new Error("verdict panel: missing #" + id);
@@ -76,6 +77,7 @@
       return $(id).value;
     };
     var fr = FRESNEL[v("v-fresnel")];
+    var deck = DECK.effect();
     if (!fr) throw new RangeError("unknown Fresnel setting " + v("v-fresnel"));
     return {
       R: Math.pow(10, Number(v("v-R"))),
@@ -87,7 +89,8 @@
       t: Math.pow(10, Number(v("v-t"))),
       pMode: v("v-p-mode"),
       p: Math.pow(10, Number(v("v-p"))),
-      inputs: {
+      // a played card moves an input (T_freeze_K here), never the inequality (§12)
+      inputs: Object.assign({
         albedo: Number(v("v-albedo")),
         emissivity: Number(v("v-emissivity")),
         t_opt_K: Number(v("v-topt")),
@@ -98,7 +101,8 @@
         optical_law: fr.optical_law,
         thermal_reflectance: fr.thermal_reflectance,
         n_interior: M.N_INTERIOR[v("v-ninterior")],
-      },
+      }, deck.inputs),
+      deck: deck,
     };
   }
 
@@ -107,6 +111,7 @@
     var inp = M.makeVesselInputs(s.inputs);
     var org = M.PRESETS[s.org];
     if (!org) throw new RangeError("unknown organism class " + s.org);
+    org = DECK.applyOrganism(org, s.deck);
     if (s.wall !== M.WALL_MATERIAL)
       throw new RangeError("wall material " + s.wall + " is not grounded");
     var th = {
@@ -221,6 +226,7 @@
       s.sigma,
       s.org,
       s.inputs,
+      s.deck.organism,
     ]);
   }
   function edge(kind, res) {
@@ -277,6 +283,7 @@
       return;
     }
     $("v-error").textContent = "";
+    DECK.status(s.deck);
     current = res;
     $("v-R-out").textContent =
       s.R >= 1000 ? fmt(s.R / 1000, 3) + " km" : fmt(s.R, 1) + " m";
@@ -363,7 +370,9 @@
   }
   seedManual("v-t-mode", "v-t", "tMin");
   seedManual("v-p-mode", "v-p", "pStar");
-  Object.keys(DEFAULTS).forEach(function (id) {
+  Object.keys(DEFAULTS)
+    .concat(DECK.controlIds)
+    .forEach(function (id) {
     $(id).addEventListener("input", render);
     $(id).addEventListener("change", render);
   });

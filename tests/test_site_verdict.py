@@ -70,7 +70,7 @@ function run(steps) {
   const g = (id) => { const e = document.getElementById(id); if (!e) throw new Error("no #" + id); return e.textContent; };
   const out = { lines: {}, summary: g("v-summary"), live: document.getElementById("v-summary").attrs["aria-live"] || null };
   for (const n of LINES) out.lines[n] = { status: g("v-status-" + n), margin: g("v-margin-" + n), cmp: g("v-cmp-" + n) };
-  for (const k of ["v-pstar", "v-tmin", "v-rfixed", "v-rauto", "v-Rwin", "v-Rfloor", "v-rslab", "v-albedo-freeze", "v-error"]) out[k] = g(k);
+  for (const k of ["v-pstar", "v-tmin", "v-rfixed", "v-rauto", "v-Rwin", "v-Rfloor", "v-rslab", "v-albedo-freeze", "v-error", "deck-status", "deck-0-badge", "deck-1-badge", "deck-0-trait", "deck-1-trait", "deck-0-source"]) out[k] = g(k);
   return out;
 }
 const res = {};
@@ -88,6 +88,28 @@ SCENARIOS = {
     "p_below": [{"id": "v-p-mode", "value": "manual"}, {"id": "v-p", "value": "3.25"}],
     # manual t of 100 m at the defaults, p re-solved on the given wall
     "t_100m": [{"id": "v-t-mode", "value": "manual"}, {"id": "v-t", "value": "2"}],
+    # M2b deck (§12): antifreeze 1.3 K at R 10 km moves the sigma 0.7 FREEZE edge to 1.2197
+    "afp13_r1.21": [
+        {"id": "v-R", "value": "4"},
+        {"id": "deck-0-count", "value": "1"},
+        {"id": "deck-0-value", "value": "1.3"},
+        {"id": "v-r", "value": "1.21"},
+    ],
+    "afp13_r1.22": [
+        {"id": "v-R", "value": "4"},
+        {"id": "deck-0-count", "value": "1"},
+        {"id": "deck-0-value", "value": "1.3"},
+        {"id": "v-r", "value": "1.22"},
+    ],
+    # two 0.8 K cards: 1.6 K total, clipped at 1.3 K and the clip printed
+    "afp_2x08": [
+        {"id": "v-R", "value": "4"},
+        {"id": "deck-0-count", "value": "2"},
+        {"id": "deck-0-value", "value": "0.8"},
+    ],
+    # P2 window (r 1.10, sigma 0.7, R 95.55 km): STARVE +3.11 -> +3.20 with the DECLARED r_d card
+    "P2_edge": [{"id": "v-R", "value": "4.98027"}],
+    "P2_edge_rd": [{"id": "v-R", "value": "4.98027"}, {"id": "deck-1-count", "value": "1"}],
 }
 
 
@@ -192,3 +214,41 @@ def test_slab_reflectance_printed_live(page):
     b = num(page["res"]["t_100m"]["v-rslab"])
     assert 0 < a < 0.2 and a != b
     assert "0.072" in page["res"]["defaults"]["v-albedo-freeze"]
+
+
+# ---------------------------------------------------------------- M2b, the deck (§12)
+def test_deck_cards_carry_badges_and_sources(page):
+    r = page["res"]["defaults"]
+    assert (r["deck-0-trait"], r["deck-0-badge"]) == ("antifreeze proteins", "DEMONSTRATED")
+    assert (r["deck-1-trait"], r["deck-1-badge"]) == ("reduced dark respiration", "DECLARED")
+    assert "10.1038/nbt0997-887" in r["deck-0-source"]
+    assert r["deck-status"] == "no card played"
+
+
+def test_antifreeze_card_moves_t_freeze_and_the_freeze_edge(page):
+    base = page["res"]["R10km_r1.21"]
+    a, b = page["res"]["afp13_r1.21"], page["res"]["afp13_r1.22"]
+    # positive control: without the card r 1.21 AU freezes (edge 1.2049)
+    assert violated(base) == ["FREEZE"] and "1.2049" in base["v-rauto"]
+    assert violated(a) == [], a["lines"]["FREEZE"]
+    assert violated(b) == ["FREEZE"]
+    assert "T_freeze 271.850 K" in a["lines"]["FREEZE"]["cmp"], a["lines"]["FREEZE"]["cmp"]
+    assert "1.2197" in a["v-rauto"] and "FREEZE binds" in a["v-rauto"], a["v-rauto"]
+
+
+def test_stacked_antifreeze_is_clipped_and_the_clip_printed(page):
+    r = page["res"]["afp_2x08"]
+    assert "CLIPPED" in r["deck-status"] and "clipped at 1.3" in r["deck-status"], r["deck-status"]
+    assert "T_freeze 271.850 K" in r["lines"]["FREEZE"]["cmp"]
+    assert "1.2197" in r["v-rauto"], r["v-rauto"]
+
+
+def test_declared_respiration_card_allowed_on_page_moves_starve_margin(page):
+    a, b = page["res"]["P2_edge"], page["res"]["P2_edge_rd"]
+    assert round(num(a["lines"]["STARVE"]["margin"]), 2) == 3.11, a["lines"]["STARVE"]
+    assert round(num(b["lines"]["STARVE"]["margin"]), 2) == 3.20, b["lines"]["STARVE"]
+    assert b["v-error"] == "" and "DECLARED" in b["deck-status"], b["deck-status"]
+    # the card moved r_d, not any comparator: every right-hand side is unchanged
+    for n in LINES:
+        rhs = lambda r: r["lines"][n]["cmp"].split(" vs ")[1]  # noqa: E731
+        assert rhs(a) == rhs(b), n
