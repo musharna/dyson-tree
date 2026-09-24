@@ -51,7 +51,7 @@ jobs:
           python -m pytest -q
       - name: Build site
         run: tools/build_site.sh
-      - uses: actions/upload-pages-artifact@v3
+      - uses: actions/upload-pages-artifact@v5
         with:
           path: site
 
