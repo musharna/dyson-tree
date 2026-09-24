@@ -31,7 +31,7 @@ documents, figures, results and pre-registrations (`docs/**`,
 git clone https://github.com/musharna/dyson-tree && cd dyson-tree
 python3 -m venv .venv && . .venv/bin/activate
 pip install -e '.[dev]'
-python -m pytest -q          # 304 passed, 1 skipped (pytest -m slow: 4 more)
+python -m pytest -q          # 303 passed, 1 skipped (pytest -m slow: 4 more)
 tools/build_site.sh          # build the published page into site/
 ```
 
