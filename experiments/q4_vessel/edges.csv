@@ -1,0 +1,49 @@
+# git_sha=686e7edb0304d9887851dab15044df953cb45ee5
+# code_dirty=no
+# prereg_md5=d8707a6607db6d54a006e14af9dcfe79
+# spectral_table_sha256=2cfea122d9f6f8aae04b3cc53221d67f6d010f94ead1ff39a81a78f4398da0b8
+# vessel_md5=4eddbbbb4098a09fae1039ca82cbc052
+# physiology_md5=af16830e7f15c5cf9848c8eb694e99c8
+# thermal_md5=6b0ecfc0353686a3534939ac9eff9a0e
+# organism_md5=a5425fa33a97b64be9793a2788778abc
+# run_md5=04c7a9c54fa237830dd550a2f64e17a4
+# python=3.13.2
+# numpy=2.3.5
+# scipy=1.16.3
+# written=2026-09-24T01:16:59-04:00
+row,prediction,config,optical_law,n_interior,thermal_reflectance,interior,f_floor,sigma_MPa,fixed,quantity,line,unit,measured,expected,delta,tolerance,within_tol,matches_printed,binding,expected_binding,binding_ok,tie,bracket_lo,bracket_hi,roots,counterfactual,starve_margin_at_edge,band_lo,band_hi,in_band
+P1,P1,registered,shell,1.000,0,mixed,0.25,0.7,R=10 km,r_close,FREEZE,AU,1.204929,1.2049,+0.000029,0.0001,True,True,FREEZE,FREEZE,True,False,1.2000,1.2100,FREEZE=1.204929,,1.9816,1.19,1.27,True
+P1,P1,registered,shell,1.000,0,mixed,0.25,1.5,R=10 km,r_close,FREEZE,AU,1.230323,1.2303,+0.000023,0.0001,True,True,FREEZE,FREEZE,True,False,1.2300,1.2400,FREEZE=1.230323,,1.9870,1.19,1.27,True
+P1,P1,registered,shell,1.000,0,mixed,0.25,3.1,R=10 km,r_close,FREEZE,AU,1.254335,1.2543,+0.000035,0.0001,True,True,FREEZE,FREEZE,True,False,1.2500,1.2600,FREEZE=1.254335,,1.9895,1.19,1.27,True
+P1.control,P1,control normal,normal,1.000,0,mixed,0.25,0.7,R=10 km,r_close,FREEZE,AU,1.211114,1.2111,+0.000014,0.0001,True,True,FREEZE,FREEZE,True,False,1.2100,1.2200,FREEZE=1.211114,,1.9833,1.19,1.27,True
+P1.control,P1,control normal,normal,1.000,0,mixed,0.25,1.5,R=10 km,r_close,FREEZE,AU,1.236544,1.2365,+0.000044,0.0001,True,True,FREEZE,FREEZE,True,False,1.2300,1.2400,FREEZE=1.236544,,1.9879,1.19,1.27,True
+P1.control,P1,control normal,normal,1.000,0,mixed,0.25,3.1,R=10 km,r_close,FREEZE,AU,1.260455,1.2605,-0.000045,0.0001,True,True,FREEZE,FREEZE,True,False,1.2600,1.2700,FREEZE=1.260455,,1.9899,1.19,1.27,True
+P1.arm0,P1,arm (i) n_int 1.000,shell+fresnel,1.000,0,mixed,0.25,0.7,R=10 km,r_close,FREEZE,AU,1.188569,1.1886,-0.000031,0.0001,True,True,FREEZE,FREEZE,True,False,1.1800,1.1900,FREEZE=1.188569,,1.9784,1.19,1.27,False
+P1.arm0,P1,arm (i) n_int 1.000,shell+fresnel,1.000,0,mixed,0.25,1.5,R=10 km,r_close,FREEZE,AU,1.211598,1.2116,-0.000002,0.0001,True,True,FREEZE,FREEZE,True,False,1.2100,1.2200,FREEZE=1.211598,,1.9843,1.19,1.27,True
+P1.arm0,P1,arm (i) n_int 1.000,shell+fresnel,1.000,0,mixed,0.25,3.1,R=10 km,r_close,FREEZE,AU,1.233407,1.2334,+0.000007,0.0001,True,True,FREEZE,FREEZE,True,False,1.2300,1.2400,FREEZE=1.233407,,1.9871,1.19,1.27,True
+P1.arm1,P1,arm (i) n_int 1.333,shell+fresnel,1.333,0,mixed,0.25,0.7,R=10 km,r_close,FREEZE,AU,1.195410,1.1954,+0.000010,0.0001,True,True,FREEZE,FREEZE,True,False,1.1900,1.2000,FREEZE=1.195410,,1.9798,1.19,1.27,True
+P1.arm1,P1,arm (i) n_int 1.333,shell+fresnel,1.333,0,mixed,0.25,1.5,R=10 km,r_close,FREEZE,AU,1.219419,1.2194,+0.000019,0.0001,True,True,FREEZE,FREEZE,True,False,1.2100,1.2200,FREEZE=1.219419,,1.9855,1.19,1.27,True
+P1.arm1,P1,arm (i) n_int 1.333,shell+fresnel,1.333,0,mixed,0.25,3.1,R=10 km,r_close,FREEZE,AU,1.242135,1.2421,+0.000035,0.0001,True,True,FREEZE,FREEZE,True,False,1.2400,1.2500,FREEZE=1.242135,,1.9882,1.19,1.27,True
+P1.arm2,P1,arm (ii) n_int 1.000,shell+fresnel,1.000,slab,mixed,0.25,0.7,R=10 km,r_close,FREEZE,AU,1.153951,1.1540,-0.000049,0.0001,True,True,FREEZE,FREEZE,True,False,1.1500,1.1600,FREEZE=1.153951,,1.9807,1.19,1.27,False
+P1.arm2,P1,arm (ii) n_int 1.000,shell+fresnel,1.000,slab,mixed,0.25,1.5,R=10 km,r_close,FREEZE,AU,1.176601,1.1766,+0.000001,0.0001,True,True,FREEZE,FREEZE,True,False,1.1700,1.1800,FREEZE=1.176601,,1.9863,1.19,1.27,False
+P1.arm2,P1,arm (ii) n_int 1.000,shell+fresnel,1.000,slab,mixed,0.25,3.1,R=10 km,r_close,FREEZE,AU,1.197990,1.1980,-0.000010,0.0001,True,True,FREEZE,FREEZE,True,False,1.1900,1.2000,FREEZE=1.197990,,1.9889,1.19,1.27,True
+P1.arm3,P1,arm (ii) n_int 1.333,shell+fresnel,1.333,slab,mixed,0.25,0.7,R=10 km,r_close,FREEZE,AU,1.166772,1.1668,-0.000028,0.0001,True,True,FREEZE,FREEZE,True,False,1.1600,1.1700,FREEZE=1.166772,,1.9817,1.19,1.27,False
+P1.arm3,P1,arm (ii) n_int 1.333,shell+fresnel,1.333,slab,mixed,0.25,1.5,R=10 km,r_close,FREEZE,AU,1.191356,1.1914,-0.000044,0.0001,True,True,FREEZE,FREEZE,True,False,1.1900,1.2000,FREEZE=1.191356,,1.9871,1.19,1.27,True
+P1.arm3,P1,arm (ii) n_int 1.333,shell+fresnel,1.333,slab,mixed,0.25,3.1,R=10 km,r_close,FREEZE,AU,1.214595,1.2146,-0.000005,0.0001,True,True,FREEZE,FREEZE,True,False,1.2100,1.2200,FREEZE=1.214595,,1.9895,1.19,1.27,True
+P2,P2,registered,shell,1.000,0,mixed,0.25,0.7,r=1.1 AU,R_window,OPAQUE,km,95.5523,95.6,-0.047667,0.0956,True,True,OPAQUE,OPAQUE,True,False,89.1,100.0,OPAQUE=95.552,FREEZE=532.625,3.1094,60.0,300.0,True
+P2,P2,registered,shell,1.000,0,mixed,0.25,0.7,r=1.1 AU,FREEZE_root,FREEZE,km,532.6245,532.6,+0.024530,0.5326,True,True,OPAQUE,,,False,89.1,100.0,OPAQUE=95.552,FREEZE=532.625,,,,
+P2.control,P2,control normal,normal,1.000,0,mixed,0.25,0.7,r=1.1 AU,R_window,OPAQUE,km,114.9430,114.9,+0.042975,0.1149,True,True,OPAQUE,OPAQUE,True,False,112.2,125.9,OPAQUE=114.943,FREEZE=642.625,3.1105,,,
+P2.control,P2,control normal,normal,1.000,0,mixed,0.25,0.7,r=1.1 AU,FREEZE_root,FREEZE,km,642.6248,642.6,+0.024763,0.6426,True,True,OPAQUE,,,False,112.2,125.9,OPAQUE=114.943,FREEZE=642.625,,,,
+P2.central,P2,variant interior central,shell,1.000,0,central,0.25,0.7,r=1.1 AU,R_window,OPAQUE,km,119.2849,119.3,-0.015137,0.1193,True,True,OPAQUE,,,False,112.2,125.9,OPAQUE=119.285,FREEZE=532.625,2.9397,,,
+P2.ffloor0.50,P2,f_floor 0.50,shell,1.000,0,mixed,0.5,0.7,r=1.1 AU,R_window,OPAQUE,km,10.5843,,,,,,OPAQUE,,,False,10.0,11.2,OPAQUE=10.584,FREEZE=532.625,5.3873,,,
+P2.ffloor0.50,P2,f_floor 0.50,shell,1.000,0,mixed,0.5,0.7,r=1.1 AU,OPAQUE_root,OPAQUE,km,10.5843,10.6,-0.015749,0.0106,False,True,OPAQUE,,,False,10.0,11.2,OPAQUE=10.584,FREEZE=532.625,,,,
+P2.ffloor0.10,P2,f_floor 0.10,shell,1.000,0,mixed,0.1,0.7,r=1.1 AU,R_window,FREEZE,km,532.6245,532.6,+0.024530,0.5326,True,True,FREEZE,FREEZE,True,False,501.2,562.3,FREEZE=532.625,OPAQUE=777.546,1.8621,,,
+P2.ffloor0.10,P2,f_floor 0.10,shell,1.000,0,mixed,0.1,0.7,r=1.1 AU,OPAQUE_root,OPAQUE,km,777.5463,777.5,+0.046313,0.7775,True,True,FREEZE,,,False,501.2,562.3,FREEZE=532.625,OPAQUE=777.546,,,,
+P2.arm4,P2,arm (i) n_int 1.000,shell+fresnel,1.000,0,mixed,0.25,0.7,r=1.1 AU,R_window,OPAQUE,km,75.7822,75.8,-0.017773,0.0758,True,True,OPAQUE,OPAQUE,True,False,70.8,79.4,OPAQUE=75.782,FREEZE=396.247,2.9554,,,
+P2.arm4,P2,arm (i) n_int 1.000,shell+fresnel,1.000,0,mixed,0.25,0.7,r=1.1 AU,FREEZE_root,FREEZE,km,396.2470,396.2,+0.046984,0.3962,True,True,OPAQUE,,,False,70.8,79.4,OPAQUE=75.782,FREEZE=396.247,,,,
+P2.arm5,P2,arm (i) n_int 1.333,shell+fresnel,1.333,0,mixed,0.25,0.7,r=1.1 AU,R_window,OPAQUE,km,84.0151,84.0,+0.015084,0.084,True,True,OPAQUE,OPAQUE,True,False,79.4,89.1,OPAQUE=84.015,FREEZE=453.513,3.0194,,,
+P2.arm5,P2,arm (i) n_int 1.333,shell+fresnel,1.333,0,mixed,0.25,0.7,r=1.1 AU,FREEZE_root,FREEZE,km,453.5134,453.5,+0.013401,0.4535,True,True,OPAQUE,,,False,79.4,89.1,OPAQUE=84.015,FREEZE=453.513,,,,
+P2.arm6,P2,arm (ii) n_int 1.000,shell+fresnel,1.000,slab,mixed,0.25,0.7,r=1.1 AU,R_window,FREEZE,km,78.3890,78.4,-0.011004,0.0784,True,True,FREEZE,FREEZE,True,False,70.8,79.4,FREEZE=78.389,OPAQUE=102.280,1.9461,,,
+P2.arm6,P2,arm (ii) n_int 1.000,shell+fresnel,1.000,slab,mixed,0.25,0.7,r=1.1 AU,OPAQUE_root,OPAQUE,km,102.2799,102.3,-0.020110,0.1023,True,True,FREEZE,,,False,70.8,79.4,FREEZE=78.389,OPAQUE=102.280,,,,
+P2.arm7,P2,arm (ii) n_int 1.333,shell+fresnel,1.333,slab,mixed,0.25,0.7,r=1.1 AU,R_window,OPAQUE,km,109.7621,109.8,-0.037861,0.1098,True,True,OPAQUE,OPAQUE,True,False,100.0,112.2,FREEZE=111.562;OPAQUE=109.762,,1.9489,,,
+P2.arm7,P2,arm (ii) n_int 1.333,shell+fresnel,1.333,slab,mixed,0.25,0.7,r=1.1 AU,FREEZE_root,FREEZE,km,111.5624,111.6,-0.037611,0.1116,True,True,OPAQUE,,,False,100.0,112.2,FREEZE=111.562;OPAQUE=109.762,,,,,
