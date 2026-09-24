@@ -7,15 +7,15 @@ requires-python = ">=3.13"
 # out of scipy.optimize.brentq bracketed by a numpy grid, so the numeric stack
 # is part of the result's provenance, not an incidental build detail.
 dependencies = [
-    "numpy==2.3.5",
-    "scipy==1.16.3",
+    "numpy==2.5.3",
+    "scipy==1.18.1",
     "PyYAML==6.0.3",
 ]
 
 [project.optional-dependencies]
 dev = [
     "pytest==9.1.1",
-    "ruff==0.15.15",
+    "ruff==0.16.8",
 ]
 
 # Explicit discovery: the flat layout also holds `web/` (the static explorer) and
