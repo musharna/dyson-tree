@@ -250,7 +250,9 @@ def test_rule2_measured_sources_resolve():
         "sim/nope.py:3",
         "doi:10.1038/nbt0997-887",
         "sim/physiology.py",
-        "../dyson-tree/sim/physiology.py:54",
+        # exists but outside the repo on any checkout layout (CI checks out
+        # into .../dyson-tree/dyson-tree, where ../dyson-tree/ is the repo itself)
+        "../../../../../../../../etc/passwd:1",
     ):
         bad = dict(copy.deepcopy(RD), anchor="MEASURED", source=src)
         assert rule2_failures([bad]), f"accepted {src!r}"
