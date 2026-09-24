@@ -58,7 +58,9 @@
       footer { margin-top: 22px; color: var(--muted); font-size: 13px; }
       code { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 13px; }
       .vessel { margin-bottom: 20px; }
-      .vgrid { display: grid; grid-template-columns: 300px minmax(0, 1fr); gap: 20px; align-items: start; }
+      .vgrid { display: grid; grid-template-columns: 340px 280px minmax(0, 1fr); gap: 20px; align-items: start; }
+      .vpic { margin: 0; }
+      .vpic svg { background: var(--bg); }
       .vinputs .control { margin-bottom: 10px; }
       .vinputs details .control { margin-top: 8px; }
       .note { color: var(--muted); font-size: 13px; }
@@ -96,6 +98,13 @@
           <i>p</i> = <i>p</i>*, <i>t</i> = <i>t</i><sub>min</sub>(<i>p</i>*).
         </p>
         <div class="vgrid">
+          <figure class="vpic">
+            <svg id="pic" viewBox="0 0 400 440" role="img" aria-labelledby="pic-cap"></svg>
+            <figcaption class="note" id="pic-cap">Cross-section, drawn only from the model's outputs:
+              wall band at its true t/R (clamped to a visible minimum, labelled), interior colour from
+              the transmitted PAR spectrum, brightness from f_photon, disc saturation = net carbon / a_max.
+              Each failed line marks the picture and prints both sides.</figcaption>
+          </figure>
           <div class="vinputs">
             <div class="control slider">
               <label for="v-R">Vessel radius R <output id="v-R-out" for="v-R"></output></label>
@@ -119,7 +128,7 @@
             </div>
             <div class="control slider">
               <label for="v-r">Distance r <output id="v-r-out" for="v-r"></output></label>
-              <input id="v-r" type="range" min="0.9" max="3" step="0.001" value="1.10" />
+              <input id="v-r" type="range" min="-0.3011" max="2" step="0.0001" value="0.0414" />
             </div>
             <div class="control">
               <label for="v-sigma">Ice tensile strength σ (MPa)</label>
@@ -223,6 +232,7 @@
             </p>
             <table>
               <tbody>
+                <tr><th>t/R (wall to radius)</th><td class="num" id="v-tR"></td></tr>
                 <tr><th>p*</th><td class="num" id="v-pstar"></td></tr>
                 <tr><th>t<sub>min</sub>(p*)</th><td class="num" id="v-tmin"></td></tr>
                 <tr><th>[r<sub>melt</sub>, r<sub>freeze</sub>], wall held fixed</th><td class="num" id="v-rfixed"></td></tr>
@@ -338,6 +348,7 @@
     <script src="./app.js"></script>
     <script src="./deck_rows.js"></script>
     <script src="./deck.js"></script>
+    <script src="./picture.js"></script>
     <script src="./verdict.js"></script>
   </body>
 </html>

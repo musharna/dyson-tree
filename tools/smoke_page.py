@@ -389,7 +389,7 @@ def exercise_vessel(page, label: str) -> None:
     # input-to-readout latency: dragging r, the five lines are recomputed synchronously
     lat = page.evaluate(
         """() => { const s = document.getElementById('v-r'); const out = [];
-                   for (let i = 0; i < 40; i++) { s.value = (1.05 + i * 0.005).toFixed(3);
+                   for (let i = 0; i < 40; i++) { s.value = Math.log10(1.05 + i * 0.005).toFixed(4);
                      const t0 = performance.now(); s.dispatchEvent(new Event('input'));
                      void document.getElementById('v-status-FREEZE').textContent;
                      out.push(performance.now() - t0); }
@@ -399,11 +399,21 @@ def exercise_vessel(page, label: str) -> None:
     notes.append(f"NOTE  [{label}] r-drag input-to-readout latency: median {lat['median']:.1f} ms, max {lat['max']:.1f} ms (40 inputs)")
     check(lat["max"] < 100, f"[{label}] r-drag input-to-readout under 100 ms (max {lat['max']:.1f} ms)")
 
+    # spec §5: the distance slider spans 0.5 to 100 AU (the M2 page stopped at 0.9 to 3)
+    reload()
+    for end, want in (("min", "0.500 AU"), ("max", "100.000 AU")):
+        lim = page.locator("#v-r").get_attribute(end)
+        set_range("#v-r", lim)
+        settle()
+        got = page.locator("#v-r-out").inner_text().strip()
+        err = page.locator("#v-error").inner_text().strip()
+        check(got == want and not err, f"[{label}] r slider {end} reads {want} with no error (got {got!r}, error {err!r})")
+
     reload()
     set_range("#v-R", 4)
-    set_range("#v-r", 1.20)
+    set_range("#v-r", 0.0792)
     check(violated() == [], f"[{label}] R 10 km, r 1.20 AU: all hold, got {violated()}")
-    set_range("#v-r", 1.21)
+    set_range("#v-r", 0.0828)
     check(violated() == ["FREEZE"], f"[{label}] R 10 km, r 1.21 AU (past r_close 1.2049): exactly FREEZE, got {violated()}")
 
     reload()
@@ -426,7 +436,7 @@ def exercise_vessel(page, label: str) -> None:
     check(page.locator("#deck-1-badge").inner_text() == "DECLARED", f"[{label}] respiration badge DECLARED")
     check(page.locator("#deck-0-count option").count() == 4, f"[{label}] antifreeze stacks 0-3 cards")
     set_range("#v-R", 4)
-    set_range("#v-r", 1.21)
+    set_range("#v-r", 0.0828)
     check(violated() == ["FREEZE"], f"[{label}] deck: no card, R 10 km, r 1.21: FREEZE, got {violated()}")
     page.select_option("#deck-0-count", "1")
     set_range("#deck-0-value", 1.3)
@@ -441,6 +451,262 @@ def exercise_vessel(page, label: str) -> None:
     check(page.locator("#deck-status").get_attribute("aria-live") == "polite", f"[{label}] deck status is a polite live region")
     settle()
     reload()
+
+SHOTS = ROOT / "docs" / "m3_shots"
+
+
+def exercise_picture(page, label: str, shoot: bool) -> None:
+    """M3: the cross-section, measured from the RENDERED DOM (spec §8 M3, §9 risk 3)."""
+
+    def settle():
+        page.wait_for_function(
+            "() => !['v-rauto','v-Rwin'].some(i => document.getElementById(i).textContent.includes('computing'))",
+            timeout=60000,
+        )
+
+    def set_range(sel, value):
+        page.locator(sel).fill(str(value))
+        page.locator(sel).dispatch_event("input")
+
+    def violated():
+        return [n for n in VLINES if page.locator(f"#v-status-{n}").inner_text().strip() == "VIOLATED"]
+
+    def geom():
+        # client rects of the two circles, in CSS px: what the reader sees
+        return page.evaluate(
+            """() => { const o = document.getElementById('pic-outer').getBoundingClientRect();
+                       const i = document.getElementById('pic-inner').getBoundingClientRect();
+                       return {ro: o.width / 2, ri: i.width / 2}; }"""
+        )
+
+    def overlays():
+        return sorted(page.eval_on_selector_all("#pic-overlays > g", "els => els.map(e => e.dataset.line)"))
+
+    def shot(name):
+        settle()
+        busy = "computing" in page.locator("#vessel").inner_text()
+        check(not busy, f"[{label}] shot {name}: taken after the panel finished computing")
+        if shoot:
+            SHOTS.mkdir(parents=True, exist_ok=True)
+            page.locator("#vessel").screenshot(path=str(SHOTS / f"{name}.png"))
+
+    def reload():
+        page.reload(wait_until="load")
+        settle()
+
+    def measure(tag, line=None):
+        """Critic round 1: text size, wound anchoring, rim clearance, disc colour, clamp leader."""
+        m = page.evaluate(
+            """(line) => { const svg = document.getElementById('pic');
+              svg.scrollIntoView({block: 'center'});
+              const s = svg.getBoundingClientRect(), vb = svg.viewBox.baseVal, k = s.width / vb.width;
+              const o = document.getElementById('pic-outer').getBoundingClientRect();
+              const i = document.getElementById('pic-inner').getBoundingClientRect();
+              const C = {x: o.left + o.width / 2, y: o.top + o.height / 2, ro: o.width / 2, ri: i.width / 2};
+              const rect = (b) => ({l: b.left, r: b.right, t: b.top, b: b.bottom});
+              const fonts = [...svg.querySelectorAll('text')].map(t =>
+                ({t: t.textContent.slice(0, 30), px: parseFloat(getComputedStyle(t).fontSize) * k}));
+              const org = document.getElementById('pic-organism'), ob = org.getBoundingClientRect();
+              const top = document.elementFromPoint(ob.left + ob.width / 2, ob.top + ob.height / 2);
+              const lab = line ? [...document.querySelectorAll('#pic-ov-' + line + ' text')].map(t => rect(t.getBoundingClientRect())) : [];
+              const cl = document.getElementById('pic-clamp');
+              const lead = document.getElementById('pic-clamp-leader');
+              let leadEnd = null;
+              if (lead) { const b = lead.getBoundingClientRect(); leadEnd = [rect(b)]; }
+              return {C, fonts, fill: getComputedStyle(org).fill, topId: top ? top.id : null,
+                      lab, clamp: cl ? rect(cl.getBoundingClientRect()) : null, leadEnd,
+                      inner: getComputedStyle(document.getElementById('pic-inner')).fill,
+                      amax: DysonModel.PRESETS[document.getElementById('v-org').value].a_max}; }""",
+            line,
+        )
+        C = m["C"]
+        small = [f for f in m["fonts"] if f["px"] < 12]
+        check(not small, f"[{label}] {tag}: every picture text >= 12 px effective: {small}")
+
+        def dist_rect(b):  # centre-to-rectangle nearest distance
+            dx = max(b["l"] - C["x"], 0, C["x"] - b["r"])
+            dy = max(b["t"] - C["y"], 0, C["y"] - b["b"])
+            return (dx * dx + dy * dy) ** 0.5
+
+        if line == "BURST":
+            near = min(dist_rect(b) for b in m["lab"])
+            check(near > C["ro"] + 2, f"[{label}] {tag}: fracture label clear of the rim (nearest {near:.1f} px, rim {C['ro']:.1f} px)")
+        elif line in ("FREEZE", "BOIL", "OPAQUE"):
+            cy = [((b["l"] + b["r"]) / 2 - C["x"], (b["t"] + b["b"]) / 2 - C["y"]) for b in m["lab"]]
+            inside = all((x * x + y * y) ** 0.5 < C["ri"] for x, y in cy)
+            check(inside, f"[{label}] {tag}: killing number anchored inside the interior wound {cy} (ri {C['ri']:.1f})")
+        rgb = [int(x) for x in re.findall(r"\d+", m["fill"])[:3]]
+        mx, mn = max(rgb) / 255, min(rgb) / 255
+        lum = (mx + mn) / 2
+        sat = 0 if mx == mn else (mx - mn) / (1 - abs(2 * lum - 1))
+        net = number_in(page.locator("#v-cmp-STARVE").inner_text())
+        want = max(0.0, min(1.0, net / m["amax"]))
+        check(m["topId"] == "pic-organism" and abs(sat - want) < 0.02,
+              f"[{label}] {tag}: disc on top ({m['topId']}) with saturation {sat:.3f} = net/a_max {want:.3f}")
+        if m["clamp"] is not None:
+            d = dist_rect(m["clamp"]) - C["ro"]
+            ok = m["leadEnd"] is not None and d < 60
+            check(ok, f"[{label}] {tag}: clamp label beside the band ({d:.1f} px off the rim) with a leader")
+        return m
+
+
+    def overlap_check(tag):
+        """Critic round 2: no overlay mark or leader crosses a label plate; plates clear the disc."""
+        g = page.evaluate(
+            """() => { const svg = document.getElementById('pic'); const n = (e, a) => parseFloat(e.getAttribute(a));
+              const plates = [...svg.querySelectorAll('#pic-overlays rect')].map(r => ({owner: r.parentNode.id,
+                x0: n(r,'x'), y0: n(r,'y'), x1: n(r,'x') + n(r,'width'), y1: n(r,'y') + n(r,'height')}));
+              const segs = [];
+              const add = (e, pts) => { for (let i = 1; i < pts.length; i++) segs.push({id: (e.id || e.parentNode.id) + ':' + e.tagName, a: pts[i-1], b: pts[i]}); };
+              svg.querySelectorAll('#pic-overlays line, #pic-clamp-leader').forEach(e =>
+                add(e, [[n(e,'x1'), n(e,'y1')], [n(e,'x2'), n(e,'y2')]]));
+              svg.querySelectorAll('#pic-overlays polyline').forEach(e =>
+                add(e, e.getAttribute('points').trim().split(/\\s+/).map(p => p.split(',').map(Number))));
+              const rings = [...svg.querySelectorAll('#pic-overlays circle')].filter(c => c.getAttribute('fill') === 'none')
+                .map(c => ({id: c.parentNode.id + ':ring', cx: n(c,'cx'), cy: n(c,'cy'), r: n(c,'r')}));
+              const o = document.getElementById('pic-organism');
+              return {plates, segs, rings, disc: {cx: n(o,'cx'), cy: n(o,'cy'), r: n(o,'r')}}; }"""
+        )
+
+        def seg_hits(a, b, R):
+            # Liang-Barsky clip of segment ab against rect R shrunk by 1 unit (a leader may touch the edge)
+            x0, y0, x1, y1 = R["x0"] + 1, R["y0"] + 1, R["x1"] - 1, R["y1"] - 1
+            dx, dy = b[0] - a[0], b[1] - a[1]
+            t0, t1 = 0.0, 1.0
+            for p_, q_ in ((-dx, a[0] - x0), (dx, x1 - a[0]), (-dy, a[1] - y0), (dy, y1 - a[1])):
+                if p_ == 0:
+                    if q_ < 0:
+                        return False
+                else:
+                    t = q_ / p_
+                    if p_ < 0:
+                        t0 = max(t0, t)
+                    else:
+                        t1 = min(t1, t)
+            return t0 <= t1
+
+        def ring_hits(c, R):
+            nx = min(max(c["cx"], R["x0"]), R["x1"]) - c["cx"]
+            ny = min(max(c["cy"], R["y0"]), R["y1"]) - c["cy"]
+            near = (nx * nx + ny * ny) ** 0.5
+            far = max(((x - c["cx"]) ** 2 + (y - c["cy"]) ** 2) ** 0.5 for x in (R["x0"], R["x1"]) for y in (R["y0"], R["y1"]))
+            return near <= c["r"] <= far
+
+        hits = [f"{s_['id']} x plate {R['owner']}" for R in g["plates"] for s_ in g["segs"] if seg_hits(s_["a"], s_["b"], R)]
+        hits += [f"{c['id']} x plate {R['owner']}" for R in g["plates"] for c in g["rings"] if ring_hits(c, R)]
+        check(not hits, f"[{label}] {tag}: no overlay mark or leader crosses a label plate: {sorted(set(hits))[:6]}")
+        d = g["disc"]
+        for R in g["plates"]:
+            if R["owner"] == "pic-ov-BURST":
+                continue
+            nx = min(max(d["cx"], R["x0"]), R["x1"]) - d["cx"]
+            ny = min(max(d["cy"], R["y0"]), R["y1"]) - d["cy"]
+            gap = (nx * nx + ny * ny) ** 0.5 - d["r"]
+            check(gap >= 3, f"[{label}] {tag}: plate {R['owner']} clears the disc by {gap:.1f} >= 3 units")
+
+    def hatch_contrast():
+        m = page.evaluate(
+            """() => { const g = document.getElementById('pic-ov-OPAQUE');
+              const cs = (e, p) => getComputedStyle(e)[p];
+              const hatch = [...g.querySelectorAll('line')].map(l => ({c: cs(l, 'stroke'), a: parseFloat(cs(l, 'strokeOpacity'))}));
+              const veil = g.querySelector('[data-mark=veil]');
+              return {hatch, inner: cs(document.getElementById('pic-inner'), 'fill'),
+                      veil: veil ? {c: cs(veil, 'fill'), a: parseFloat(cs(veil, 'fillOpacity'))} : null}; }"""
+        )
+
+        def rgb(s_):
+            return [int(x) / 255 for x in re.findall(r"\d+", s_)[:3]]
+
+        def over(top, a, base):
+            return [a * t + (1 - a) * b for t, b in zip(top, base)]
+
+        def lum(c):
+            lin = [x / 12.92 if x <= 0.04045 else ((x + 0.055) / 1.055) ** 2.4 for x in c]
+            return 0.2126 * lin[0] + 0.7152 * lin[1] + 0.0722 * lin[2]
+
+        under = rgb(m["inner"])
+        if m["veil"]:
+            under = over(rgb(m["veil"]["c"]), m["veil"]["a"], under)
+        diffs = [abs(lum(over(rgb(h["c"]), h["a"], under)) - lum(under)) for h in m["hatch"]]
+        check(bool(diffs) and min(diffs) >= 0.15,
+              f"[{label}] OPAQUE hatch contrasts with the fill under it: min luminance difference {min(diffs) if diffs else None} (>= 0.15)")
+
+    reload()
+    tr = float(page.locator("#v-tR").inner_text())
+    g = geom()
+    check(abs(tr - 1.400e-3) < 5e-7, f"[{label}] picture defaults: readout t/R {tr:.3e} is t_min 1.400 m / 1 km (spec §8 prints 1.45e-3, the normal-incidence t_min)")
+    clamp = page.locator("#pic-clamp")
+    check(clamp.count() == 1 and clamp.is_visible() and "clamped" in clamp.text_content(),
+          f"[{label}] picture defaults: clamp label present and visible")
+    band = g["ro"] - g["ri"]
+    notes.append(f"NOTE  [{label}] defaults drawn band {band:.3f} px on inner {g['ri']:.2f} px "
+                 f"(ratio {band / g['ri']:.4f} vs true t/R {tr:.3e})")
+    check(overlays() == [], f"[{label}] picture defaults: no overlay, got {overlays()}")
+    measure("defaults")
+    overlap_check("defaults")
+    shot("01_defaults_clamped")
+
+    # input -> picture latency: the picture is redrawn synchronously with the lines
+    lat = page.evaluate(
+        """() => { const s = document.getElementById('v-r'); const out = [];
+                   for (let i = 0; i < 40; i++) { s.value = Math.log10(1.05 + i * 0.005).toFixed(4);
+                     const t0 = performance.now(); s.dispatchEvent(new Event('input'));
+                     void document.getElementById('pic-inner').getBoundingClientRect();
+                     out.push(performance.now() - t0); }
+                   out.sort((a, b) => a - b); return {median: out[20], max: out[39]}; }"""
+    )
+    notes.append(f"NOTE  [{label}] r-drag input-to-picture latency (layout forced): median {lat['median']:.1f} ms, max {lat['max']:.1f} ms")
+    check(lat["max"] < 100, f"[{label}] input-to-picture under 100 ms (max {lat['max']:.1f} ms)")
+
+    reload()
+    page.select_option("#v-t-mode", "manual")
+    set_range("#v-t", "1.699")  # 50.003 m (the slider step is 1e-4)
+    tr = float(page.locator("#v-tR").inner_text())
+    g = geom()
+    ratio = (g["ro"] - g["ri"]) / g["ri"]
+    notes.append(f"NOTE  [{label}] unclamped R 1 km t 50 m: drawn band/inner {ratio:.5f} (ro {g['ro']:.3f}, ri {g['ri']:.3f} px) vs readout t/R {tr:.5f}")
+    check(round(tr, 3) == 0.050 and round(ratio, 2) == round(tr, 2),
+          f"[{label}] unclamped: drawn band/inner {ratio:.4f} equals readout t/R {tr:.4f} to 2 dp")
+    check(page.locator("#pic-clamp").count() == 0, f"[{label}] unclamped: no clamp label")
+    m2 = measure("unclamped")
+    overlap_check("unclamped")
+    rgb2 = [int(x) for x in re.findall(r"\d+", m2["inner"])[:3]]
+    check(rgb2[2] == max(rgb2) and rgb2[2] - min(rgb2) >= 40 and max(rgb2) >= 120,
+          f"[{label}] unclamped (alive, f_photon above the floor): interior visibly blue and not crushed, {rgb2}")
+    shot("02_unclamped_t50m")
+    settle()
+
+    gestures = [
+        ("03_freeze", "FREEZE", lambda: (set_range("#v-R", 4), set_range("#v-r", 0.0828))),
+        ("04_burst", "BURST", lambda: (page.select_option("#v-p-mode", "manual"), set_range("#v-p", 3.35))),
+        ("05_boil", "BOIL", lambda: (page.select_option("#v-p-mode", "manual"), set_range("#v-p", 3.25))),
+        ("06_opaque", "OPAQUE", lambda: (page.select_option("#v-t-mode", "manual"), set_range("#v-t", 2))),
+    ]
+    for name, line, act in gestures:
+        reload()
+        act()
+        v, ov = violated(), overlays()
+        check(v == [line] and ov == [line], f"[{label}] gesture {line}: violated {v}, overlays {ov} (want exactly [{line}])")
+        cmp = page.locator(f"#v-cmp-{line}").inner_text().split(" — ")[0]
+        lab = page.locator(f"#pic-ov-{line}").text_content()
+        check(cmp in lab, f"[{label}] gesture {line}: wound prints the panel's both sides {cmp!r}")
+        box = page.evaluate(
+            f"""() => {{ const s = document.getElementById('pic').getBoundingClientRect();
+                        return [...document.querySelectorAll('#pic-ov-{line} text')].map(t => {{ const b = t.getBoundingClientRect();
+                          return b.left >= s.left - 0.5 && b.right <= s.right + 0.5 && b.top >= s.top - 0.5 && b.bottom <= s.bottom + 0.5; }}); }}"""
+        )
+        check(box and all(box), f"[{label}] gesture {line}: wound label inside the picture {box}")
+        measure(line, line)
+        overlap_check(line)
+        if line == "OPAQUE":
+            hatch_contrast()
+        if line == "OPAQUE":
+            marks = page.eval_on_selector_all("#pic-ov-OPAQUE [data-mark]", "els => els.map(e => e.dataset.mark)")
+            check("veil" in marks and "floor-ring" in marks, f"[{label}] OPAQUE has its own veil and floor ring, not luminance only: {marks}")
+        shot(name)
+        settle()
+    reload()
+
 
 
 def main() -> int:
@@ -487,6 +753,7 @@ def main() -> int:
             )
             exercise(page, label)
             exercise_vessel(page, label)
+            exercise_picture(page, label, shoot=url.startswith("http"))
             page.close()
         browser.close()
     httpd.shutdown()

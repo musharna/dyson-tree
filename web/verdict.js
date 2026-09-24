@@ -11,6 +11,7 @@
 
   var M = window.DysonModel;
   var DECK = window.DysonDeck; // web/deck.js: the played cards' inputs
+  var PIC = window.DysonPicture; // web/picture.js: the cross-section, drawn from res
   var $ = function (id) {
     var e = document.getElementById(id);
     if (!e) throw new Error("verdict panel: missing #" + id);
@@ -28,7 +29,7 @@
     "v-t": "0", // log10 m, used when manual
     "v-p-mode": "auto",
     "v-p": "3", // log10 Pa, used when manual
-    "v-r": "1.10",
+    "v-r": "0.0414", // log10 AU on the 1e-4 grid from -0.3011: 1.100 AU (§5 range 0.5 to 100 AU)
     "v-sigma": "0.7",
     "v-org": "algal",
     "v-wall": "ice",
@@ -81,7 +82,7 @@
     if (!fr) throw new RangeError("unknown Fresnel setting " + v("v-fresnel"));
     return {
       R: Math.pow(10, Number(v("v-R"))),
-      r: Math.round(Number(v("v-r")) * 1000) / 1000,
+      r: Math.round(Math.pow(10, Number(v("v-r"))) * 1000) / 1000,
       sigma: Number(v("v-sigma")) * 1e6,
       org: v("v-org"),
       wall: v("v-wall"),
@@ -280,6 +281,7 @@
       $("v-summary").textContent =
         "no verdict: the model raised (see the error line)";
       current = null;
+      PIC.blank("the model raised");
       return;
     }
     $("v-error").textContent = "";
@@ -298,8 +300,10 @@
     $("v-p").disabled = s.pMode === "auto";
 
     var bad = res.report.violated;
+    var texts = {};
     M.LOAD_ORDER.forEach(function (n) {
       var tx = lineText(n, res.report.lines[n], res);
+      texts[n] = tx.cmp;
       $("v-cmp-" + n).textContent = tx.cmp;
       $("v-margin-" + n).textContent = tx.margin;
       var st = $("v-status-" + n);
@@ -309,6 +313,9 @@
     $("v-summary").textContent = bad.length
       ? "VIOLATED: " + bad.join(", ") + " — the picture is " + bad[0]
       : "alive: every line holds";
+
+    $("v-tR").textContent = (res.t / s.R).toExponential(3);
+    PIC.draw(res, texts);
 
     $("v-pstar").textContent = fmt(res.pStar, 1) + " Pa";
     $("v-tmin").textContent = fmt(res.tMin, 3) + " m";
