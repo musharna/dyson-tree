@@ -12,6 +12,7 @@ import hashlib
 import importlib.util
 import re
 import subprocess
+import sys
 from pathlib import Path
 
 import pytest
@@ -24,6 +25,7 @@ OUTPUTS = ("RESULTS.md", "edges.csv", "sweep.csv")
 
 _spec = importlib.util.spec_from_file_location("q4_run", Q4 / "run.py")
 q4 = importlib.util.module_from_spec(_spec)
+sys.modules["q4_run"] = q4  # Pool workers unpickle _sweep_sigma by module name
 _spec.loader.exec_module(q4)
 
 

@@ -709,6 +709,34 @@ def exercise_picture(page, label: str, shoot: bool) -> None:
 
 
 
+def exercise_q4_band(page, label: str) -> None:
+    """M4: the r_close band hatched as Q1's is, the measured edges beside it, HELD/FAILED."""
+    import re as _re
+
+    results = (ROOT / "experiments" / "q4_vessel" / "RESULTS.md").read_text()
+    want = dict(_re.findall(r"^Q4_(P[12])=(HELD|FAILED)$", results, _re.M))
+    m = page.evaluate(
+        """() => { const r = document.getElementById('q4-band-rect');
+                  const pat = document.getElementById('q4hatch');
+                  const dots = [...document.querySelectorAll('#q4-band [data-mark=q4-measured]')];
+                  const rb = r.getBoundingClientRect();
+                  return { fill: r.getAttribute('fill'), pat: !!pat, w: rb.width, h: rb.height,
+                    label: document.getElementById('q4-band-label').textContent,
+                    verdict: document.getElementById('q4-verdict').textContent,
+                    dots: dots.map(d => { const b = d.getBoundingClientRect(); return {x: (b.left + b.right) / 2, w: b.width}; }),
+                    x0: rb.left, x1: rb.right }; }"""
+    )
+    check(m["fill"] == "url(#q4hatch)" and m["pat"], f"[{label}] Q4 band is hatched: {m['fill']}")
+    check(m["w"] > 20 and m["h"] > 20, f"[{label}] Q4 band is drawn: {m['w']:.0f}x{m['h']:.0f}px")
+    check(len(m["dots"]) == 3 and all(d["w"] > 0 for d in m["dots"]), f"[{label}] three measured r_close marks")
+    check(f"({want.get('P1')})" in m["label"], f"[{label}] Q4 band label {m['label']!r} carries RESULTS.md P1 {want.get('P1')}")
+    check(f"P1 {want.get('P1')}" in m["verdict"] and f"P2 {want.get('P2')}" in m["verdict"],
+          f"[{label}] Q4 verdict line {m['verdict']!r} matches RESULTS.md {want}")
+    inside = [m["x0"] <= d["x"] <= m["x1"] for d in m["dots"]]
+    check(inside == [True] * 3 if want.get("P1") == "HELD" else not all(inside),
+          f"[{label}] measured marks sit where the verdict says relative to the band: {inside}")
+
+
 def main() -> int:
     assert SITE.is_dir(), "site/ not built — run tools/build_site.sh first"
     from playwright.sync_api import sync_playwright
@@ -753,6 +781,7 @@ def main() -> int:
             )
             exercise(page, label)
             exercise_vessel(page, label)
+            exercise_q4_band(page, label)
             exercise_picture(page, label, shoot=url.startswith("http"))
             page.close()
         browser.close()

@@ -477,7 +477,7 @@ wall thickness, and it is untouched. The frozen experiments stay frozen.
 git clone https://github.com/musharna/dyson-tree && cd dyson-tree
 python3 -m venv .venv && . .venv/bin/activate
 pip install -e '.[dev]'          # python 3.13.2 exactly; numpy 2.3.5, scipy 1.16.3, PyYAML 6.0.3
-python -m pytest -q              # 149 passed
+python -m pytest -q              # 304 passed, 1 skipped (pytest -m slow: 4 more)
 
 python3 experiments/q1_crossover/run.py    # exits 0
 python3 experiments/q2_thermal/run.py      # exits 2 -- the gate fails, by design
