@@ -1,4 +1,4 @@
-# git_sha=686e7edb0304d9887851dab15044df953cb45ee5
+# git_sha=46199443972a9686db0a0a327fb68eb9ee62d1ac
 # code_dirty=no
 # prereg_md5=d8707a6607db6d54a006e14af9dcfe79
 # spectral_table_sha256=2cfea122d9f6f8aae04b3cc53221d67f6d010f94ead1ff39a81a78f4398da0b8
@@ -10,7 +10,7 @@
 # python=3.13.2
 # numpy=2.3.5
 # scipy=1.16.3
-# written=2026-09-24T01:16:59-04:00
+# written=2026-09-24T02:36:11-04:00
 row,prediction,config,optical_law,n_interior,thermal_reflectance,interior,f_floor,sigma_MPa,fixed,quantity,line,unit,measured,expected,delta,tolerance,within_tol,matches_printed,binding,expected_binding,binding_ok,tie,bracket_lo,bracket_hi,roots,counterfactual,starve_margin_at_edge,band_lo,band_hi,in_band
 P1,P1,registered,shell,1.000,0,mixed,0.25,0.7,R=10 km,r_close,FREEZE,AU,1.204929,1.2049,+0.000029,0.0001,True,True,FREEZE,FREEZE,True,False,1.2000,1.2100,FREEZE=1.204929,,1.9816,1.19,1.27,True
 P1,P1,registered,shell,1.000,0,mixed,0.25,1.5,R=10 km,r_close,FREEZE,AU,1.230323,1.2303,+0.000023,0.0001,True,True,FREEZE,FREEZE,True,False,1.2300,1.2400,FREEZE=1.230323,,1.9870,1.19,1.27,True

@@ -3,7 +3,7 @@
 Written by `experiments/q4_vessel/run.py`; do not edit by hand. Provenance:
 
 ```
-git_sha=686e7edb0304d9887851dab15044df953cb45ee5
+git_sha=46199443972a9686db0a0a327fb68eb9ee62d1ac
 code_dirty=no
 prereg_md5=d8707a6607db6d54a006e14af9dcfe79
 spectral_table_sha256=2cfea122d9f6f8aae04b3cc53221d67f6d010f94ead1ff39a81a78f4398da0b8
@@ -15,8 +15,8 @@ run_md5=04c7a9c54fa237830dd550a2f64e17a4
 python=3.13.2
 numpy=2.3.5
 scipy=1.16.3
-written=2026-09-24T01:16:59-04:00
-runtime_s=36.2
+written=2026-09-24T02:36:11-04:00
+runtime_s=49.1
 ```
 
 ## Verdicts

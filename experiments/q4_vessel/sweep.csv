@@ -1,4 +1,4 @@
-# git_sha=686e7edb0304d9887851dab15044df953cb45ee5
+# git_sha=46199443972a9686db0a0a327fb68eb9ee62d1ac
 # code_dirty=no
 # prereg_md5=d8707a6607db6d54a006e14af9dcfe79
 # spectral_table_sha256=2cfea122d9f6f8aae04b3cc53221d67f6d010f94ead1ff39a81a78f4398da0b8
@@ -10,7 +10,7 @@
 # python=3.13.2
 # numpy=2.3.5
 # scipy=1.16.3
-# written=2026-09-24T01:16:59-04:00
+# written=2026-09-24T02:36:11-04:00
 sigma_MPa,r_au,R_m,p_star_Pa,t_m,T_int_K,T_shell_K,f_photon,margin_BURST_Pa,margin_FREEZE_K,margin_BOIL_Pa,margin_STARVE_umol,margin_OPAQUE,first_violated
 0.7,1.04,10,6423.415221,0.0458815,310.565224,272.906559,0.993205,0,37.4152,1.03234e-07,5.72765,0.743205,HELD
 0.7,1.04,11.2202,6318.453205,0.0506387,310.262376,272.906559,0.992506,0,37.1124,-8.55598e-08,5.87502,0.742506,HELD
