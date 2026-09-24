@@ -1,0 +1,36 @@
+[
+  {
+    "organism": "fish, insects",
+    "trait": "antifreeze proteins",
+    "input": "T_freeze_K",
+    "delta_or_range": {
+      "op": "subtract",
+      "param": "dT_sc",
+      "unit": "K",
+      "range": [0.0, 5.0],
+      "total_cap": 1.3,
+      "max_stack": 3,
+      "clip_note": "real proteins give a few K (fish AFP ~1.5 K, insect hemolymph 5-10 K of thermal hysteresis); the TOTAL across stacked cards is clipped at 1.3 K, where the R 10 km, sigma 3.1 MPa FREEZE edge is 1.2695 AU; it leaves the registered box at 1.343 K"
+    },
+    "cost": "protein synthesis: carbon charged to STARVE is not modelled in M2b (no cost term yet); thermal hysteresis is a non-equilibrium freezing-point depression, read here as an equilibrium T_freeze shift",
+    "anchor": "DEMONSTRATED",
+    "source": "doi:10.1038/nbt0997-887 (Tyshenko, Doucet, Davies & Walker 1997, Nat Biotechnol 15:887-890: fish AFP thermal hysteresis ~1.5 C, insect hemolymph 5-10 C)"
+  },
+  {
+    "organism": "none named",
+    "trait": "reduced dark respiration",
+    "input": "r_d",
+    "delta_or_range": {
+      "op": "scale",
+      "param": "r_d factor",
+      "unit": "",
+      "range": [0.1, 0.1],
+      "total_cap": null,
+      "max_stack": 1,
+      "clip_note": "r_d to a tenth of the preset (algal 0.24 -> 0.024), never zero: respiration(0, T) = 0 would make STARVE undisplayable"
+    },
+    "cost": "none charged; DECLARED fantasy",
+    "anchor": "DECLARED",
+    "source": "DECLARED: no source"
+  }
+]
