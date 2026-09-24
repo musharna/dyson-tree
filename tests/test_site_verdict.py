@@ -47,12 +47,15 @@ function run(steps) {
           id, value: "", textContent: "", className: "", disabled: false, attrs: {},
           setAttribute(k, v) { this.attrs[k] = String(v); },
           getAttribute(k) { return k in this.attrs ? this.attrs[k] : null; },
+          appendChild(c) { return c; },
           addEventListener(ev, fn) { (l[ev] = l[ev] || []).push(fn); },
           fire(ev) { (l[ev] || []).forEach((fn) => fn({ target: this })); },
         });
       }
       return els.get(id);
     },
+    // web/picture.js builds SVG; a detached stub is enough here (tests/test_site_picture.py reads it)
+    createElementNS() { const e = { setAttribute() {}, appendChild(c) { return c; }, textContent: "" }; return e; },
   };
   const ctx = { console, document, setTimeout: (fn) => (timers.push(fn), timers.length), clearTimeout: () => {} };
   ctx.window = ctx;

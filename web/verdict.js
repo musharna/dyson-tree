@@ -11,6 +11,7 @@
 
   var M = window.DysonModel;
   var DECK = window.DysonDeck; // web/deck.js: the played cards' inputs
+  var PIC = window.DysonPicture; // web/picture.js: the cross-section, drawn from res
   var $ = function (id) {
     var e = document.getElementById(id);
     if (!e) throw new Error("verdict panel: missing #" + id);
@@ -280,6 +281,7 @@
       $("v-summary").textContent =
         "no verdict: the model raised (see the error line)";
       current = null;
+      PIC.blank("the model raised");
       return;
     }
     $("v-error").textContent = "";
@@ -298,8 +300,10 @@
     $("v-p").disabled = s.pMode === "auto";
 
     var bad = res.report.violated;
+    var texts = {};
     M.LOAD_ORDER.forEach(function (n) {
       var tx = lineText(n, res.report.lines[n], res);
+      texts[n] = tx.cmp;
       $("v-cmp-" + n).textContent = tx.cmp;
       $("v-margin-" + n).textContent = tx.margin;
       var st = $("v-status-" + n);
@@ -309,6 +313,9 @@
     $("v-summary").textContent = bad.length
       ? "VIOLATED: " + bad.join(", ") + " — the picture is " + bad[0]
       : "alive: every line holds";
+
+    $("v-tR").textContent = (res.t / s.R).toExponential(3);
+    PIC.draw(res, texts);
 
     $("v-pstar").textContent = fmt(res.pStar, 1) + " Pa";
     $("v-tmin").textContent = fmt(res.tMin, 3) + " m";
