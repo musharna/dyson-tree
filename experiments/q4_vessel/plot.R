@@ -27,7 +27,7 @@ fig1 <- ggplot(p1, aes(y = yi)) +
            alpha = band_alpha, fill = band_fill) +
   annotate("text", x = 1.19, y = reg1, hjust = 1.04, size = 2.8, colour = "grey30",
            label = "registered band\n[1.19, 1.27] AU") +
-  geom_segment(aes(x = measured, xend = expected, y = yi + link_trim * expected_nudge, yend = yi + (1 - link_trim) * expected_nudge),
+  geom_segment(aes(x = measured, xend = expected, y = yi - link_gap, yend = yi + expected_nudge + link_gap),
                linewidth = connector_width, linetype = connector_linetype, colour = connector_colour) +
   geom_point(aes(x = expected, y = yi + expected_nudge), shape = shapes_mark[["prereg expected: the edge"]],
              size = 3, colour = "grey35") +
@@ -38,7 +38,7 @@ fig1 <- ggplot(p1, aes(y = yi)) +
   scale_x_continuous(limits = c(1.145, 1.285), breaks = seq(1.15, 1.275, 0.025)) +
   labs(x = expression(r[close]~"(AU), R = 10 km"), y = NULL, shape = expression(sigma~"(MPa)"),
        title = "Q4 P1: where the window closes in r — binding: FREEZE in every row",
-       subtitle = paste0("filled = measured (labelled); open ring just below, joined by a dotted link = prereg expected\n",
+       subtitle = paste0("filled = measured (labelled); open ring just below, joined by a dashed link = prereg expected\n",
                          "(|measured - expected| <= 5e-5 AU in every row, so each link is vertical)")) +
   theme_dyson()
 save(fig1, "p1_r_close_by_law.png")
@@ -57,7 +57,7 @@ exp2 <- subset(p2, !is.na(expected))
 is_edge <- exp2$quantity == "R_window" |
   mapply(function(c, m) any(abs(win$measured[win$config == c] - m) < 1e-9), exp2$config, exp2$measured)
 exp2$mark <- ifelse(is_edge, "prereg expected: the edge", "prereg expected: a later root")
-exp2$dy <- ifelse(is_edge, expected_nudge, 0.6)  # a later-root expected: above its lifted x
+exp2$dy <- ifelse(is_edge, edge_expected_dy_p2, root_expected_dy)  # every mark stays within half a row of its own
 exp2$y0 <- ifelse(is_edge, 0, root_lift)  # where the measured mark it links to sits
 oth$mark <- "measured later root (not the edge)"
 reg2 <- match("registered", levels(p2$config))
@@ -65,14 +65,14 @@ yi <- function(d) as.numeric(factor(d$config, levels = levels(p2$config)))
 oth$yi <- yi(oth) + root_lift; win$yi <- yi(win); bad$yi <- yi(bad); exp2$yi <- yi(exp2)
 fig2 <- ggplot() +
   annotate("rect", xmin = 60, xmax = 300, ymin = reg2 - 0.45, ymax = reg2 + 0.45, alpha = band_alpha, fill = band_fill) +
-  annotate("text", x = 60, y = reg2, hjust = 1.04, size = 2.6, colour = "grey30",
-           label = "registered band\n[60, 300] km") +
+  annotate("text", x = 60, y = reg2 + edge_expected_dy_p2, hjust = 1.04, size = 2.6, colour = "grey30",
+           label = "registered band [60, 300] km") +
   geom_point(data = oth, aes(measured, yi, shape = mark), size = later_root_size, colour = "grey30") +
   geom_text(data = oth, aes(measured, yi, label = sub(" \\(not the edge\\)", "", what)), hjust = -0.25,
             size = 2.5, colour = "grey45") +
   # edge expecteds sit below their measured mark, later-root expecteds above theirs, so a later root
   # that nearly coincides with the edge (arm (ii) n_int 1.333) keeps two separate expected marks
-  geom_segment(data = exp2, aes(x = measured, xend = expected, y = yi + y0 + link_trim * (dy - y0), yend = yi + y0 + (1 - link_trim) * (dy - y0)),
+  geom_segment(data = exp2, aes(x = measured, xend = expected, y = yi + y0 + sign(dy - y0) * link_gap, yend = yi + dy - sign(dy - y0) * link_gap),
                linewidth = connector_width, linetype = connector_linetype, colour = connector_colour) +
   geom_point(data = exp2, aes(expected, yi + dy, shape = mark), size = 3, colour = "grey35") +
   geom_point(data = win, aes(measured, yi, colour = binding), size = 3) +
@@ -86,10 +86,10 @@ fig2 <- ggplot() +
   guides(colour = guide_legend(order = 1), shape = guide_legend(order = 2, nrow = 1)) +
   labs(x = "R (km, log), r = 1.10 AU, σ 0.7 MPa", y = NULL,
        title = "Q4 P2: R_window per configuration",
-       subtitle = paste0("each prereg expected mark is joined by a dotted link to the measured value it is compared with:\n",
-                         "below it for the edge, above it for a later root")) +
+       subtitle = paste0("each prereg expected mark is joined by a dashed link to the measured value it is compared with;\n",
+                         "in every row: the edge on the line, its expected just below; later roots just above")) +
   theme_dyson() + theme(legend.box = "vertical")
-save(fig2, "p2_R_window_by_config.png", w = 10, h = 5.5)
+save(fig2, "p2_R_window_by_config.png", w = 10, h = 7.5)
 
 # 3. Measured minus expected for every compared row, in units of its edge tolerance
 cmp <- subset(edges, !is.na(expected))

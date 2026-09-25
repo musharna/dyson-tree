@@ -39,13 +39,17 @@ band_fill <- "grey40"
 band_alpha <- 0.12
 # Measured-to-expected connector: thin dotted grey, never confusable with a "|" point glyph.
 connector_colour <- "grey10"
-connector_linetype <- "dotted"
+connector_linetype <- "22"  # short dashes: a dotted line this short reads as specks
 connector_width <- 0.8
 # Value labels on points: >= 12 px at 150 dpi.
 value_label_size <- 3.6
 # Measured later root ("x" glyph): readable, and unlike a link or a diamond.
 later_root_size <- 3.2
-# A link stops this fraction of the offset short of each mark, so it never enters a marker.
-link_trim <- 0.22
+# A link stops this far (rows) short of each mark's centre: about one marker radius, so it never enters it.
+link_gap <- 0.1
 # Later roots sit this far (rows) above the row line, so a root next to the edge never covers its dot.
-root_lift <- 0.24
+root_lift <- 0.14
+# A later root's prereg expected sits here (rows, above its own row line): < 0.5, so it reads as its row's.
+root_expected_dy <- 0.44
+# P2 edge expecteds: below their dot by this much (rows); well under half a row.
+edge_expected_dy_p2 <- -0.3

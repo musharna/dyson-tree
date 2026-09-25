@@ -27,6 +27,7 @@
     MIN_BAND_PX = 3,
     FS = 17, // >= 12 px on screen at the page's figure width (smoke asserts it)
     LH = 19,
+    PLATE_PAD = 10, // text inset inside a plate
     ORG_R = 34, // the organism disc: one size and one centre in every state
     KEEP_PAD = 3, // units every mark keeps clear of a plate
     WRAP = 20,
@@ -157,15 +158,15 @@
   function label(parent, x, y, anchor, text, plate, n) {
     var lines = wrap(text, n);
     var wmax = Math.max.apply(null, lines.map(function (l) { return l.trim().length; }));
-    var w = wmax * FS * 0.64 + 10,
-      h = lines.length * LH + 6;
+    var w = wmax * FS * 0.64 + 2 * PLATE_PAD,
+      h = lines.length * LH + 2 * PLATE_PAD - 2;
     var x0 = anchor === "end" ? x - w : anchor === "middle" ? x - w / 2 : x;
     if (plate)
       el("rect", { x: x0.toFixed(1), y: (y - 2).toFixed(1), width: w.toFixed(1), height: h.toFixed(1),
         rx: 4, fill: "#ffffff", "fill-opacity": 0.92, stroke: FAIL, "stroke-width": 1 }, parent);
-    var tx = el("text", { x: x0 + 5, y: y + FS - 1, "font-size": FS, fill: INK }, parent);
+    var tx = el("text", { x: x0 + PLATE_PAD, y: y + FS + PLATE_PAD - 6, "font-size": FS, fill: INK }, parent);
     lines.forEach(function (l, i) {
-      var a = { x: (x0 + 5).toFixed(1), dy: i ? LH : 0 };
+      var a = { x: (x0 + PLATE_PAD).toFixed(1), dy: i ? LH : 0 };
       if (i === 0) {
         a["font-weight"] = 700;
         a.fill = FAIL;
@@ -179,7 +180,7 @@
   function plateSize(text, n) {
     var lines = wrap(text, n);
     var wmax = Math.max.apply(null, lines.map(function (l) { return l.trim().length; }));
-    return { w: wmax * FS * 0.64 + 10, h: lines.length * LH + 6 };
+    return { w: wmax * FS * 0.64 + 2 * PLATE_PAD, h: lines.length * LH + 2 * PLATE_PAD - 2 };
   }
   // Plates live OUTSIDE the vessel, in a strip above it (slots 0 right, 1 left) and, past two
   // plates, a strip below (2 right, 3 left); BURST takes slot 0, over its crack. Each plate gets
@@ -190,9 +191,12 @@
     if (order.length > 4) throw new Error("picture: more than four plates: " + order.join(", "));
     var out = {};
     order.forEach(function (n, slot) {
-      var wr = WRAP, sz = plateSize(texts[n], wr);
-      while (wr > 8 && (sz.w > COL_W || sz.h > STRIP_H)) sz = plateSize(texts[n], --wr);
-      if (sz.w > COL_W || sz.h > STRIP_H) throw new Error("picture: plate for " + n + " fits no wrap");
+      // alone in its strip, a plate may use the full width; otherwise one column
+      var alone = slot < 2 ? order.length === 1 : order.length === 3;
+      var maxW = alone ? W - 2 * MARGIN : COL_W;
+      var wr = 34, sz = plateSize(texts[n], wr);
+      while (wr > 8 && (sz.w > maxW || sz.h > STRIP_H)) sz = plateSize(texts[n], --wr);
+      if (sz.w > maxW || sz.h > STRIP_H) throw new Error("picture: plate for " + n + " fits no wrap");
       var right = slot % 2 === 0, top = slot < 2;
       var x0 = right ? W - MARGIN - sz.w : MARGIN;
       var y0 = top ? MARGIN : below0;
@@ -208,10 +212,10 @@
     var ends = { x1: anchor[0].toFixed(1), y1: anchor[1].toFixed(1), x2: lx.toFixed(1),
       y2: (pl.top ? b.y1 : b.y0).toFixed(1) };
     // a white halo under the leader, so it reads over a dark (OPAQUE) interior too
-    el("line", Object.assign({ stroke: "#ffffff", "stroke-width": 4.5, "stroke-opacity": 0.85,
-      "data-mark": "leader-halo" }, ends), g);
-    el("line", Object.assign({ stroke: FAIL, "stroke-width": 1.5, "data-mark": "leader" }, ends), g);
-    el("circle", { cx: anchor[0].toFixed(1), cy: anchor[1].toFixed(1), r: 3, fill: FAIL, "data-mark": "anchor" }, g);
+    el("line", Object.assign({ stroke: "#ffffff", "stroke-width": 6, "data-mark": "leader-halo" }, ends), g);
+    el("line", Object.assign({ stroke: FAIL, "stroke-width": 2, "data-mark": "leader" }, ends), g);
+    el("circle", { cx: anchor[0].toFixed(1), cy: anchor[1].toFixed(1), r: 4.5, fill: FAIL, stroke: "#ffffff",
+      "stroke-width": 2, "data-mark": "anchor" }, g);
   }
   // an interior wound's anchor: between the disc and the wall, toward the plate
   function interiorLabel(g, geo, text, n) {
@@ -356,7 +360,8 @@
       var fr = el("g", { "data-mark": "floor-ring" }, g);
       var af = -Math.PI / 2 + 2 * Math.PI * ff;
       segs(fr, [pt(rg - 9, af), pt(rg + 5, af)], { stroke: "#ffffff", "stroke-width": 3 }, geo.keep);
-      interiorLabel(g, geo, text, n);
+      // the leader ends on the arc's tip: the f_photon the plate names
+      plateWithLeader(g, geo.plates[n], text, pt(rg, -Math.PI / 2 + 2 * Math.PI * f));
     },
   };
 
@@ -415,7 +420,7 @@
     var sat = Math.max(0, Math.min(1, net / res.org.a_max));
     el("circle", { id: "pic-organism", cx: CX, cy: geo.oy.toFixed(2), r: rOrg.toFixed(2),
       fill: "hsl(120, " + (100 * sat).toFixed(1) + "%, 32%)",
-      stroke: net > 0 ? "#1f7a1f" : "#8a8a8a", "stroke-width": 2.5,
+      stroke: net > 0 ? "#2ecc40" : "#8a8a8a", "stroke-width": 3, // bright mid green: reads on navy and on pale
       "fill-opacity": rep.lines.STARVE.violated ? 0.35 : 1,
       "data-saturation": sat.toFixed(4) }, svg);
 
@@ -423,19 +428,19 @@
       var tip = pt(ro, (3 * Math.PI) / 4);
       el("line", { id: "pic-clamp-leader", x1: tip[0].toFixed(1), y1: tip[1].toFixed(1), x2: 40, y2: CLAMP_Y - 4,
         stroke: MUTED, "stroke-width": 1.2 }, svg);
-      var ct = el("text", { id: "pic-clamp", x: 6, y: CLAMP_Y + FS, "font-size": FS, fill: FAIL }, svg);
-      el("tspan", { x: 6, dy: 0 }, ct, "wall clamped to " + MIN_BAND_PX + " px;");
-      el("tspan", { x: 6, dy: LH }, ct,
+      var ct = el("text", { id: "pic-clamp", x: 16, y: CLAMP_Y + FS, "font-size": FS, fill: FAIL }, svg);
+      el("tspan", { x: 16, dy: 0 }, ct, "wall clamped to " + MIN_BAND_PX + " px;");
+      el("tspan", { x: 16, dy: LH }, ct,
         " true t/R " + fmtE(t / R) + " would draw " + (ro - riTrue).toFixed(2) + " px");
     }
     // a key for the OPAQUE gauge, bottom left above the footer (the clamp label's place; a
     // wall thin enough to clamp never darkens the interior below the floor)
     if (rep.lines.OPAQUE.violated) {
-      var kt = el("text", { id: "pic-key", x: 6, y: H - 6 - 2 * LH, "font-size": FS, fill: MUTED }, svg);
-      el("tspan", { x: 6, dy: 0 }, kt, "amber arc: f_photon reaching in;");
-      el("tspan", { x: 6, dy: LH }, kt, " white tick: declared floor");
+      var kt = el("text", { id: "pic-key", x: 16, y: H - 6 - 2 * LH, "font-size": FS, fill: MUTED }, svg);
+      el("tspan", { x: 16, dy: 0 }, kt, "amber arc: f_photon reaching in;");
+      el("tspan", { x: 16, dy: LH }, kt, " white tick: declared floor");
     }
-    el("text", { x: 6, y: H - 6, "font-size": FS, fill: MUTED }, svg,
+    el("text", { x: 16, y: H - 6, "font-size": FS, fill: MUTED }, svg,
       "t/R " + fmtE(t / R) + " · size log-scaled in R + t");
   }
 
