@@ -302,9 +302,30 @@ def test_picture_draws_across_the_slider_range():
     assert node, "node is required; this test fails rather than skips"
     subprocess.run(["bash", str(ROOT / "tools" / "build_site.sh")], cwd=ROOT, check=True,
                    capture_output=True, timeout=120)
-    old = "res[name] = run(steps);"
-    assert DRIVER.count(old) == 1
-    drv_src = DRIVER.replace(old, "try { res[name] = run(steps); } catch (e) { res[name] = { error: String(e.message) }; }")
+    # (visual-first Task 5) the map must draw too: the stub DOM records children here, so the
+    # cells #map holds after the state is set can be counted
+    kids = ("children: [], appendChild(c) { this.children.push(c); return c; }, "
+            "get firstChild() { return this.children[0] || null; }, "
+            "removeChild(c) { this.children = this.children.filter((x) => x !== c); return c; }, ")
+    patches = [
+        ("res[name] = run(steps);",
+         "try { res[name] = run(steps); } catch (e) { res[name] = { error: String(e.message) }; }"),
+        ("          appendChild(c) { return c; },", "          " + kids),
+        ('const e = { setAttribute() {}, appendChild(c) { return c; }, textContent: "" };',
+         "const e = { attrs: {}, setAttribute(k, v) { this.attrs[k] = String(v); }, " + kids + 'textContent: "" };'),
+        ("  return out;\n",
+         "  const walk = (e) => [e].concat((e.children || []).flatMap(walk));\n"
+         '  out.mapCells = walk(document.getElementById("map")).filter((e) => e.attrs && "data-cell" in e.attrs).length;\n'
+         "  out.mapWant = ctx.DysonMap.grid.r_log10[2] * ctx.DysonMap.grid.R_log10[2];\n"
+         '  out.mapGrid = ctx.DysonMap.grid;\n'
+         '  const dot = walk(document.getElementById("map")).filter((e) => e.attrs && e.attrs.id === "map-dot");\n'
+         "  out.mapDot = dot.map((e) => e.attrs);\n"
+         "  return out;\n"),
+    ]
+    drv_src = DRIVER
+    for old, new in patches:
+        assert drv_src.count(old) == 1, old
+        drv_src = drv_src.replace(old, new)
     with tempfile.TemporaryDirectory() as tmp:
         drv = Path(tmp) / "sweep.cjs"
         drv.write_text(drv_src)
@@ -316,6 +337,31 @@ def test_picture_draws_across_the_slider_range():
     assert not thrown, thrown
     # positive control: these states do fail lines, so plates were actually placed
     assert all(violated(v) for v in res.values()), {k: violated(v) for k, v in res.items()}
+    # every state draws the map's cells, one per grid point
+    assert all(v["mapWant"] > 0 for v in res.values()), res
+    undrawn = {k: (v["mapCells"], v["mapWant"]) for k, v in res.items() if v["mapCells"] != v["mapWant"]}
+    assert not undrawn, undrawn
+    # drawn for THIS state: one dot, on the cell nearest the slider values the state set (the
+    # cells persist between draws, so they alone cannot tell a draw that skipped this state)
+    # (grid position in cell units; R 1 km sits on a half-cell tie, so either neighbour is nearest)
+    def pos(g, lv):
+        return min(g[2] - 1.0, max(0.0, (lv - g[0]) * (g[2] - 1) / (g[1] - g[0])))
+
+    offdot = {}
+    for k, v in res.items():
+        steps = {st["id"]: float(st["value"]) for st in SWEEP[k]}
+        g = v["mapGrid"]
+        want = (pos(g["r_log10"], steps["v-r"]), pos(g["R_log10"], steps["v-R"]))
+        got = [(d.get("data-i"), d.get("data-j")) for d in v["mapDot"]]
+        if len(got) != 1 or any(c is None or abs(int(c) - w) > 0.5 + 1e-6 for c, w in zip(got[0], want)):
+            offdot[k] = (got, want)
+    assert not offdot, offdot
+    # and the five headroom bars, each with a drawn fill
+    def barless(v):
+        return [n for n in LINES if not (v["bars"][n] and v["bars"][n]["fill"]
+                                         and "width:" in v["bars"][n]["fill"].get("style", ""))]
+    nobars = {k: barless(v) for k, v in res.items() if barless(v)}
+    assert not nobars, nobars
 
 
 # ---------------------------------------------------------------- visual-first Task 4: headroom bars
