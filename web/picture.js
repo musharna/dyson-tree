@@ -41,7 +41,17 @@
     INK = "#1b1b1b",
     RIM = "#3d6f8e", // outer-circle outline: the vessel edge against the page
     MUTED = "#5d5d5d",
-    FAIL = "#8a3b2a";
+    FAIL = "#8a3b2a",
+    FROST = "#5f8fb3", // FREEZE's frost crystals
+    BUBBLE = "#b5651d", // BOIL's bubbles
+    LIVE = "#2ecc40", // the organism's rim while net carbon > 0
+    DEAD = "#8a8a8a", // the organism's rim at net carbon <= 0 (starving)
+    TRACK = "#d8d2c4"; // the OPAQUE gauge's empty track
+  // One colour per first-failing line, for web/mapview.js: the picture's own marks, so the map
+  // and the cross-section speak one palette. OPAQUE is the veil's dark grey (MUTED).
+  var PALETTE = {
+    HELD: LIVE, BURST: FAIL, FREEZE: FROST, BOIL: BUBBLE, STARVE: DEAD, OPAQUE: MUTED, NO_DESIGN: TRACK,
+  };
 
   function el(tag, attrs, parent, text) {
     var e = document.createElementNS(NS, tag);
@@ -317,7 +327,7 @@
           var bb = (k * Math.PI) / 3;
           el("line", { x1: (p[0] - s * Math.cos(bb)).toFixed(1), y1: (p[1] - s * Math.sin(bb)).toFixed(1),
             x2: (p[0] + s * Math.cos(bb)).toFixed(1), y2: (p[1] + s * Math.sin(bb)).toFixed(1),
-            stroke: "#5f8fb3", "stroke-width": 1.5 }, g);
+            stroke: FROST, "stroke-width": 1.5 }, g);
         }
       }
       interiorLabel(g, geo, text, n);
@@ -339,7 +349,7 @@
             return p[0] + q > R.x0 && p[0] - q < R.x1 && p[1] + q > R.y0 && p[1] - q < R.y1;
           });
         if (clear)
-          el("circle", { cx: p[0].toFixed(1), cy: p[1].toFixed(1), r: s, fill: "none", stroke: "#b5651d",
+          el("circle", { cx: p[0].toFixed(1), cy: p[1].toFixed(1), r: s, fill: "none", stroke: BUBBLE,
             "stroke-width": 1.8 }, bg);
       }
       interiorLabel(g, geo, text, n);
@@ -364,7 +374,7 @@
         return pts;
       };
       var gg = el("g", { "data-mark": "light-gauge" }, g);
-      segs(gg, arc(0, 1), { stroke: "#d8d2c4", "stroke-opacity": 0.75, "stroke-width": 2 }, geo.keep);
+      segs(gg, arc(0, 1), { stroke: TRACK, "stroke-opacity": 0.75, "stroke-width": 2 }, geo.keep);
       segs(gg, arc(0, f), { stroke: "#ffb000", "stroke-width": 6, "stroke-linecap": "butt" }, geo.keep);
       var fr = el("g", { "data-mark": "floor-ring" }, g);
       var af = -Math.PI / 2 + 2 * Math.PI * ff;
@@ -434,7 +444,7 @@
     var sat = Math.max(0, Math.min(1, net / res.org.a_max));
     el("circle", { id: "pic-organism", cx: CX, cy: geo.oy.toFixed(2), r: rOrg.toFixed(2),
       fill: "hsl(120, " + (100 * sat).toFixed(1) + "%, 32%)",
-      stroke: net > 0 ? "#2ecc40" : "#8a8a8a", "stroke-width": 3, // bright mid green: reads on navy and on pale
+      stroke: net > 0 ? LIVE : DEAD, "stroke-width": 3, // bright mid green: reads on navy and on pale
       "fill-opacity": rep.lines.STARVE.violated ? 0.35 : 1,
       "data-saturation": sat.toFixed(4) }, svg);
 
@@ -466,5 +476,5 @@
     el("desc", {}, svg, "No picture: " + msg);
   }
 
-  window.DysonPicture = { draw: draw, blank: blank, MIN_BAND_PX: MIN_BAND_PX };
+  window.DysonPicture = { draw: draw, blank: blank, MIN_BAND_PX: MIN_BAND_PX, PALETTE: PALETTE };
 })();

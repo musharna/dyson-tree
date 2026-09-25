@@ -780,6 +780,95 @@ def exercise_picture(page, label: str, shoot: bool) -> None:
 
 
 
+def exercise_map(page, label: str) -> None:
+    """Visual-first Task 2: the first-failure map, in a real browser. Clicking a cell drives the
+    r/R sliders and the verdict, both directions (HELD -> FREEZE -> HELD); the dot pins to the
+    frame at the slider extremes; every map text is >= 12 rendered px."""
+
+    def settle():
+        page.wait_for_function(
+            "() => !['v-rauto','v-Rwin'].some(i => document.getElementById(i).textContent.includes('computing'))",
+            timeout=60000,
+        )
+
+    def set_range(sel, value):
+        page.locator(sel).fill(str(value))
+        page.locator(sel).dispatch_event("input")
+
+    def summary():
+        return page.locator("#v-summary").inner_text().strip()
+
+    def click_cell(i, j):
+        sel = f'#map rect[data-cell][data-i="{i}"][data-j="{j}"]'
+        page.locator(sel).scroll_into_view_if_needed()
+        b = page.locator(sel).bounding_box()
+        assert b, f"no box for {sel}"
+        page.mouse.click(b["x"] + b["width"] / 2, b["y"] + b["height"] / 2)
+        return page.locator(sel).get_attribute("data-class")
+
+    page.reload(wait_until="load")
+    settle()
+    box = page.locator("#map").bounding_box()
+    check(box is not None and box["width"] > 400 and page.locator("#map").is_visible(),
+          f"[{label}] map is visible ({box and round(box['width'])} px wide)")
+    n = page.locator("#map rect[data-cell]").count()
+    check(n == 80 * 60, f"[{label}] map draws 80 x 60 cells, got {n}")
+    fonts = page.evaluate(
+        """() => { const svg = document.getElementById('map'); svg.scrollIntoView({block: 'center'});
+                  const k = svg.getBoundingClientRect().width / svg.viewBox.baseVal.width;
+                  return [...svg.querySelectorAll('text')].map(t =>
+                    ({t: t.textContent.slice(0, 30), px: parseFloat(getComputedStyle(t).fontSize) * k})); }"""
+    )
+    small = [(f["t"], round(f["px"], 1)) for f in fonts if f["px"] < 12]
+    check(fonts and not small, f"[{label}] every map text >= 12 px rendered: {small}")
+    outside = page.evaluate(
+        """() => { const s = document.getElementById('map').getBoundingClientRect();
+                  return [...document.querySelectorAll('#map text')].filter(t => { const b = t.getBoundingClientRect();
+                    return b.left < s.left - 0.5 || b.right > s.right + 0.5 || b.top < s.top - 0.5 || b.bottom > s.bottom + 0.5; })
+                    .map(t => t.textContent.slice(0, 30)); }"""
+    )
+    check(not outside, f"[{label}] every map text inside the map's box: {outside}")
+
+    # both directions: start FREEZE (slider), click a HELD cell, then a FREEZE cell, then HELD again
+    set_range("#v-R", 4)
+    set_range("#v-r", 0.3)
+    check(summary().startswith("VIOLATED: FREEZE"), f"[{label}] map start state is FREEZE: {summary()!r}")
+    for i, j, want in ((12, 44, "alive"), (30, 44, "VIOLATED: FREEZE"), (12, 30, "alive")):
+        before = page.locator("#v-r").input_value()
+        cls = click_cell(i, j)
+        got = summary()
+        rv, Rv = page.locator("#v-r").input_value(), page.locator("#v-R").input_value()
+        on_grid = all(len(v.split(".")[-1]) <= 4 for v in (rv, Rv))
+        dot_cls = page.locator("#map-dot").get_attribute("data-class")
+        check(got.startswith(want) and dot_cls == cls and on_grid and rv != before,
+              f"[{label}] click on map cell ({i}, {j}) [{cls}] -> r {rv} R {Rv}, verdict {got[:40]!r}, "
+              f"dot cell {dot_cls} (want {want!r}, sliders on the 1e-4 grid)")
+    settle()
+
+    # the dot pins to the frame at the slider extremes, with a visible marker; not at the defaults
+    page.reload(wait_until="load")
+    settle()
+    check(page.locator("#map-dot").get_attribute("data-clamped") == "false" and page.locator("#map-clamp").count() == 0,
+          f"[{label}] defaults: map dot not clamped, no edge marker")
+    for rv, Rv in ((-0.3011, 1), (2, 5)):
+        set_range("#v-R", Rv)
+        set_range("#v-r", rv)
+        g = page.evaluate(
+            """() => { const d = document.getElementById('map-dot').getBoundingClientRect();
+                      const f = document.getElementById('map-frame').getBoundingClientRect();
+                      const m = document.getElementById('map-clamp');
+                      const mb = m ? m.getBoundingClientRect() : null;
+                      return {cx: (d.left + d.right) / 2, cy: (d.top + d.bottom) / 2, f: [f.left, f.top, f.right, f.bottom],
+                              clamped: document.getElementById('map-dot').getAttribute('data-clamped'),
+                              marker: mb ? mb.width * mb.height : 0}; }"""
+        )
+        on_x = min(abs(g["cx"] - g["f"][0]), abs(g["cx"] - g["f"][2])) < 1
+        on_y = min(abs(g["cy"] - g["f"][1]), abs(g["cy"] - g["f"][3])) < 1
+        check(g["clamped"] == "true" and on_x and on_y and g["marker"] > 20,
+              f"[{label}] r {rv}, R {Rv}: dot on the map corner with a visible edge marker: {g}")
+    settle()
+
+
 def exercise_q4_band(page, label: str) -> None:
     """M4: the r_close band hatched as Q1's is, the measured edges beside it, HELD/FAILED."""
     import re as _re
@@ -867,6 +956,7 @@ def main() -> int:
             exercise(page, label)
             exercise_vessel(page, label)
             exercise_q4_band(page, label)
+            exercise_map(page, label)
             exercise_picture(page, label, shoot=url.startswith("http"))
             page.close()
         browser.close()

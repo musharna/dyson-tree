@@ -12,6 +12,7 @@
   var M = window.DysonModel;
   var DECK = window.DysonDeck; // web/deck.js: the played cards' inputs
   var PIC = window.DysonPicture; // web/picture.js: the cross-section, drawn from res
+  var MV = window.DysonMapView; // web/mapview.js: the precomputed first-failure map
   var $ = function (id) {
     var e = document.getElementById(id);
     if (!e) throw new Error("verdict panel: missing #" + id);
@@ -32,6 +33,14 @@
     r_close_au: [1.2049, 1.2303, 1.2543],
     R_window_km: 95.6,
   };
+  // P1 is r_close at R = 10 km (prereg P1); the map draws both registered bands from here
+  MV.setBands({
+    P1: { band_au: Q4_RESULT.P1_band_au, R_km: 10, verdict: Q4_RESULT.P1 },
+    P2: { band_km: P2.band_km, r_au: P2.r_au, sigma_MPa: P2.sigma_MPa, verdict: Q4_RESULT.P2 },
+  });
+  // the <details> inputs: a change here moves the model off the precomputed map's inputs
+  var ADVANCED = ["v-albedo", "v-emissivity", "v-topt", "v-omega", "v-ffloor", "v-dust", "v-interior",
+    "v-fresnel", "v-ninterior"];
 
   // Control defaults (§5). Log sliders carry log10 of the value.
   var DEFAULTS = {
@@ -335,6 +344,7 @@
 
     $("v-tR").textContent = (res.t / s.R).toExponential(3);
     PIC.draw(res, texts);
+    drawMap(s);
 
     $("v-pstar").textContent = fmt(res.pStar, 1) + " Pa";
     $("v-tmin").textContent = fmt(res.tMin, 3) + " m";
@@ -386,6 +396,45 @@
       renderEdges();
     }
   }
+
+  // The map slice for this state. This task always uses the precomputed slice for σ|org;
+  // Task 3 returns null here (the map shows "recomputing") when a card or an advanced input
+  // makes the precomputed slice not apply, and hands the recompute to a worker.
+  function mapSlice(state) {
+    var k = $("v-sigma").value + "|" + state.org;
+    var sl = window.DysonMap.slices[k];
+    if (typeof sl !== "string") throw new Error("map: no precomputed slice " + k);
+    return sl;
+  }
+  function drawMap(s) {
+    var state = {
+      r: s.r,
+      R: s.R,
+      sigma_MPa: Number($("v-sigma").value),
+      org: s.org,
+      cardsPlayed: s.deck.played.length,
+      advancedChanged: ADVANCED.some(function (id) {
+        return $(id).value !== DEFAULTS[id];
+      }),
+    };
+    MV.draw($("map"), state, mapSlice(state));
+  }
+  // A click or drag on the map sets r and R, snapped to each slider's own step grid, and fires
+  // the events a slider gesture fires (input while dragging, change on release).
+  MV.onPick(function (rLog, RLog, phase) {
+    [["v-r", rLog], ["v-R", RLog]].forEach(function (p) {
+      var e = $(p[0]);
+      var min = Number(e.getAttribute("min")), max = Number(e.getAttribute("max")),
+        step = Number(e.getAttribute("step"));
+      if (!(isFinite(min) && isFinite(max) && step > 0))
+        throw new Error("map pick: #" + p[0] + " has no min/max/step");
+      var v = min + Math.round((p[1] - min) / step) * step;
+      e.value = Math.max(min, Math.min(max, v)).toFixed(4);
+    });
+    ["v-r", "v-R"].forEach(function (id) {
+      $(id).dispatchEvent(new Event(phase, { bubbles: true }));
+    });
+  });
 
   // Q4 P1: the registered band drawn hatched as Q1's is (web/app.js), the measured r_close
   // beside it. Drawn once: it is a record of the run, not a function of the inputs.
