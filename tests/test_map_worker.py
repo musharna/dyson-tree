@@ -473,3 +473,45 @@ def test_preview_is_drawn_provisional_and_progress_sits_above_the_frame(gens):
     f = need(fin, "map-cells")["attrs"]
     assert f.get("data-provisional") == "false" and f.get("filter") is None, f
     assert by_id(fin, "map-provisional") is None
+
+
+# (Task 5 final review F2) a model error after a good state: the map must not keep vouching for
+# the last good design, and a worker started for it must not paint later
+MODEL_ERROR = r"""
+const P = loadPage(true);
+const out = {};
+P.set("deck-0-count", 1); P.set("deck-0-value", 1.3); P.flush();
+const w1 = P.workers[P.workers.length - 1], g1 = w1.posted[0].gen;
+const N = w1.posted[0].grid.r_log10[2] * w1.posted[0].grid.R_log10[2];
+P.deliver(w1, { gen: g1, level: "12×8", slice: "2".repeat(N) });
+out.good = P.map(); out.goodSummary = P.document.getElementById("v-summary").textContent;
+P.set("v-emissivity", "0"); P.flush();                       // the model raises
+out.err = P.map(); out.errSummary = P.document.getElementById("v-summary").textContent;
+out.w1terminated = w1.terminated; out.nWorkersErr = P.workers.length;
+P.deliver(w1, { gen: g1, level: "80×60", slice: "5".repeat(N) });   // late, for the good design
+out.late = P.map();
+P.set("v-emissivity", String(P.ctx.DysonModel.VESSEL_DEFAULTS.emissivity)); P.flush();   // recover
+out.back = P.map(); out.nWorkersBack = P.workers.length;
+process.stdout.write(JSON.stringify(out));
+"""
+
+
+def test_model_error_greys_the_map_and_drops_the_old_worker():
+    g = run_node(MODEL_ERROR)
+    # positive control: the good state's dot carries its verdict class, over the live preview
+    assert g["goodSummary"] == "alive: every line holds"
+    assert need(g["good"], "map-dot")["attrs"]["data-class"] == "HELD" and source(g["good"]) == "12×8"
+    # the error: no verdict, so the dot has no class and the map says it is not current
+    assert g["errSummary"].startswith("no verdict"), g["errSummary"]
+    d = need(g["err"], "map-dot")["attrs"]
+    assert d["data-class"] == "" and d["data-cell-class"] == "", d
+    assert source(g["err"]) == "stale", source(g["err"])
+    lab = by_id(g["err"], "map-recomputing")
+    assert lab is not None and "no verdict" in text_of(lab), lab and text_of(lab)
+    assert g["w1terminated"], "the good design's worker kept running"
+    # a late message for the good design's gen is dropped: still greyed, still the old cells
+    assert source(g["late"]) == "stale" and cell_classes(g["late"]) == cell_classes(g["err"])
+    assert set(cell_classes(g["late"]).values()) == {"FREEZE"}
+    # recovery: a good input again draws a verdict and starts a fresh worker
+    assert need(g["back"], "map-dot")["attrs"]["data-class"] == "HELD"
+    assert g["nWorkersBack"] == g["nWorkersErr"] + 1, (g["nWorkersErr"], g["nWorkersBack"])

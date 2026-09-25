@@ -370,6 +370,7 @@
       current = null;
       $("headroom").setAttribute("data-error", "true"); // the bars are the last good design's
       PIC.blank("the model raised");
+      mapModelError(s);
       return;
     }
     $("v-error").textContent = "";
@@ -531,10 +532,23 @@
     return String(level).replace("×", " × ");
   }
 
-  // verdict: the class the summary names (first violated line, or HELD) at the exact design
-  function drawMap(s, verdict, res) {
-    map.last = [s, verdict, res];
-    var state = {
+  // The model raised: no verdict for the current inputs. Stop and orphan any worker (its late
+  // messages carry an old gen), forget the key so the next good design starts afresh, and draw
+  // the last cells greyed with a dot that names no class. s: the inputs read, or undefined if
+  // reading them raised (the dot then stays where the last good design put it).
+  function mapModelError(s) {
+    stopWorker();
+    map.gen += 1;
+    map.key = null;
+    map.live = map.progress = map.error = null;
+    var at = s || (map.last && map.last[0]);
+    if (!at) return;
+    var state = mapState(at, null);
+    state.source = { kind: "stale", lines: ["no verdict: the model raised", "greyed: the last map, not current"] };
+    MV.draw($("map"), state, null);
+  }
+  function mapState(s, verdict) {
+    return {
       verdict: verdict,
       r: s.r,
       R: s.R,
@@ -546,6 +560,11 @@
       }),
       manualPT: s.pMode !== "auto" || s.tMode !== "auto",
     };
+  }
+  // verdict: the class the summary names (first violated line, or HELD) at the exact design
+  function drawMap(s, verdict, res) {
+    map.last = [s, verdict, res];
+    var state = mapState(s, verdict);
     var k = $("v-sigma").value + "|" + state.org;
     var pre = window.DysonMap.slices[k];
     if (typeof pre !== "string") throw new Error("map: no precomputed slice " + k);

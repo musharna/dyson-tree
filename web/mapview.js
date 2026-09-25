@@ -276,12 +276,14 @@
       "stroke-dasharray": "4 3", "data-mark": "crosshair" }, cross);
     el("line", { x1: cx, y1: T, x2: cx, y2: T + PH, stroke: INK, "stroke-opacity": 0.55, "stroke-width": 1,
       "stroke-dasharray": "4 3", "data-mark": "crosshair" }, cross);
-    if (!(state.verdict in PAL)) throw new Error("mapview: dot has no verdict class (" + state.verdict + ")");
+    // verdict null: the model raised, so the dot is the design's place with no class (white)
+    if (state.verdict !== null && !(state.verdict in PAL))
+      throw new Error("mapview: dot has no verdict class (" + state.verdict + ")");
     // the dot is the exact design: filled with the verdict's class, ringed dark over white so it
     // reads on any cell colour; the nearest cell's class is kept apart as data-cell-class
     el("circle", { cx: cx, cy: cy, r: 9, fill: INK, "data-mark": "dot-ring" }, g);
-    el("circle", { id: "map-dot", cx: cx, cy: cy, r: 6.5, fill: fillOf(state.verdict), stroke: "#ffffff",
-      "stroke-width": 2, "data-i": c.i, "data-j": c.j, "data-class": state.verdict,
+    el("circle", { id: "map-dot", cx: cx, cy: cy, r: 6.5, fill: state.verdict === null ? "#ffffff" : fillOf(state.verdict),
+      stroke: "#ffffff", "stroke-width": 2, "data-i": c.i, "data-j": c.j, "data-class": state.verdict || "",
       "data-cell-class": slice === null ? "" : classOf(slice, c.i, c.j),
       "data-clamped": clamped ? "true" : "false" }, g);
     if (!clamped) return;
