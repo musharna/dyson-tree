@@ -28,18 +28,24 @@ scale_colour_tolerance <- function(...) scale_colour_manual(values = palette_tol
 shapes_sigma <- c(`0.7` = 16, `1.5` = 17, `3.1` = 15)
 scale_shape_sigma <- function(...) scale_shape_manual(values = shapes_sigma, ...)
 # Mark vocabulary for measured-vs-prereg figures: one mark per meaning.
-shapes_mark <- c(`measured later root (not the edge)` = 124, `prereg expected: the edge` = 1,
+shapes_mark <- c(`measured later root (not the edge)` = 4, `prereg expected: the edge` = 1,
                  `prereg expected: a later root` = 5)
 scale_shape_mark <- function(...) scale_shape_manual(values = shapes_mark, ...)
 # A prereg expected mark is drawn this far (in rows) below its measured mark, so a value that
 # coincides with the measurement to 1e-5 AU is still a visible, separate mark (data unchanged).
-expected_nudge <- -0.4
+expected_nudge <- -0.42
 # Registered band: one fill, scoped to the registered row only.
 band_fill <- "grey40"
 band_alpha <- 0.12
 # Measured-to-expected connector: thin dotted grey, never confusable with a "|" point glyph.
-connector_colour <- "grey25"
+connector_colour <- "grey10"
 connector_linetype <- "dotted"
-connector_width <- 0.6
+connector_width <- 0.8
 # Value labels on points: >= 12 px at 150 dpi.
 value_label_size <- 3.6
+# Measured later root ("x" glyph): readable, and unlike a link or a diamond.
+later_root_size <- 3.2
+# A link stops this fraction of the offset short of each mark, so it never enters a marker.
+link_trim <- 0.22
+# Later roots sit this far (rows) above the row line, so a root next to the edge never covers its dot.
+root_lift <- 0.24

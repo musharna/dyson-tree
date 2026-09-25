@@ -17,20 +17,20 @@
   var M = window.DysonModel;
   if (!M) throw new Error("picture: DysonModel not loaded");
   var W = 400,
-    H = 440,
     CX = 200,
-    CY = 222,
+    MARGIN = 20, // every plate keeps this far inside the picture's edge
+    STRIP_H = 110, // a plate strip above (and, past two plates, below) the vessel
+    STRIP_GAP = 12, // strip to the vessel's largest rim
+    CY = 20 + 110 + 12 + 148, // MARGIN + STRIP_H + STRIP_GAP + OUT_MAX: never moves
     OUT_MIN = 100, // px at R + t = 10 m
     OUT_MAX = 148, // px at R + t = 101 km
     MIN_BAND_PX = 3,
     FS = 17, // >= 12 px on screen at the page's figure width (smoke asserts it)
     LH = 19,
-    PLATE_GAP = 10, // units between the organism disc and a plate
+    ORG_R = 34, // the organism disc: one size and one centre in every state
     KEEP_PAD = 3, // units every mark keeps clear of a plate
     WRAP = 20,
-    MARGIN = 20, // every plate keeps this far inside the picture's edge
-    FIT_PAD = 14, // interior plates keep this far inside the wall (the OPAQUE gauge runs there)
-    CLAMP_Y = 378;
+    COL_W = (400 - 2 * 20 - 14) / 2; // two plate columns per strip
   var NS = "http://www.w3.org/2000/svg";
   var BG = "#faf8f4",
     INK = "#1b1b1b",
@@ -181,53 +181,43 @@
     var wmax = Math.max.apply(null, lines.map(function (l) { return l.trim().length; }));
     return { w: wmax * FS * 0.64 + 10, h: lines.length * LH + 6 };
   }
-  // Interior plates: one stack, centred on x, inside the interior clear of the wall band by
-  // FIT_PAD. The disc stays at the centre when the stack fits above it; otherwise the stack
-  // rises as high as the widest plate's corners allow and the disc moves down beneath it.
-  // Returns {boxes: {line: box}, oy: disc centre y}.
-  function layoutInterior(ri, rOrg, names, texts) {
-    if (!names.length) return { boxes: {}, oy: CY, wrap: WRAP, rOrg: rOrg };
-    var rf = ri - FIT_PAD, best = null;
-    // the widest wrap whose stack and full-size disc both fit; failing that, the wrap that
-    // leaves the largest disc (the disc shrinks rather than touch the wall; it never used to)
-    for (var n = WRAP; n >= 10; n--) {
-      var c = stackAt(n);
-      if (!c) continue;
-      if (c.rOrg >= rOrg) return c;
-      if (!best || c.rOrg > best.rOrg) best = c;
-    }
-    if (!best || best.rOrg < 6)
-      throw new Error("picture: no interior layout fits the plates and a disc (ri " + ri.toFixed(1) + ")");
-    return best;
-
-    function stackAt(n) {
-      var sz = names.map(function (k) { return plateSize(texts[k], n); });
-      var Hs = sz.reduce(function (a, z) { return a + z.h; }, 0) + 6 * (sz.length - 1);
-      var Ws = Math.max.apply(null, sz.map(function (z) { return z.w; }));
-      if (Ws / 2 >= rf) return null;
-      var a = Math.sqrt(rf * rf - (Ws * Ws) / 4); // highest top the corners allow
-      var top, oy, r = rOrg;
-      if (rOrg + PLATE_GAP + Hs <= a) {
-        top = CY - (rOrg + PLATE_GAP + Hs); // disc stays centred
-        oy = CY;
-      } else {
-        top = CY - a;
-        var below = top + Hs + PLATE_GAP; // disc spans below..CY + rf
-        r = Math.min(rOrg, (CY + rf - below) / 2);
-        oy = below + r;
-      }
-      if (Math.hypot(Ws / 2, top + Hs - CY) > rf) return null;
-      var boxes = {}, y = top;
-      names.forEach(function (k, i) {
-        boxes[k] = { x0: CX - sz[i].w / 2, y0: y, x1: CX + sz[i].w / 2, y1: y + sz[i].h };
-        y += sz[i].h + 6;
-      });
-      return { boxes: boxes, oy: oy, wrap: n, rOrg: r };
-    }
+  // Plates live OUTSIDE the vessel, in a strip above it (slots 0 right, 1 left) and, past two
+  // plates, a strip below (2 right, 3 left); BURST takes slot 0, over its crack. Each plate gets
+  // the widest wrap that fits its column and the strip. Returns {line: {box, wrap, slot}}.
+  function placePlates(names, texts, below0) {
+    var order = names.filter(function (n) { return n === "BURST"; })
+      .concat(names.filter(function (n) { return n !== "BURST"; }));
+    if (order.length > 4) throw new Error("picture: more than four plates: " + order.join(", "));
+    var out = {};
+    order.forEach(function (n, slot) {
+      var wr = WRAP, sz = plateSize(texts[n], wr);
+      while (wr > 8 && (sz.w > COL_W || sz.h > STRIP_H)) sz = plateSize(texts[n], --wr);
+      if (sz.w > COL_W || sz.h > STRIP_H) throw new Error("picture: plate for " + n + " fits no wrap");
+      var right = slot % 2 === 0, top = slot < 2;
+      var x0 = right ? W - MARGIN - sz.w : MARGIN;
+      var y0 = top ? MARGIN : below0;
+      out[n] = { box: { x0: x0, y0: y0, x1: x0 + sz.w, y1: y0 + sz.h }, wrap: wr, top: top, right: right };
+    });
+    return out;
   }
+  // a plate, and a leader from its inner edge to the wound's anchor point (x1,y1 = the anchor)
+  function plateWithLeader(g, pl, text, anchor) {
+    var b = pl.box;
+    label(g, b.x0, b.y0 + 2, "start", text, true, pl.wrap);
+    var lx = Math.max(b.x0 + 8, Math.min(b.x1 - 8, anchor[0]));
+    var ends = { x1: anchor[0].toFixed(1), y1: anchor[1].toFixed(1), x2: lx.toFixed(1),
+      y2: (pl.top ? b.y1 : b.y0).toFixed(1) };
+    // a white halo under the leader, so it reads over a dark (OPAQUE) interior too
+    el("line", Object.assign({ stroke: "#ffffff", "stroke-width": 4.5, "stroke-opacity": 0.85,
+      "data-mark": "leader-halo" }, ends), g);
+    el("line", Object.assign({ stroke: FAIL, "stroke-width": 1.5, "data-mark": "leader" }, ends), g);
+    el("circle", { cx: anchor[0].toFixed(1), cy: anchor[1].toFixed(1), r: 3, fill: FAIL, "data-mark": "anchor" }, g);
+  }
+  // an interior wound's anchor: between the disc and the wall, toward the plate
   function interiorLabel(g, geo, text, n) {
-    var b = geo.boxes[n];
-    label(g, CX, b.y0 + 2, "middle", text, true, geo.wrap);
+    var pl = geo.plates[n];
+    var ang = (pl.top ? -Math.PI / 2 : Math.PI / 2) + (pl.right ? 1 : -1) * (pl.top ? 0.45 : -0.45);
+    plateWithLeader(g, pl, text, pt((geo.rOrg + geo.ri) / 2, ang));
   }
   // the parts of segment ab outside every keep-out rect (padded), for marks near a plate
   function outside(a, b, rects) {
@@ -279,10 +269,7 @@
           " L" + P2(pt(r0, a + da)) + " Z",
         fill: BG, "data-mark": "gap",
       }, g);
-      // the cracks stop short of the plate (drawn below), with a visible gap
-      var ps = plateSize(text), GAP = 8;
-      var clearOf = geo.keep.concat([{ x0: W - MARGIN - ps.w - GAP, y0: MARGIN - 2 - GAP,
-        x1: W - MARGIN + GAP, y1: MARGIN - 2 + ps.h + GAP }]);
+      var clearOf = geo.keep;
       [[-1, 0.6], [1, 0.6], [-1, -0.5], [1, -0.5], [0, 1], [0, -0.9]].forEach(function (c) {
         var side = a + c[0] * da * 1.3,
           out = c[1] > 0;
@@ -295,10 +282,7 @@
         }
         segs(g, p, { stroke: FAIL, "stroke-width": 2, "stroke-linecap": "round" }, clearOf);
       });
-      var b = label(g, W - MARGIN, MARGIN, "end", text, true);
-      var from = pt(r1 + 26, a);
-      el("line", { x1: P2(from).split(",")[0], y1: P2(from).split(",")[1],
-        x2: (b.x0 + b.w / 2).toFixed(1), y2: (b.y0 + b.h).toFixed(1), stroke: FAIL, "stroke-width": 1.5 }, g);
+      plateWithLeader(g, geo.plates.BURST, text, pt(r1 + 26, a));
     },
     // frost at the wall, inward to the disc's edge: it never covers the organism
     FREEZE: function (g, geo, text, n) {
@@ -392,12 +376,16 @@
     var riTrue = (ro * R) / (R + t);
     var clamped = ro - riTrue < MIN_BAND_PX;
     var ri = clamped ? ro - MIN_BAND_PX : riTrue;
-    var rOrg = Math.max(6, 0.28 * ri);
+    // one disc in every state; only an interior too small for it (never in the shots) shrinks it
+    var rOrg = Math.min(ORG_R, 0.5 * ri);
     var bad = rep.violated.slice();
-    var lay = layoutInterior(ri, rOrg, bad.filter(function (n) { return n !== "BURST"; }), texts);
-    rOrg = lay.rOrg;
-    var geo = { ro: ro, ri: ri, rOrg: rOrg, oy: lay.oy, boxes: lay.boxes, wrap: lay.wrap };
-    geo.keep = Object.keys(lay.boxes).map(function (n) { return lay.boxes[n]; });
+    var below0 = CY + OUT_MAX + STRIP_GAP;
+    var plates = placePlates(bad, texts, below0);
+    var lower = bad.length > 2 ? STRIP_H + STRIP_GAP : 0;
+    var CLAMP_Y = CY + 156 + lower;
+    var H = CLAMP_Y + 62; // clamp label (2 lines) or gauge key, then the footer
+    var geo = { ro: ro, ri: ri, rOrg: rOrg, oy: CY, plates: plates };
+    geo.keep = Object.keys(plates).map(function (n) { return plates[n].box; });
     svg.setAttribute("viewBox", "0 0 " + W + " " + H);
 
     el("title", {}, svg, "Cross-section of the vessel");

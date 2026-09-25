@@ -27,7 +27,7 @@ fig1 <- ggplot(p1, aes(y = yi)) +
            alpha = band_alpha, fill = band_fill) +
   annotate("text", x = 1.19, y = reg1, hjust = 1.04, size = 2.8, colour = "grey30",
            label = "registered band\n[1.19, 1.27] AU") +
-  geom_segment(aes(x = measured, xend = expected, y = yi, yend = yi + expected_nudge),
+  geom_segment(aes(x = measured, xend = expected, y = yi + link_trim * expected_nudge, yend = yi + (1 - link_trim) * expected_nudge),
                linewidth = connector_width, linetype = connector_linetype, colour = connector_colour) +
   geom_point(aes(x = expected, y = yi + expected_nudge), shape = shapes_mark[["prereg expected: the edge"]],
              size = 3, colour = "grey35") +
@@ -57,21 +57,22 @@ exp2 <- subset(p2, !is.na(expected))
 is_edge <- exp2$quantity == "R_window" |
   mapply(function(c, m) any(abs(win$measured[win$config == c] - m) < 1e-9), exp2$config, exp2$measured)
 exp2$mark <- ifelse(is_edge, "prereg expected: the edge", "prereg expected: a later root")
-exp2$dy <- ifelse(is_edge, expected_nudge, -expected_nudge)
+exp2$dy <- ifelse(is_edge, expected_nudge, 0.6)  # a later-root expected: above its lifted x
+exp2$y0 <- ifelse(is_edge, 0, root_lift)  # where the measured mark it links to sits
 oth$mark <- "measured later root (not the edge)"
 reg2 <- match("registered", levels(p2$config))
 yi <- function(d) as.numeric(factor(d$config, levels = levels(p2$config)))
-oth$yi <- yi(oth); win$yi <- yi(win); bad$yi <- yi(bad); exp2$yi <- yi(exp2)
+oth$yi <- yi(oth) + root_lift; win$yi <- yi(win); bad$yi <- yi(bad); exp2$yi <- yi(exp2)
 fig2 <- ggplot() +
   annotate("rect", xmin = 60, xmax = 300, ymin = reg2 - 0.45, ymax = reg2 + 0.45, alpha = band_alpha, fill = band_fill) +
   annotate("text", x = 60, y = reg2, hjust = 1.04, size = 2.6, colour = "grey30",
            label = "registered band\n[60, 300] km") +
-  geom_point(data = oth, aes(measured, yi, shape = mark), size = 4, colour = "grey60") +
+  geom_point(data = oth, aes(measured, yi, shape = mark), size = later_root_size, colour = "grey30") +
   geom_text(data = oth, aes(measured, yi, label = sub(" \\(not the edge\\)", "", what)), hjust = -0.25,
             size = 2.5, colour = "grey45") +
   # edge expecteds sit below their measured mark, later-root expecteds above theirs, so a later root
   # that nearly coincides with the edge (arm (ii) n_int 1.333) keeps two separate expected marks
-  geom_segment(data = exp2, aes(x = measured, xend = expected, y = yi, yend = yi + dy),
+  geom_segment(data = exp2, aes(x = measured, xend = expected, y = yi + y0 + link_trim * (dy - y0), yend = yi + y0 + (1 - link_trim) * (dy - y0)),
                linewidth = connector_width, linetype = connector_linetype, colour = connector_colour) +
   geom_point(data = exp2, aes(expected, yi + dy, shape = mark), size = 3, colour = "grey35") +
   geom_point(data = win, aes(measured, yi, colour = binding), size = 3) +
