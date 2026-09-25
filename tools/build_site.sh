@@ -15,7 +15,9 @@ mkdir -p site
 
 # spectral_table.js: the vessel's spectral table (sim/spectral_table.csv as a classic
 # script, tools/make_spectral_js.py), loaded before model.js; ~137 KB.
-for f in index.html spectral_table.js model.js app.js deck.js picture.js verdict.js; do
+# map_worker.js: not a <script>; verdict.js starts it as a Web Worker, and it importScripts
+# spectral_table.js and model.js from beside itself.
+for f in index.html spectral_table.js model.js map_data.js mapview.js map_worker.js app.js deck.js picture.js verdict.js; do
   test -f "web/$f" || { echo "missing web/$f" >&2; exit 1; }
   cp "web/$f" "site/$f"
 done

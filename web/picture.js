@@ -31,6 +31,8 @@
     MIN_BAND_PX = 3,
     FS = 17, // >= 12 px on screen at the page's figure width (smoke asserts it)
     LH = 19,
+    NOTE_FS = 13, // drawing notes (clamp, scale): quieter than the call-outs, still >= 12 px on screen
+    NOTE_LH = 16,
     PLATE_PAD = 10, // text inset inside a plate
     ORG_R = 34, // the organism disc: one size and one centre in every state
     KEEP_PAD = 3, // units every mark keeps clear of a plate
@@ -41,7 +43,18 @@
     INK = "#1b1b1b",
     RIM = "#3d6f8e", // outer-circle outline: the vessel edge against the page
     MUTED = "#5d5d5d",
-    FAIL = "#8a3b2a";
+    FAIL = "#8a3b2a",
+    FROST = "#5f8fb3", // FREEZE's frost crystals
+    BUBBLE = "#b5651d", // BOIL's bubbles
+    LIVE = "#2ecc40", // the organism's rim while net carbon > 0
+    DEAD = "#8a8a8a", // the organism's rim at net carbon <= 0 (starving)
+    TRACK = "#d8d2c4", // the OPAQUE gauge's empty track
+    GAUGE = "#ffb000"; // the OPAQUE gauge's amber arc: f_photon reaching in
+  // One colour per first-failing line, for web/mapview.js: the picture's own marks, so the map
+  // and the cross-section speak one palette. OPAQUE is the light gauge's amber arc.
+  var PALETTE = {
+    HELD: LIVE, BURST: FAIL, FREEZE: FROST, BOIL: BUBBLE, STARVE: DEAD, OPAQUE: GAUGE, NO_DESIGN: TRACK,
+  };
 
   function el(tag, attrs, parent, text) {
     var e = document.createElementNS(NS, tag);
@@ -145,6 +158,11 @@
   // space, so the concatenated textContent is exactly the input (the panel's string).
   function wrap(text, n) {
     n = n || WRAP;
+    // a comparison that does not fit breaks before " vs ", so each side keeps its value
+    if (text.length > n && text.indexOf(" vs ") > 0) {
+      var k = text.indexOf(" vs ");
+      return wrap(text.slice(0, k), n).concat(wrap(text.slice(k), n));
+    }
     var out = [],
       cur = "";
     text.split(/(?= )/).forEach(function (w) {
@@ -317,7 +335,7 @@
           var bb = (k * Math.PI) / 3;
           el("line", { x1: (p[0] - s * Math.cos(bb)).toFixed(1), y1: (p[1] - s * Math.sin(bb)).toFixed(1),
             x2: (p[0] + s * Math.cos(bb)).toFixed(1), y2: (p[1] + s * Math.sin(bb)).toFixed(1),
-            stroke: "#5f8fb3", "stroke-width": 1.5 }, g);
+            stroke: FROST, "stroke-width": 1.5 }, g);
         }
       }
       interiorLabel(g, geo, text, n);
@@ -339,7 +357,7 @@
             return p[0] + q > R.x0 && p[0] - q < R.x1 && p[1] + q > R.y0 && p[1] - q < R.y1;
           });
         if (clear)
-          el("circle", { cx: p[0].toFixed(1), cy: p[1].toFixed(1), r: s, fill: "none", stroke: "#b5651d",
+          el("circle", { cx: p[0].toFixed(1), cy: p[1].toFixed(1), r: s, fill: "none", stroke: BUBBLE,
             "stroke-width": 1.8 }, bg);
       }
       interiorLabel(g, geo, text, n);
@@ -364,8 +382,8 @@
         return pts;
       };
       var gg = el("g", { "data-mark": "light-gauge" }, g);
-      segs(gg, arc(0, 1), { stroke: "#d8d2c4", "stroke-opacity": 0.75, "stroke-width": 2 }, geo.keep);
-      segs(gg, arc(0, f), { stroke: "#ffb000", "stroke-width": 6, "stroke-linecap": "butt" }, geo.keep);
+      segs(gg, arc(0, 1), { stroke: TRACK, "stroke-opacity": 0.75, "stroke-width": 2 }, geo.keep);
+      segs(gg, arc(0, f), { stroke: GAUGE, "stroke-width": 6, "stroke-linecap": "butt" }, geo.keep);
       var fr = el("g", { "data-mark": "floor-ring" }, g);
       var af = -Math.PI / 2 + 2 * Math.PI * ff;
       segs(fr, [pt(rg - 9, af), pt(rg + 5, af)], { stroke: "#ffffff", "stroke-width": 3 }, geo.keep);
@@ -434,7 +452,7 @@
     var sat = Math.max(0, Math.min(1, net / res.org.a_max));
     el("circle", { id: "pic-organism", cx: CX, cy: geo.oy.toFixed(2), r: rOrg.toFixed(2),
       fill: "hsl(120, " + (100 * sat).toFixed(1) + "%, 32%)",
-      stroke: net > 0 ? "#2ecc40" : "#8a8a8a", "stroke-width": 3, // bright mid green: reads on navy and on pale
+      stroke: net > 0 ? LIVE : DEAD, "stroke-width": 3, // bright mid green: reads on navy and on pale
       "fill-opacity": rep.lines.STARVE.violated ? 0.35 : 1,
       "data-saturation": sat.toFixed(4) }, svg);
 
@@ -442,10 +460,12 @@
       var tip = pt(ro, (3 * Math.PI) / 4);
       el("line", { id: "pic-clamp-leader", x1: tip[0].toFixed(1), y1: tip[1].toFixed(1), x2: 40, y2: CLAMP_Y - 4,
         stroke: MUTED, "stroke-width": 1.2 }, svg);
-      var ct = el("text", { id: "pic-clamp", x: 16, y: CLAMP_Y + FS, "font-size": FS, fill: FAIL }, svg);
+      // a drawing note, not a verdict: quiet (NOTE_FS, grey), and the only place t/R is printed
+      var ct = el("text", { id: "pic-clamp", x: 16, y: CLAMP_Y + FS, "font-size": NOTE_FS, fill: MUTED }, svg);
       el("tspan", { x: 16, dy: 0 }, ct, "wall clamped to " + MIN_BAND_PX + " px;");
-      el("tspan", { x: 16, dy: LH }, ct,
-        " true t/R " + fmtE(t / R) + " would draw " + (ro - riTrue).toFixed(2) + " px");
+      el("tspan", { x: 16, dy: NOTE_LH }, ct,
+        " true t/R " + fmtE(t / R) + " would draw " +
+          (ro - riTrue < 0.005 ? "≪ 1 px" : (ro - riTrue).toFixed(2) + " px")); // never "0.00 px"
     }
     // a key for the OPAQUE gauge, bottom left above the footer (the clamp label's place; a
     // wall thin enough to clamp never darkens the interior below the floor)
@@ -454,8 +474,8 @@
       el("tspan", { x: 16, dy: 0 }, kt, "amber arc: f_photon reaching in;");
       el("tspan", { x: 16, dy: LH }, kt, " white tick: declared floor");
     }
-    el("text", { x: 16, y: H - 6, "font-size": FS, fill: MUTED }, svg,
-      "t/R " + fmtE(t / R) + " · size log-scaled in R + t");
+    el("text", { x: 16, y: H - 6, "font-size": NOTE_FS, fill: MUTED }, svg,
+      (clamped ? "" : "t/R " + fmtE(t / R) + " · ") + "size log-scaled in R + t");
   }
 
   function blank(msg) {
@@ -466,5 +486,5 @@
     el("desc", {}, svg, "No picture: " + msg);
   }
 
-  window.DysonPicture = { draw: draw, blank: blank, MIN_BAND_PX: MIN_BAND_PX };
+  window.DysonPicture = { draw: draw, blank: blank, MIN_BAND_PX: MIN_BAND_PX, PALETTE: PALETTE };
 })();

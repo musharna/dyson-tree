@@ -12,6 +12,7 @@
   var M = window.DysonModel;
   var DECK = window.DysonDeck; // web/deck.js: the played cards' inputs
   var PIC = window.DysonPicture; // web/picture.js: the cross-section, drawn from res
+  var MV = window.DysonMapView; // web/mapview.js: the precomputed first-failure map
   var $ = function (id) {
     var e = document.getElementById(id);
     if (!e) throw new Error("verdict panel: missing #" + id);
@@ -32,6 +33,17 @@
     r_close_au: [1.2049, 1.2303, 1.2543],
     R_window_km: 95.6,
   };
+  // P1 is r_close at R = 10 km (prereg P1); the map draws both registered bands from here
+  MV.setBands({
+    P1: { band_au: Q4_RESULT.P1_band_au, R_km: 10, verdict: Q4_RESULT.P1,
+      r_close_au: Q4_RESULT.r_close_au, sigma_MPa: Q4_RESULT.sigma_MPa },
+    P2: { band_km: P2.band_km, r_au: P2.r_au, sigma_MPa: P2.sigma_MPa, verdict: Q4_RESULT.P2,
+      measured_km: Q4_RESULT.R_window_km.toFixed(1) },
+    order: M.LOAD_ORDER, // the model's check order: a map cell names the first line to fail
+  });
+  // the <details> inputs: a change here moves the model off the precomputed map's inputs
+  var ADVANCED = ["v-albedo", "v-emissivity", "v-topt", "v-omega", "v-ffloor", "v-dust", "v-interior",
+    "v-fresnel", "v-ninterior"];
 
   // Control defaults (§5). Log sliders carry log10 of the value.
   var DEFAULTS = {
@@ -223,6 +235,62 @@
     };
   }
 
+  // The headroom bars (visual-first Task 4). Each bar is the line's printed margin divided by that
+  // line's own scale, so five lines in different units share one axis. The scales are the model's
+  // own numbers for this design: σ_eff and p_sat are the right sides BURST and BOIL compare against,
+  // f_floor is OPAQUE's right side, a_max is the organism's (after any card). FREEZE has no model
+  // output of its size, so it uses FREEZE_SCALE_K, a display scale named by the task brief; the row's
+  // title says which scale each bar uses. Bars are clamped to ±1 scale and the clamp is marked.
+  var FREEZE_SCALE_K = 10;
+  function barScale(name, L, res) {
+    if (name === "BURST") return { v: L.rhs, name: "σ_eff(T_shell)", unit: "Pa" };
+    if (name === "FREEZE") return { v: FREEZE_SCALE_K, name: "10 K (a display scale, not a model output)", unit: "K" };
+    if (name === "BOIL") return { v: L.rhs, name: "p_sat(T_int)", unit: "Pa" };
+    if (name === "STARVE") return { v: res.org.a_max, name: "a_max (the organism's)", unit: "µmol m⁻² s⁻¹" };
+    if (name === "OPAQUE") return { v: L.rhs, name: "f_floor (declared)", unit: "" };
+    throw new RangeError("headroom: no scale for line " + name);
+  }
+  function pct(x) {
+    return (Math.round(x * 1e4) / 100) + "%";
+  }
+  function drawBar(name, L, res, first) {
+    var sc = barScale(name, L, res);
+    var q = L.margin / sc.v; // ±Infinity when the scale is 0 (σ_eff of a water wall), NaN if 0/0
+    var row = $("hr-" + name), fill = $("hr-" + name + "-fill"), cap = $("hr-" + name + "-cap");
+    var val = $("hr-" + name + "-val");
+    var scaleText = "bar = margin ÷ " + sc.name + " = " + withUnit(fmt(L.margin, 3), sc.unit) + " ÷ " +
+      withUnit(fmt(sc.v, 3), sc.unit);
+    if (isNaN(q)) {
+      // 0 ÷ 0: no length can be drawn; said, not hidden
+      row.setAttribute("data-norm", "NaN");
+      row.setAttribute("data-len", "0");
+      row.setAttribute("data-clamped", "false");
+      fill.setAttribute("style", "left:50%;width:0%");
+      cap.className = "hr-cap";
+      val.textContent = "no scale";
+      scaleText += ": the scale is 0, so the bar has no length";
+    } else {
+      var len = Math.max(-1, Math.min(1, q)), clamped = len !== q;
+      row.setAttribute("data-norm", String(q));
+      row.setAttribute("data-len", String(len));
+      row.setAttribute("data-clamped", clamped ? "true" : "false");
+      fill.setAttribute("style", len >= 0
+        ? "left:50%;width:" + pct(len / 2)
+        : "left:" + pct(0.5 + len / 2) + ";width:" + pct(-len / 2));
+      cap.className = clamped ? "hr-cap " + (len > 0 ? "hr-cap-right" : "hr-cap-left") : "hr-cap";
+      cap.textContent = clamped ? (len > 0 ? "›" : "‹") : "";
+      val.textContent = res.byConstruction[name]
+        ? "0, auto"
+        : !isFinite(q) ? (q > 0 ? "+∞" : "−∞") : (q >= 0 ? "+" : "−") + fmt(Math.abs(q), 2);
+      scaleText += " = " + (isFinite(q) ? fmt(q, 3) : String(q)) +
+        (clamped ? "; drawn clamped at " + (len > 0 ? "+1" : "−1") + " scale" : "");
+    }
+    row.setAttribute("data-violated", L.violated ? "true" : "false");
+    row.setAttribute("data-first", first ? "true" : "false");
+    row.setAttribute("title", name + " headroom: " + scaleText);
+    $("hr-" + name + "-scale").textContent = scaleText;
+  }
+
   // [r_melt, r_freeze] for the current wall held fixed. T_int and T_shell both scale as
   // T_eq(r) ∝ r^-1/2 at a fixed wall (containedTemperature: (1 - R_s + τ)^¼·T_eq, τ and R_s
   // independent of r), so each edge is r·(T/T_threshold)² from the model's own temperatures.
@@ -298,11 +366,15 @@
         "model error: " + (err && err.message ? err.message : err);
       $("v-summary").textContent =
         "no verdict: the model raised (see the error line)";
+      $("v-summary").className = "vsummary verdict-failed";
       current = null;
+      $("headroom").setAttribute("data-error", "true"); // the bars are the last good design's
       PIC.blank("the model raised");
+      mapModelError(s);
       return;
     }
     $("v-error").textContent = "";
+    $("headroom").setAttribute("data-error", "false");
     DECK.status(s.deck);
     current = res;
     $("v-R-out").textContent =
@@ -327,14 +399,17 @@
       $("v-margin-" + n).textContent = tx.margin;
       var st = $("v-status-" + n);
       st.textContent = tx.status;
-      st.className = tx.status === "HOLDS" ? "verdict-held" : "verdict-failed";
+      st.className = "hr-status " + (tx.status === "HOLDS" ? "verdict-held" : "verdict-failed");
+      drawBar(n, res.report.lines[n], res, bad.length > 0 && bad[0] === n);
     });
     $("v-summary").textContent = bad.length
-      ? "VIOLATED: " + bad.join(", ") + " — the picture is " + bad[0]
+      ? "VIOLATED: " + bad.join(", ") + " — drawn: " + bad[0] + " (first to fail)"
       : "alive: every line holds";
+    $("v-summary").className = "vsummary " + (bad.length ? "verdict-failed" : "verdict-held");
 
     $("v-tR").textContent = (res.t / s.R).toExponential(3);
     PIC.draw(res, texts);
+    drawMap(s, bad.length ? bad[0] : "HELD", res);
 
     $("v-pstar").textContent = fmt(res.pStar, 1) + " Pa";
     $("v-tmin").textContent = fmt(res.tMin, 3) + " m";
@@ -371,8 +446,8 @@
       P2.band_km[1] +
       "] km — measured " +
       Q4_RESULT.R_window_km.toFixed(1) +
-      " km, OPAQUE: " +
-      Q4_RESULT.P2;
+      " km, OPAQUE: prediction " +
+      (Q4_RESULT.P2 === "HELD" ? "confirmed" : "falsified");
 
     var pending =
       !(edgeKey("rClose", res) in edgeCache) ||
@@ -386,6 +461,168 @@
       renderEdges();
     }
   }
+
+  // The map's source. The precomputed slice (web/map_data.js) is the auto design at the page's
+  // default inputs, so it applies iff no card is played and every advanced input is at its
+  // default. Otherwise a Web Worker (web/map_worker.js) recomputes the slice with the organism and
+  // inputs this page's resolve() built, level by level (12×8, 40×30, 80×60); until the first
+  // level lands the precomputed slice is drawn greyed and labelled not current.
+  // Manual p/t does not change the map: it is the map of the AUTO design, labelled as such, and
+  // the dot carries the exact (manual) verdict.
+  // Every change of the map's inputs bumps mapGen; a worker message from an older gen is dropped.
+  var MAP_DEBOUNCE_MS = 250;
+  var MAP_FINAL = "80×60";
+  var map = { gen: 0, key: null, live: null, progress: null, error: null, worker: null, timer: null, last: null };
+
+  function stopWorker() {
+    if (map.timer !== null) clearTimeout(map.timer);
+    map.timer = null;
+    if (map.worker) map.worker.terminate();
+    map.worker = null;
+  }
+  function startWorker(gen, req) {
+    map.timer = null;
+    if (gen !== map.gen) return;
+    if (typeof Worker === "undefined") {
+      map.error = "this browser has no Web Worker";
+      return redrawMap();
+    }
+    var w;
+    try {
+      w = new Worker("map_worker.js");
+    } catch (err) {
+      var fileUrl = typeof location !== "undefined" && location.protocol === "file:";
+      map.error = fileUrl
+        ? "browsers refuse workers on file:// pages; serve this folder over http"
+        : "the browser refused the worker: " + (err && err.message ? err.message : err);
+      return redrawMap();
+    }
+    map.worker = w;
+    w.onmessage = function (ev) { onMapMessage(ev.data); };
+    w.onerror = function (ev) {
+      if (gen !== map.gen) return;
+      map.error = "worker error: " + ((ev && ev.message) || "the worker script failed to load");
+      stopWorker();
+      redrawMap();
+    };
+    req.gen = gen;
+    w.postMessage(req);
+  }
+  function onMapMessage(d) {
+    if (!d || d.gen !== map.gen) return; // a result for inputs the page no longer shows
+    if (d.error) {
+      map.error = "the model raised in the worker: " + String(d.error).split("\n")[0];
+      stopWorker();
+    } else if (d.progress) {
+      map.progress = d.progress;
+    } else {
+      var D = window.DysonMap, n = D.grid.r_log10[2] * D.grid.R_log10[2];
+      if (typeof d.slice !== "string" || d.slice.length !== n)
+        throw new Error("map worker: level " + d.level + " slice is not " + n + " cells");
+      map.live = { level: d.level, slice: d.slice };
+      map.progress = null;
+      if (d.level === MAP_FINAL) stopWorker();
+    }
+    redrawMap();
+  }
+  function redrawMap() {
+    if (map.last) drawMap(map.last[0], map.last[1], map.last[2]);
+  }
+  function spaced(level) {
+    return String(level).replace("×", " × ");
+  }
+
+  // The model raised: no verdict for the current inputs. Stop and orphan any worker (its late
+  // messages carry an old gen), forget the key so the next good design starts afresh, and draw
+  // the last cells greyed with a dot that names no class. s: the inputs read, or undefined if
+  // reading them raised (the dot then stays where the last good design put it).
+  function mapModelError(s) {
+    stopWorker();
+    map.gen += 1;
+    map.key = null;
+    map.live = map.progress = map.error = null;
+    var at = s || (map.last && map.last[0]);
+    if (!at) return;
+    var state = mapState(at, null);
+    state.source = { kind: "stale", lines: ["no verdict: the model raised", "greyed: the last map, not current"] };
+    MV.draw($("map"), state, null);
+  }
+  function mapState(s, verdict) {
+    return {
+      verdict: verdict,
+      r: s.r,
+      R: s.R,
+      sigma_MPa: Number($("v-sigma").value),
+      org: s.org,
+      cardsPlayed: s.deck.played.length,
+      advancedChanged: ADVANCED.some(function (id) {
+        return $(id).value !== DEFAULTS[id];
+      }),
+      manualPT: s.pMode !== "auto" || s.tMode !== "auto",
+    };
+  }
+  // verdict: the class the summary names (first violated line, or HELD) at the exact design
+  function drawMap(s, verdict, res) {
+    map.last = [s, verdict, res];
+    var state = mapState(s, verdict);
+    var k = $("v-sigma").value + "|" + state.org;
+    var pre = window.DysonMap.slices[k];
+    if (typeof pre !== "string") throw new Error("map: no precomputed slice " + k);
+    var applies = state.cardsPlayed === 0 && !state.advancedChanged;
+    var key = applies ? "precomputed|" + k : JSON.stringify([s.sigma, res.org, res.inp]);
+    if (key !== map.key) {
+      map.key = key;
+      map.gen += 1;
+      map.live = map.progress = map.error = null;
+      stopWorker();
+      if (!applies) {
+        var D = window.DysonMap;
+        map.timer = setTimeout(startWorker.bind(null, map.gen, {
+          grid: D.grid, classes: D.classes, sigma_Pa: s.sigma, org: res.org, inputs: res.inp,
+        }), MAP_DEBOUNCE_MS);
+      }
+    }
+    var slice = pre;
+    if (applies) {
+      state.source = { kind: "precomputed" };
+    } else if (map.live) {
+      var p = map.progress;
+      state.source = {
+        kind: "live",
+        level: map.live.level,
+        provisional: map.live.level !== MAP_FINAL, // a coarse preview, drawn as such
+        status: map.live.level === MAP_FINAL
+          ? "recomputed for your design (" + spaced(MAP_FINAL) + ")"
+          : "your design, " + spaced(map.live.level) + " preview" +
+            (p ? " · computing " + spaced(p.level) + ": " + Math.floor((100 * p.done) / p.total) + "%" : ""),
+      };
+      slice = map.live.slice;
+    } else {
+      state.source = map.error
+        ? { kind: "stale", lines: ["live recompute unavailable", map.error,
+          "greyed: the precomputed map, not current"] }
+        : { kind: "stale", lines: ["recomputing for your design…" +
+          (map.progress ? " " + Math.floor((100 * map.progress.done) / map.progress.total) + "%" : ""),
+          "greyed: the precomputed map, not current"] };
+    }
+    MV.draw($("map"), state, slice);
+  }
+  // A click or drag on the map sets r and R, snapped to each slider's own step grid, and fires
+  // the events a slider gesture fires (input while dragging, change on release).
+  MV.onPick(function (rLog, RLog, phase) {
+    [["v-r", rLog], ["v-R", RLog]].forEach(function (p) {
+      var e = $(p[0]);
+      var min = Number(e.getAttribute("min")), max = Number(e.getAttribute("max")),
+        step = Number(e.getAttribute("step"));
+      if (!(isFinite(min) && isFinite(max) && step > 0))
+        throw new Error("map pick: #" + p[0] + " has no min/max/step");
+      var v = min + Math.round((p[1] - min) / step) * step;
+      e.value = Math.max(min, Math.min(max, v)).toFixed(4);
+    });
+    ["v-r", "v-R"].forEach(function (id) {
+      $(id).dispatchEvent(new Event(phase, { bubbles: true }));
+    });
+  });
 
   // Q4 P1: the registered band drawn hatched as Q1's is (web/app.js), the measured r_close
   // beside it. Drawn once: it is a record of the run, not a function of the inputs.
@@ -417,7 +654,7 @@
     mk("rect", { id: "q4-band-rect", x: x(b[0]), y: TOP, width: x(b[1]) - x(b[0]), height: BOT - TOP,
       fill: "url(#q4hatch)", stroke: "#8a8378", "stroke-dasharray": "4 3", "stroke-width": "1" });
     mk("text", { id: "q4-band-label", x: (x(b[0]) + x(b[1])) / 2, y: TOP - 9, "text-anchor": "middle",
-      "font-size": FS, fill: "#6b655c" }, "pre-registered [" + b[0] + ", " + b[1] + "] AU (" + Q4_RESULT.P1 + ")");
+      "font-size": FS, fill: "#6b655c" }, "pre-registered [" + b[0] + ", " + b[1] + "] AU (" + Q4_RESULT.P1 + ") — registered run");
     var LX = Math.max(Rt, x(b[1])) + 10; // the label column
     Q4_RESULT.r_close_au.forEach(function (r, i) {
       var y = TOP + 6 + ROW / 2 + i * ROW;
@@ -435,8 +672,8 @@
     mk("text", { x: 4, y: BOT + 42, "font-size": FS, fill: "#5d5d5d" },
       "r (AU): measured r_close; σ in MPa");
     var v = $("q4-verdict");
-    v.textContent = "P1 " + Q4_RESULT.P1 + " (binding FREEZE) · P2 " + Q4_RESULT.P2 +
-      " (R_window " + Q4_RESULT.R_window_km.toFixed(1) + " km, OPAQUE)";
+    v.textContent = "P1 " + Q4_RESULT.P1 + " (registered run, binding FREEZE) · P2 " + Q4_RESULT.P2 +
+      " (registered run, R_window " + Q4_RESULT.R_window_km.toFixed(1) + " km, OPAQUE)";
     v.className = Q4_RESULT.P1 === "HELD" ? "verdict-held" : "verdict-failed";
   }
   drawQ4Band();

@@ -19,6 +19,7 @@ from __future__ import annotations
 
 import http.server
 import json
+import os
 import re
 import signal
 import socketserver
@@ -36,6 +37,8 @@ ROOT = Path(__file__).resolve().parents[1]
 SITE = ROOT / "site"
 FIXTURES = json.loads((ROOT / "web" / "fixtures.json").read_text())
 SUBPATH = "dyson-tree"
+# review screenshots (not the tracked docs/m3_shots): $DT_SMOKE_SHOT_DIR, else _scratch/ (gitignored)
+SHOT_DIR = Path(os.environ.get("DT_SMOKE_SHOT_DIR") or ROOT / "_scratch" / "smoke_shots")
 
 failures: list[str] = []
 notes: list[str] = []
@@ -780,6 +783,341 @@ def exercise_picture(page, label: str, shoot: bool) -> None:
 
 
 
+def exercise_map(page, label: str) -> None:
+    """Visual-first Task 2: the first-failure map, in a real browser. Clicking a cell drives the
+    r/R sliders and the verdict, both directions (HELD -> FREEZE -> HELD); the dot pins to the
+    frame at the slider extremes; every map text is >= 12 rendered px."""
+
+    def settle():
+        page.wait_for_function(
+            "() => !['v-rauto','v-Rwin'].some(i => document.getElementById(i).textContent.includes('computing'))",
+            timeout=60000,
+        )
+
+    def set_range(sel, value):
+        page.locator(sel).fill(str(value))
+        page.locator(sel).dispatch_event("input")
+
+    def summary():
+        return page.locator("#v-summary").inner_text().strip()
+
+    def click_cell(i, j):
+        sel = f'#map rect[data-cell][data-i="{i}"][data-j="{j}"]'
+        page.locator(sel).scroll_into_view_if_needed()
+        b = page.locator(sel).bounding_box()
+        assert b, f"no box for {sel}"
+        page.mouse.click(b["x"] + b["width"] / 2, b["y"] + b["height"] / 2)
+        return page.locator(sel).get_attribute("data-class")
+
+    page.reload(wait_until="load")
+    settle()
+    box = page.locator("#map").bounding_box()
+    check(box is not None and box["width"] > 400 and page.locator("#map").is_visible(),
+          f"[{label}] map is visible ({box and round(box['width'])} px wide)")
+    n = page.locator("#map rect[data-cell]").count()
+    check(n == 80 * 60, f"[{label}] map draws 80 x 60 cells, got {n}")
+    fonts = page.evaluate(
+        """() => { const svg = document.getElementById('map'); svg.scrollIntoView({block: 'center'});
+                  const k = svg.getBoundingClientRect().width / svg.viewBox.baseVal.width;
+                  return [...svg.querySelectorAll('text')].map(t =>
+                    ({t: t.textContent.slice(0, 30), px: parseFloat(getComputedStyle(t).fontSize) * k})); }"""
+    )
+    small = [(f["t"], round(f["px"], 1)) for f in fonts if f["px"] < 12]
+    check(fonts and not small, f"[{label}] every map text >= 12 px rendered: {small}")
+    outside = page.evaluate(
+        """() => { const s = document.getElementById('map').getBoundingClientRect();
+                  return [...document.querySelectorAll('#map text')].filter(t => { const b = t.getBoundingClientRect();
+                    return b.left < s.left - 0.5 || b.right > s.right + 0.5 || b.top < s.top - 0.5 || b.bottom > s.bottom + 0.5; })
+                    .map(t => t.textContent.slice(0, 30)); }"""
+    )
+    check(not outside, f"[{label}] every map text inside the map's box: {outside}")
+
+    # both directions: start FREEZE (slider), click a HELD cell, then a FREEZE cell, then HELD again
+    set_range("#v-R", 4)
+    set_range("#v-r", 0.3)
+    check(summary().startswith("VIOLATED: FREEZE"), f"[{label}] map start state is FREEZE: {summary()!r}")
+    for i, j, want in ((12, 44, "alive"), (30, 44, "VIOLATED: FREEZE"), (12, 30, "alive")):
+        before = page.locator("#v-r").input_value()
+        cls = click_cell(i, j)
+        got = summary()
+        rv, Rv = page.locator("#v-r").input_value(), page.locator("#v-R").input_value()
+        on_grid = all(len(v.split(".")[-1]) <= 4 for v in (rv, Rv))
+        dot_cls = page.locator("#map-dot").get_attribute("data-class")
+        check(got.startswith(want) and dot_cls == cls and on_grid and rv != before,
+              f"[{label}] click on map cell ({i}, {j}) [{cls}] -> r {rv} R {Rv}, verdict {got[:40]!r}, "
+              f"dot cell {dot_cls} (want {want!r}, sliders on the 1e-4 grid)")
+    settle()
+
+    # the dot pins to the frame at the slider extremes, with a visible marker; not at the defaults
+    page.reload(wait_until="load")
+    settle()
+    check(page.locator("#map-dot").get_attribute("data-clamped") == "false" and page.locator("#map-clamp").count() == 0,
+          f"[{label}] defaults: map dot not clamped, no edge marker")
+    for rv, Rv in ((-0.3011, 1), (2, 5)):
+        set_range("#v-R", Rv)
+        set_range("#v-r", rv)
+        g = page.evaluate(
+            """() => { const d = document.getElementById('map-dot').getBoundingClientRect();
+                      const f = document.getElementById('map-frame').getBoundingClientRect();
+                      const m = document.getElementById('map-clamp');
+                      const mb = m ? m.getBoundingClientRect() : null;
+                      return {cx: (d.left + d.right) / 2, cy: (d.top + d.bottom) / 2, f: [f.left, f.top, f.right, f.bottom],
+                              clamped: document.getElementById('map-dot').getAttribute('data-clamped'),
+                              marker: mb ? mb.width * mb.height : 0}; }"""
+        )
+        on_x = min(abs(g["cx"] - g["f"][0]), abs(g["cx"] - g["f"][2])) < 1
+        on_y = min(abs(g["cy"] - g["f"][1]), abs(g["cy"] - g["f"][3])) < 1
+        check(g["clamped"] == "true" and on_x and on_y and g["marker"] > 20,
+              f"[{label}] r {rv}, R {Rv}: dot on the map corner with a visible edge marker: {g}")
+        # (Task 5 fix round) no registered label under the dot or its edge marker, in real pixels
+        hit = page.evaluate(
+            """() => { const r = (e) => { const b = e.getBoundingClientRect(); return [b.left, b.top, b.right, b.bottom]; };
+                      const marks = [document.getElementById('map-dot')]
+                        .concat([...document.querySelectorAll('#map-clamp polygon')]).map(r);
+                      const labs = ['map-p2-label', 'map-p1-label', 'map-rclose-label']
+                        .map(i => document.getElementById(i)).filter(Boolean);
+                      const ov = (a, b) => a[0] < b[2] && b[0] < a[2] && a[1] < b[3] && b[1] < a[3];
+                      return {n: labs.length, hits: labs.filter(l => marks.some(m => ov(r(l), m))).map(l => l.id)}; }"""
+        )
+        check(hit["n"] >= 2 and not hit["hits"], f"[{label}] r {rv}, R {Rv}: no band label under the dot: {hit}")
+    settle()
+
+
+MAP_SHOT = SHOT_DIR / "task-3-shot.png"
+
+
+def exercise_map_live(page, label: str, shoot: bool) -> None:
+    """Visual-first Task 3: playing a card greys the precomputed map and labels it "recomputing";
+    a Web Worker then paints its first level over the whole grid, without blocking the main thread.
+    From file:// Chromium refuses workers, so there the map must SAY so and stay greyed."""
+    page.reload(wait_until="load")
+    src = lambda: page.locator("#map-cells").get_attribute("data-source")  # noqa: E731
+    # positive control: at the defaults the precomputed map is current
+    check(
+        src() == "precomputed" and page.locator("#map-recomputing").count() == 0,
+        f"[{label}] map live: defaults draw the precomputed map as current ({src()})",
+    )
+    page.select_option("#deck-0-count", "1")
+    page.locator("#deck-0-value").fill("1.3")
+    page.locator("#deck-0-value").dispatch_event("input")
+    rc = page.locator("#map-recomputing")
+    check(
+        rc.count() == 1
+        and src() == "stale"
+        and page.locator("#map-cells").get_attribute("opacity") == "0.35",
+        f"[{label}] map live: card played -> greyed, label {rc.text_content() if rc.count() else None!r}",
+    )
+    note = page.locator("#map-stale-note")
+    check(
+        note.count() == 1 and "not current" in note.text_content(),
+        f"[{label}] map live: greyed map labelled not current",
+    )
+    if label == "file://":
+        page.wait_for_function(
+            "() => /unavailable/.test(document.getElementById('map-recomputing').textContent)",
+            timeout=10000,
+        )
+        said = page.locator("#map [data-state=recomputing]").all_text_contents()
+        check(
+            src() == "stale",
+            f"[{label}] map live: no worker from file://, the map says so, stays greyed: {said}",
+        )
+        page.select_option("#deck-0-count", "0")
+        check(
+            src() == "precomputed",
+            f"[{label}] map live: card off -> precomputed map current again",
+        )
+        return
+    t0 = page.evaluate("() => performance.now()")
+    page.wait_for_function(
+        "() => document.getElementById('map-cells').getAttribute('data-source') === '12×8'",
+        timeout=60000,
+    )
+    t1 = page.evaluate("() => performance.now()")
+    n = page.locator("#map rect[data-cell]").count()
+    status = page.locator("#map-live-status").text_content()
+    check(
+        n == 80 * 60
+        and page.locator("#map-recomputing").count() == 0
+        and "12 × 8" in status,
+        f"[{label}] map live: first worker level painted over the full grid in {(t1 - t0) / 1000:.1f} s "
+        f"({n} cells, status {status!r})",
+    )
+    # the main thread stays free while the worker runs the next level: r-drag latency as before
+    lat = page.evaluate(
+        """() => { const s = document.getElementById('v-r'); const out = [];
+                   for (let i = 0; i < 20; i++) { s.value = Math.log10(1.05 + i * 0.005).toFixed(4);
+                     const t0 = performance.now(); s.dispatchEvent(new Event('input'));
+                     void document.getElementById('v-status-FREEZE').textContent;
+                     out.push(performance.now() - t0); }
+                   out.sort((a, b) => a - b); return {max: out[19],
+                   src: document.getElementById('map-cells').getAttribute('data-source')}; }"""
+    )
+    check(
+        lat["max"] < 100 and lat["src"] not in ("stale", "precomputed"),
+        f"[{label}] map live: r-drag under 100 ms while the worker computes (max {lat['max']:.1f} ms, map {lat['src']})",
+    )
+    if shoot:
+        page.locator("#map").scroll_into_view_if_needed()
+        page.locator("#map").screenshot(path=str(MAP_SHOT))
+        notes.append(
+            f"NOTE  [{label}] map live screenshot -> {MAP_SHOT.relative_to(ROOT)}"
+        )
+    # card off: the precomputed map is current again, and the worker's later levels cannot repaint it
+    page.select_option("#deck-0-count", "0")
+    page.wait_for_timeout(1500)
+    check(
+        src() == "precomputed" and page.locator("#map-live-status").count() == 0,
+        f"[{label}] map live: card off -> precomputed map current again ({src()})",
+    )
+
+
+def exercise_headroom(page, label: str, shoot: bool) -> None:
+    """Visual-first Task 4: five headroom bars in load order, the violated one marked; both sides
+    revealed on hover/focus; the bands' labels, the DECLARED badge, the summary, the bars and the map
+    visible with nothing opened, while prose in a closed <details> is not; bar and token text >= 12 px;
+    the map's registered labels qualified once a card is played."""
+
+    def settle():
+        page.wait_for_function(
+            "() => !['v-rauto','v-Rwin'].some(i => document.getElementById(i).textContent.includes('computing'))",
+            timeout=60000,
+        )
+
+    def set_range(sel, value):
+        page.locator(sel).fill(str(value))
+        page.locator(sel).dispatch_event("input")
+
+    def marked():
+        return page.eval_on_selector_all(
+            "#headroom [data-line][data-violated=true]", "els => els.map(e => e.dataset.line)"
+        )
+
+    def seen(ids):
+        return page.evaluate(
+            """(ids) => ids.map(id => { const e = document.getElementById(id);
+                 if (!e) return {id, missing: true};
+                 const b = e.getBoundingClientRect();
+                 return {id, w: b.width, h: b.height, closed: !!e.closest('details:not([open])'),
+                         shown: e.checkVisibility({visibilityProperty: true, opacityProperty: true})}; })""",
+            ids,
+        )
+
+    page.set_viewport_size({"width": 1400, "height": 900})
+    page.reload(wait_until="load")
+    settle()
+    rows = page.eval_on_selector_all("#headroom [data-line]", "els => els.map(e => e.dataset.line)")
+    check(rows == list(VLINES), f"[{label}] headroom: one bar per line in load order: {rows}")
+    check(marked() == [], f"[{label}] headroom defaults: no bar marked violated, got {marked()}")
+
+    # nothing opened: the things a reader must see are visible; closed-<details> prose is not
+    must = ["deck-1-badge", "v-summary", "headroom", "map", "map-p1-label", "map-p2-label",
+            "map-rclose-label", "q4-band-label", "q4-verdict"] + [f"hr-{n}" for n in VLINES]
+    got = seen(must)
+    bad = [g for g in got if g.get("missing") or not (g["shown"] and g["w"] > 0 and g["h"] > 0 and not g["closed"])]
+    check(not bad, f"[{label}] visible without interaction (DECLARED badge, summary, bars, map, band labels): {bad}")
+    check(page.locator("#deck-1-badge").inner_text() == "DECLARED", f"[{label}] the visible badge reads DECLARED")
+    prose = seen(["deck-0-source", "deck-1-cost", "deck-rule"])
+    # (Chromium keeps a layout box for closed-<details> content; checkVisibility is what the reader gets)
+    ctrl = [g for g in prose if g.get("missing") or not g["closed"] or g["shown"]
+            or page.locator("#" + g["id"]).is_visible()]
+    check(not ctrl, f"[{label}] control: card source/cost and the deck rule sit in a closed <details>, not visible: {ctrl}")
+
+    # both sides are in the row, hidden until hover or focus
+    def box(sel):
+        b = page.locator(sel).bounding_box()
+        return (round(b["width"]), round(b["height"])) if b else (0, 0)
+
+    has_rows = rows == list(VLINES)
+    before = focused = hovered = (0, 0)
+    if has_rows:  # without the rows there is nothing to focus: the check below FAILs, it does not hang
+        # the detail box is what clips its text: 1 x 1 px until hover/focus
+        before = box("#hr-FREEZE .hr-detail")
+        page.locator("#hr-FREEZE").focus()
+        focused = box("#hr-FREEZE .hr-detail")
+        page.locator("#v-R").focus()
+        page.locator("#hr-BURST").hover()
+        hovered = box("#hr-BURST .hr-detail")
+        page.mouse.move(0, 0)
+    check(before[0] <= 1 and focused[0] > 40 and hovered[0] > 40,
+          f"[{label}] headroom: both sides hidden until focus/hover (before {before}, focus {focused}, hover {hovered})")
+
+    fonts = page.evaluate(
+        """() => [...document.querySelectorAll('#headroom *, #deck *')].filter(e =>
+               [...e.childNodes].some(n => n.nodeType === 3 && n.textContent.trim()) &&
+               e.getBoundingClientRect().width > 0 && e.checkVisibility())
+             .map(e => ({t: e.textContent.trim().slice(0, 24), px: parseFloat(getComputedStyle(e).fontSize)}))"""
+    )
+    small = [(f["t"], f["px"]) for f in fonts if f["px"] < 12]
+    check(fonts and not small, f"[{label}] headroom and card tokens: every visible text >= 12 px ({len(fonts)} texts): {small}")
+    # (Task 5 fix round) the verdict line heads the vessel panel at heading size, above the map
+    vs = page.evaluate(
+        """() => { const s = document.getElementById('v-summary'), m = document.getElementById('map');
+                  return {px: parseFloat(getComputedStyle(s).fontSize), s: s.getBoundingClientRect().bottom,
+                          m: m.getBoundingClientRect().top}; }"""
+    )
+    check(vs["px"] >= 20 and vs["s"] <= vs["m"], f"[{label}] verdict line above the map at heading size: {vs}")
+    # (Task 5 polish) a passing verdict is a dark green, not the FREEZE blue; the bar key follows its bars
+    col = page.evaluate(
+        """() => { const c = getComputedStyle(document.getElementById('v-summary')).color.match(/\\d+/g).map(Number);
+                  const k = document.querySelector('#headroom .hr-key').getBoundingClientRect().top;
+                  const b = document.getElementById('hr-OPAQUE').getBoundingClientRect().bottom;
+                  return {rgb: c.slice(0, 3), key: k, bars: b}; }"""
+    )
+    r_, g_, b_ = col["rgb"]
+    check(g_ > r_ + 30 and g_ > b_ + 30 and g_ < 140, f"[{label}] passing verdict line is dark green: rgb {col['rgb']}")
+    check(col["key"] >= col["bars"], f"[{label}] headroom key sits below its bars: {col}")
+    if shoot:
+        page.locator("#vessel").evaluate("e => e.scrollIntoView({block: 'start'})")
+        page.screenshot(path=str(SHOT_DIR / "task-4-shot-defaults.png"))
+
+    # FREEZE at sigma 0.7, R 10 km, r 1.21 AU: exactly that bar marked, drawn left of centre
+    set_range("#v-R", 4)
+    set_range("#v-r", 0.0828)
+    settle()
+    check(marked() == ["FREEZE"], f"[{label}] headroom FREEZE state: exactly FREEZE marked, got {marked()}")
+    g = page.evaluate(
+        """() => { if (!document.getElementById('hr-FREEZE-fill')) return {w: 0, right: null, zero: null};
+                  const f = document.getElementById('hr-FREEZE-fill').getBoundingClientRect();
+                  const z = document.querySelector('#hr-FREEZE .hr-zero').getBoundingClientRect();
+                  return {w: f.width, right: f.right, zero: (z.left + z.right) / 2}; }"""
+    )
+    check(g["w"] > 1 and g["right"] is not None and g["right"] <= g["zero"] + 1,
+          f"[{label}] headroom FREEZE bar drawn left of the zero line: {g}")
+    # (Task 5 critic r3) a bar's fill is never a map legend colour: one neutral fill for holding
+    # bars, one violated red for violated bars (checked here with both kinds on the page)
+    fills = page.evaluate(
+        """() => { const hex = (h) => { const n = parseInt(h.slice(1), 16);
+                     return 'rgb(' + [(n >> 16) & 255, (n >> 8) & 255, n & 255].join(', ') + ')'; };
+                  const pal = Object.entries(window.DysonPicture.PALETTE).map(([k, v]) => [k, hex(v)]);
+                  return { pal: pal, rows: ['BURST', 'FREEZE', 'BOIL', 'STARVE', 'OPAQUE'].map(n => ({ n: n,
+                    v: document.getElementById('hr-' + n).getAttribute('data-violated'),
+                    c: getComputedStyle(document.getElementById('hr-' + n + '-fill')).backgroundColor })) }; }"""
+    )
+    legend = {c: k for k, c in fills["pal"]}
+    clash = [(r["n"], legend[r["c"]]) for r in fills["rows"] if r["c"] in legend]
+    kinds = {v: {r["c"] for r in fills["rows"] if r["v"] == v} for v in ("true", "false")}
+    check(not clash and len(kinds["true"]) == 1 and len(kinds["false"]) == 1 and kinds["true"] != kinds["false"],
+          f"[{label}] headroom fills: no legend colour, one holding and one violated fill: clash {clash}, {kinds}")
+    if shoot:
+        page.locator("#vessel").evaluate("e => e.scrollIntoView({block: 'start'})")
+        page.screenshot(path=str(SHOT_DIR / "task-4-shot-freeze.png"))
+
+    # the map's registered labels stay, qualified, once the design leaves the registered run
+    page.reload(wait_until="load")
+    settle()
+    check(page.locator("#map-registered-note").count() == 0, f"[{label}] map defaults: no registered-run note")
+    page.select_option("#deck-0-count", "1")
+    note = page.locator("#map-registered-note")
+    nb, fb = note.bounding_box() if note.count() else None, page.locator("#map-frame").bounding_box()
+    check(note.count() == 1 and note.is_visible() and nb is not None and fb is not None
+          and nb["y"] >= fb["y"] + fb["height"] and page.locator("#map-p1-label").is_visible(),
+          f"[{label}] card played: P1 label still visible and the note {note.text_content() if note.count() else None!r} "
+          f"sits below the map frame ({nb}, frame {fb})")
+    page.select_option("#deck-0-count", "0")
+    page.set_viewport_size({"width": 1280, "height": 720})
+
+
 def exercise_q4_band(page, label: str) -> None:
     """M4: the r_close band hatched as Q1's is, the measured edges beside it, HELD/FAILED."""
     import re as _re
@@ -803,6 +1141,8 @@ def exercise_q4_band(page, label: str) -> None:
     check(f"({want.get('P1')})" in m["label"], f"[{label}] Q4 band label {m['label']!r} carries RESULTS.md P1 {want.get('P1')}")
     check(f"P1 {want.get('P1')}" in m["verdict"] and f"P2 {want.get('P2')}" in m["verdict"],
           f"[{label}] Q4 verdict line {m['verdict']!r} matches RESULTS.md {want}")
+    check(m["verdict"].count("(registered run") == 2 and "registered run" in m["label"],
+          f"[{label}] Q4 HELD words say they are the registered run: {m['verdict']!r} / {m['label']!r}")
     inside = [m["x0"] <= d["x"] <= m["x1"] for d in m["dots"]]
     check(inside == [True] * 3 if want.get("P1") == "HELD" else not all(inside),
           f"[{label}] measured marks sit where the verdict says relative to the band: {inside}")
@@ -829,6 +1169,7 @@ def main() -> int:
     import shutil
     import tempfile
 
+    SHOT_DIR.mkdir(parents=True, exist_ok=True)
     tmp = Path(tempfile.mkdtemp(prefix="dt-smoke-"))
     shutil.copytree(SITE, tmp / SUBPATH)
     httpd, port = serve(tmp)
@@ -867,6 +1208,9 @@ def main() -> int:
             exercise(page, label)
             exercise_vessel(page, label)
             exercise_q4_band(page, label)
+            exercise_map(page, label)
+            exercise_map_live(page, label, shoot=url.startswith("http"))
+            exercise_headroom(page, label, shoot=url.startswith("http"))
             exercise_picture(page, label, shoot=url.startswith("http"))
             page.close()
         browser.close()

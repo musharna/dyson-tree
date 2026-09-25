@@ -17,7 +17,7 @@
 - Pre-registered bands (P1 [1.19, 1.27] AU at R 10 km; P2 [60, 300] km at r 1.10 AU, σ 0.7) and every DECLARED label stay always visible (Q2 premise).
 - Keep every existing element id that tests read (`v-status-*`, `v-margin-*`, `v-cmp-*`, `v-summary`, `v-rauto`, `v-Rwin`, `deck-*`, `pic-*`, `q4-band`); restyle them, don't remove them.
 - Plain SVG/Canvas + Web Worker only; all assets relative (build_site.sh rejects remote assets).
-- Leak-guard: no `/home/mjarnold` or `/mnt/c/Users/a2b32` in tracked files.
+- Leak-guard: no `/home/<user>` or `/mnt/c/Users/<user>` developer paths in tracked files.
 - Headless browsers: default Playwright launch only (software rendering); never `--enable-gpu`/d3d12 on this laptop (memory `laptop_tdr_0x116_wsl_webgl_2026-09-25`).
 - Every new test is seen failing for its stated reason before its fix; every negative check carries a positive control.
 - Visual output passes an independent critic agent before merge (A3); plus the blind 10-second before/after test (Q2).

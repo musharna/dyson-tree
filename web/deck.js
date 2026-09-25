@@ -32,8 +32,24 @@
     return s + ". " + d.clip_note;
   }
 
+  // the token's one-line effect: which input, which way; the range and cap sit in its <details>
+  function effectText(row) {
+    var d = row.delta_or_range;
+    if (d.op === "subtract")
+      return "lowers " + row.input + " by " + d.param + (d.unit ? " (" + d.unit + ")" : "") + " per card";
+    if (d.op === "scale")
+      return "scales " + row.input + " by " + (d.range[0] === d.range[1] ? "×" + d.range[0] : d.param);
+    throw new RangeError("deck: unknown op " + d.op);
+  }
+  var BADGE_MEANS = {
+    MEASURED: "MEASURED: a number with a source in this repository",
+    DEMONSTRATED: "DEMONSTRATED: done in a lab, cited",
+    DECLARED: "DECLARED: fantasy, labelled; allowed here, refused in a registered run",
+  };
+
   ROWS.forEach(function (row, i) {
     var d = row.delta_or_range;
+    $("deck-" + i + "-effect").textContent = effectText(row);
     $("deck-" + i + "-trait").textContent = row.trait;
     $("deck-" + i + "-organism").textContent = row.organism;
     $("deck-" + i + "-input").textContent = row.input;
@@ -43,6 +59,8 @@
     var b = $("deck-" + i + "-badge");
     b.textContent = row.anchor;
     b.className = "badge badge-" + row.anchor;
+    if (!(row.anchor in BADGE_MEANS)) throw new RangeError("deck: unknown badge " + row.anchor);
+    b.title = BADGE_MEANS[row.anchor]; // a property: tests/test_deck_parity_js.py stubs have no setAttribute
     var c = $("deck-" + i + "-count");
     var opts = [];
     for (var k = 0; k <= d.max_stack; k++) opts.push(k);

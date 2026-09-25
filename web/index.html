@@ -58,7 +58,11 @@
       footer { margin-top: 22px; color: var(--muted); font-size: 13px; }
       code { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 13px; }
       .vessel { margin-bottom: 20px; }
-      .vgrid { display: grid; grid-template-columns: 340px 280px minmax(0, 1fr); gap: 20px; align-items: start; }
+      .vhero { display: grid; grid-template-columns: minmax(0, 3fr) minmax(0, 2fr); gap: 20px; align-items: start; margin-bottom: 18px; }
+      .vmap { margin: 0; }
+      .vmap svg { background: var(--bg); touch-action: none; }
+      .vmap figcaption { padding: 6px 4px 0; }
+      .vgrid { display: grid; grid-template-columns: 280px minmax(0, 1fr); gap: 20px; align-items: start; }
       .vpic { margin: 0; }
       .vpic figcaption { padding: 6px 12px 0; }
       .vpic svg { background: var(--bg); }
@@ -72,11 +76,59 @@
       .deck legend { font-size: 12px; letter-spacing: 0.04em; color: var(--muted); }
       .card { border-top: 1px solid var(--rule); padding-top: 6px; margin-top: 6px; }
       .card p { margin: 0 0 4px; }
-      .badge { font-size: 11px; font-weight: 600; letter-spacing: 0.05em; padding: 1px 5px; border-radius: 3px; border: 1px solid currentColor; }
+      .badge { font-size: 12px; font-weight: 600; letter-spacing: 0.05em; padding: 1px 5px; border-radius: 3px; border: 1px solid currentColor; }
       .badge-MEASURED { color: var(--curve); }
       .badge-DEMONSTRATED { color: #3d6b35; }
       .badge-DECLARED { color: var(--warn); }
-      @media (max-width: 820px) { .vgrid { grid-template-columns: minmax(0, 1fr); } }
+      /* explanatory prose, collapsed; verdicts, bands, badges and bars never sit inside one */
+      details.prose { margin: 4px 0 8px; }
+      details.prose > summary { cursor: pointer; color: var(--muted); font-size: 13px; }
+      details.prose[open] > summary { margin-bottom: 4px; }
+      .isnot-short { padding-left: 18px; margin: 0 0 8px; }
+      .isnot-short li { margin-bottom: 4px; }
+      /* headroom strip: one bar per line (verdict.js drawBars) */
+      .headroom { margin-top: 10px; font-size: 13px; }
+      .vessel > .vsummary { font-size: 22px; line-height: 1.3; margin: 2px 0 8px; }
+      /* a passing verdict: a dark variant of the map's HELD green, never the FREEZE blue */
+      .vessel > .vsummary.verdict-held { color: #1d6b2c; }
+      .headroom #v-error:empty { display: none; }
+      .headroom[data-error="true"] .hr-row { opacity: 0.4; }
+      .hr-key { color: var(--muted); font-size: 12px; line-height: 1.4; margin: 6px 0 0; }
+      .hr-row { position: relative; display: grid; grid-template-columns: 62px 70px minmax(0, 1fr) 64px;
+        gap: 6px; align-items: center; padding: 1px 4px; border-left: 3px solid transparent; border-radius: 3px; }
+      .hr-row:hover, .hr-row:focus { background: #f1eee8; outline: none; }
+      .hr-row:focus-visible { outline: 2px solid var(--curve); outline-offset: 1px; }
+      .hr-row[data-violated="true"] { background: #f7e6e1; }
+      .hr-row[data-first="true"] { border-left-color: var(--warn); }
+      .hr-name { font-weight: 600; font-size: 13px; }
+      .hr-status { font-size: 12px; }
+      .hr-track { position: relative; height: 14px; background: #efece6; border-radius: 2px; }
+      .hr-zero { position: absolute; left: 50%; top: -3px; bottom: -3px; width: 2px; margin-left: -1px; background: var(--ink); }
+      /* bar fills are never a map legend colour: neutral while the line holds, one red when violated */
+      .hr-fill { position: absolute; top: 2px; bottom: 2px; background: #a39d92; }
+      .hr-row[data-violated="true"] .hr-fill { background: #c62828; }
+      /* the clamp cap: light on dark, over the bar's end, so it reads on either fill colour */
+      .hr-cap { display: none; position: absolute; top: -2px; bottom: -2px; font-size: 13px; font-weight: 700;
+        line-height: 18px; padding: 0 4px; border-radius: 3px; color: #ffffff; background: var(--ink); }
+      .hr-cap-left { display: block; left: 0; }
+      .hr-cap-right { display: block; right: 0; }
+      .hr-val { font-size: 12px; text-align: right; font-variant-numeric: tabular-nums; color: var(--muted); }
+      /* both sides and the printed margin: in the row for screen readers, shown on hover/focus */
+      .hr-detail { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%);
+        white-space: nowrap; }
+      .hr-row:hover .hr-detail, .hr-row:focus .hr-detail, .hr-row:focus-within .hr-detail {
+        clip-path: none; width: auto; height: auto; overflow: visible; white-space: normal;
+        left: 0; right: 0; top: 100%; z-index: 5; background: #fff; border: 1px solid var(--rule);
+        border-radius: 4px; padding: 6px 8px; font-size: 12px; box-shadow: 0 2px 6px rgba(0, 0, 0, 0.12); }
+      /* card tokens */
+      .token { padding: 6px 0 2px; }
+      .token p { margin: 0 0 3px; }
+      .tok-head strong { font-size: 14px; }
+      .tok-effect { font-size: 13px; color: var(--ink); }
+      .tok-controls { display: flex; gap: 12px; align-items: flex-end; flex-wrap: wrap; }
+      .tok-controls .control { margin: 0; }
+      .tok-controls input { width: 6em; }
+      @media (max-width: 820px) { .vgrid, .vhero { grid-template-columns: minmax(0, 1fr); } }
       @media (max-width: 820px) { .layout { grid-template-columns: minmax(0, 1fr); } }
     </style>
   </head>
@@ -92,20 +144,84 @@
 
       <section class="panel vessel" id="vessel" aria-labelledby="vessel-h">
         <h2 id="vessel-h">THE VESSEL: WILL IT LIVE?</h2>
-        <p class="note">
-          An ice sphere of radius <i>R</i>, wall <i>t</i>, holding water vapour at pressure <i>p</i>, at
-          distance <i>r</i>. Each line below is an inequality from the model (<code>web/model.js</code>);
-          the first violated line in load order names the failure. Auto is the self-consistent design:
-          <i>p</i> = <i>p</i>*, <i>t</i> = <i>t</i><sub>min</sub>(<i>p</i>*).
-        </p>
-        <div class="vgrid">
-          <figure class="vpic">
-            <svg id="pic" viewBox="0 0 400 440" role="img" aria-labelledby="pic-cap"></svg>
-            <figcaption class="note" id="pic-cap">Cross-section, drawn only from the model's outputs:
-              wall band at its true t/R (clamped to a visible minimum, labelled), interior colour from
-              the transmitted PAR spectrum, brightness from f_photon, disc saturation = net carbon / a_max.
-              Each failed line marks the picture and prints both sides.</figcaption>
+        <p id="v-summary" class="vsummary" role="status" aria-live="polite"></p>
+        <details class="prose">
+          <summary>What the vessel is</summary>
+          <p class="note">
+            An ice sphere of radius <i>R</i>, wall <i>t</i>, holding water vapour at pressure <i>p</i>, at
+            distance <i>r</i>. Each line is an inequality from the model (<code>web/model.js</code>);
+            the first violated line in load order names the failure. Auto is the self-consistent design:
+            <i>p</i> = <i>p</i>*, <i>t</i> = <i>t</i><sub>min</sub>(<i>p</i>*).
+          </p>
+        </details>
+        <div class="vhero">
+          <figure class="vmap">
+            <svg id="map" viewBox="0 0 640 560" role="img" aria-labelledby="map-cap"></svg>
+            <figcaption class="note"><span id="map-cap">Which line fails first, for the auto design at every
+              distance and radius. Click or drag to move r and R; the ringed dot is your design.
+              Hatched: the pre-registered Q4 bands; the black tick is the measured r_close.</span>
+              <details class="prose">
+                <summary>How the map is made</summary>
+                Precomputed on an 80 × 60 log grid by <code>tools/make_map.mjs</code> with this page's own
+                model, no cards played; each cell is the model at its centre. The dot is filled with the
+                class the verdict names, so within half a cell of an edge it can differ from the cell it
+                sits in. A played card or a changed declared assumption recomputes the map in a worker.
+              </details></figcaption>
           </figure>
+          <div class="vside">
+            <figure class="vpic">
+              <svg id="pic" viewBox="0 0 400 440" role="img" aria-labelledby="pic-cap"></svg>
+              <figcaption class="note"><span id="pic-cap">Cross-section, drawn only from the model's outputs.
+                Each failed line marks the picture and prints both sides.</span>
+                <details class="prose">
+                  <summary>What each mark encodes</summary>
+                  Wall band at its true t/R (clamped to a visible minimum, labelled), interior colour from
+                  the transmitted PAR spectrum, brightness from f_photon, disc saturation = net carbon / a_max.
+                </details></figcaption>
+            </figure>
+            <div class="headroom" id="headroom">
+              <p id="v-error" class="verdict-failed" role="alert"></p>
+              <div class="hr-row" id="hr-BURST" data-line="BURST" tabindex="0" role="group" aria-labelledby="hr-BURST-name">
+                <span class="hr-name" id="hr-BURST-name">BURST</span>
+                <span class="hr-status" id="v-status-BURST"></span>
+                <span class="hr-track" aria-hidden="true"><span class="hr-zero"></span><span class="hr-fill" id="hr-BURST-fill"></span><span class="hr-cap" id="hr-BURST-cap"></span></span>
+                <span class="hr-val" id="hr-BURST-val"></span>
+                <span class="hr-detail"><span id="v-cmp-BURST"></span><br />margin <span class="num" id="v-margin-BURST"></span><br /><span id="hr-BURST-scale"></span></span>
+              </div>
+              <div class="hr-row" id="hr-FREEZE" data-line="FREEZE" tabindex="0" role="group" aria-labelledby="hr-FREEZE-name">
+                <span class="hr-name" id="hr-FREEZE-name">FREEZE</span>
+                <span class="hr-status" id="v-status-FREEZE"></span>
+                <span class="hr-track" aria-hidden="true"><span class="hr-zero"></span><span class="hr-fill" id="hr-FREEZE-fill"></span><span class="hr-cap" id="hr-FREEZE-cap"></span></span>
+                <span class="hr-val" id="hr-FREEZE-val"></span>
+                <span class="hr-detail"><span id="v-cmp-FREEZE"></span><br />margin <span class="num" id="v-margin-FREEZE"></span><br /><span id="hr-FREEZE-scale"></span></span>
+              </div>
+              <div class="hr-row" id="hr-BOIL" data-line="BOIL" tabindex="0" role="group" aria-labelledby="hr-BOIL-name">
+                <span class="hr-name" id="hr-BOIL-name">BOIL</span>
+                <span class="hr-status" id="v-status-BOIL"></span>
+                <span class="hr-track" aria-hidden="true"><span class="hr-zero"></span><span class="hr-fill" id="hr-BOIL-fill"></span><span class="hr-cap" id="hr-BOIL-cap"></span></span>
+                <span class="hr-val" id="hr-BOIL-val"></span>
+                <span class="hr-detail"><span id="v-cmp-BOIL"></span><br />margin <span class="num" id="v-margin-BOIL"></span><br /><span id="hr-BOIL-scale"></span></span>
+              </div>
+              <div class="hr-row" id="hr-STARVE" data-line="STARVE" tabindex="0" role="group" aria-labelledby="hr-STARVE-name">
+                <span class="hr-name" id="hr-STARVE-name">STARVE</span>
+                <span class="hr-status" id="v-status-STARVE"></span>
+                <span class="hr-track" aria-hidden="true"><span class="hr-zero"></span><span class="hr-fill" id="hr-STARVE-fill"></span><span class="hr-cap" id="hr-STARVE-cap"></span></span>
+                <span class="hr-val" id="hr-STARVE-val"></span>
+                <span class="hr-detail"><span id="v-cmp-STARVE"></span><br />margin <span class="num" id="v-margin-STARVE"></span><br /><span id="hr-STARVE-scale"></span></span>
+              </div>
+              <div class="hr-row" id="hr-OPAQUE" data-line="OPAQUE" tabindex="0" role="group" aria-labelledby="hr-OPAQUE-name">
+                <span class="hr-name" id="hr-OPAQUE-name">OPAQUE</span>
+                <span class="hr-status" id="v-status-OPAQUE"></span>
+                <span class="hr-track" aria-hidden="true"><span class="hr-zero"></span><span class="hr-fill" id="hr-OPAQUE-fill"></span><span class="hr-cap" id="hr-OPAQUE-cap"></span></span>
+                <span class="hr-val" id="hr-OPAQUE-val"></span>
+                <span class="hr-detail"><span id="v-cmp-OPAQUE"></span><br />margin <span class="num" id="v-margin-OPAQUE"></span><br /><span id="hr-OPAQUE-scale"></span></span>
+              </div>
+              <p class="hr-key">Headroom = margin ÷ the line's own scale. Right of centre: headroom · left: short of
+                the limit · the row's label is the verdict; › or ‹ = past ±1 scale. Hover or focus a row for both sides.</p>
+            </div>
+          </div>
+        </div>
+        <div class="vgrid">
           <div class="vinputs">
             <div class="control slider">
               <label for="v-R">Vessel radius R <output id="v-R-out" for="v-R"></output></label>
@@ -154,30 +270,45 @@
             </div>
             <fieldset class="deck" id="deck" aria-describedby="deck-rule">
               <legend>The gene deck</legend>
-              <p class="note" id="deck-rule">A card moves an input; it never moves an inequality. Badges:
-                MEASURED (a number with a source in this repository), DEMONSTRATED (done in a lab, cited),
-                DECLARED (fantasy, labelled; allowed here, refused in a registered run).</p>
-              <div class="card" id="deck-0" role="group" aria-labelledby="deck-0-trait">
-                <p><span class="badge" id="deck-0-badge"></span> <strong id="deck-0-trait"></strong>
-                  <span class="note">from <span id="deck-0-organism"></span></span></p>
-                <p class="note">moves <code id="deck-0-input"></code>: <span id="deck-0-delta"></span></p>
-                <p class="note">cost: <span id="deck-0-cost"></span></p>
-                <p class="note">source: <span id="deck-0-source"></span></p>
-                <div class="control"><label for="deck-0-count">cards played</label>
-                  <select id="deck-0-count"></select></div>
-                <div class="control"><label for="deck-0-value" id="deck-0-value-label">value per card</label>
-                  <input id="deck-0-value" type="number" /></div>
+              <details class="prose">
+                <summary>How cards work</summary>
+                <p class="note" id="deck-rule">A card moves an input; it never moves an inequality. Badges:
+                  MEASURED (a number with a source in this repository), DEMONSTRATED (done in a lab, cited),
+                  DECLARED (fantasy, labelled; allowed here, refused in a registered run).</p>
+              </details>
+              <div class="card token" id="deck-0" role="group" aria-labelledby="deck-0-trait">
+                <p class="tok-head"><span class="badge" id="deck-0-badge"></span> <strong id="deck-0-trait"></strong></p>
+                <p class="tok-effect" id="deck-0-effect"></p>
+                <div class="tok-controls">
+                  <div class="control"><label for="deck-0-count">cards</label>
+                    <select id="deck-0-count"></select></div>
+                  <div class="control"><label for="deck-0-value" id="deck-0-value-label">value per card</label>
+                    <input id="deck-0-value" type="number" /></div>
+                </div>
+                <details class="prose">
+                  <summary>source, cost, cap</summary>
+                  <p class="note">from <span id="deck-0-organism"></span></p>
+                  <p class="note">moves <code id="deck-0-input"></code>: <span id="deck-0-delta"></span></p>
+                  <p class="note">cost: <span id="deck-0-cost"></span></p>
+                  <p class="note">source: <span id="deck-0-source"></span></p>
+                </details>
               </div>
-              <div class="card" id="deck-1" role="group" aria-labelledby="deck-1-trait">
-                <p><span class="badge" id="deck-1-badge"></span> <strong id="deck-1-trait"></strong>
-                  <span class="note">from <span id="deck-1-organism"></span></span></p>
-                <p class="note">moves <code id="deck-1-input"></code>: <span id="deck-1-delta"></span></p>
-                <p class="note">cost: <span id="deck-1-cost"></span></p>
-                <p class="note">source: <span id="deck-1-source"></span></p>
-                <div class="control"><label for="deck-1-count">cards played</label>
-                  <select id="deck-1-count"></select></div>
-                <div class="control"><label for="deck-1-value" id="deck-1-value-label">value per card</label>
-                  <input id="deck-1-value" type="number" /></div>
+              <div class="card token" id="deck-1" role="group" aria-labelledby="deck-1-trait">
+                <p class="tok-head"><span class="badge" id="deck-1-badge"></span> <strong id="deck-1-trait"></strong></p>
+                <p class="tok-effect" id="deck-1-effect"></p>
+                <div class="tok-controls">
+                  <div class="control"><label for="deck-1-count">cards</label>
+                    <select id="deck-1-count"></select></div>
+                  <div class="control"><label for="deck-1-value" id="deck-1-value-label">value per card</label>
+                    <input id="deck-1-value" type="number" /></div>
+                </div>
+                <details class="prose">
+                  <summary>source, cost, cap</summary>
+                  <p class="note">from <span id="deck-1-organism"></span></p>
+                  <p class="note">moves <code id="deck-1-input"></code>: <span id="deck-1-delta"></span></p>
+                  <p class="note">cost: <span id="deck-1-cost"></span></p>
+                  <p class="note">source: <span id="deck-1-source"></span></p>
+                </details>
               </div>
               <p class="note" id="deck-status" role="status" aria-live="polite"></p>
             </fieldset>
@@ -213,24 +344,14 @@
             </details>
           </div>
           <div class="vreadout">
-            <p id="v-summary" class="vsummary" role="status" aria-live="polite"></p>
-            <p id="v-error" class="verdict-failed" role="alert"></p>
-            <table>
-              <caption class="note">One line per inequality, in load order: both sides, status, printed margin.</caption>
-              <thead><tr><th scope="col">Line</th><th scope="col">Both sides</th><th scope="col">Status</th><th scope="col">Margin</th></tr></thead>
-              <tbody>
-                <tr><th scope="row">BURST</th><td id="v-cmp-BURST"></td><td id="v-status-BURST"></td><td class="num" id="v-margin-BURST"></td></tr>
-                <tr><th scope="row">FREEZE</th><td id="v-cmp-FREEZE"></td><td id="v-status-FREEZE"></td><td class="num" id="v-margin-FREEZE"></td></tr>
-                <tr><th scope="row">BOIL</th><td id="v-cmp-BOIL"></td><td id="v-status-BOIL"></td><td class="num" id="v-margin-BOIL"></td></tr>
-                <tr><th scope="row">STARVE</th><td id="v-cmp-STARVE"></td><td id="v-status-STARVE"></td><td class="num" id="v-margin-STARVE"></td></tr>
-                <tr><th scope="row">OPAQUE</th><td id="v-cmp-OPAQUE"></td><td id="v-status-OPAQUE"></td><td class="num" id="v-margin-OPAQUE"></td></tr>
-              </tbody>
-            </table>
-            <p class="note">
-              STARVE counts photons, which over-credits the surviving blue band, so it fires later than it
-              should. The OPAQUE floor 0.25 is declared, not grounded: 24.3% is the thickest wall the repo
-              has sized at a non-withdrawn pressure (71.4 m, 10 kPa, 0.7 MPa).
-            </p>
+            <details class="prose">
+              <summary>Caveats on STARVE and OPAQUE</summary>
+              <p class="note">
+                STARVE counts photons, which over-credits the surviving blue band, so it fires later than it
+                should. The OPAQUE floor 0.25 is declared, not grounded: 24.3% is the thickest wall the repo
+                has sized at a non-withdrawn pressure (71.4 m, 10 kPa, 0.7 MPa).
+              </p>
+            </details>
             <table>
               <tbody>
                 <tr><th>t/R (wall to radius)</th><td class="num" id="v-tR"></td></tr>
@@ -245,10 +366,13 @@
             <p class="note">Edges take <span id="v-edge-ms"></span> ms to compute; they refresh once input stops.</p>
             <h2 style="margin-top: 14px">Q4 PREDICTION 1: WHERE THE WINDOW CLOSES (R 10 km)</h2>
             <svg id="q4-band" viewBox="0 0 400 176" role="img" aria-labelledby="q4-band-cap"></svg>
-            <p class="note" id="q4-band-cap">Hatched: the pre-registered band for r<sub>close</sub>(10 km, σ),
-              written before the run. Dots: the measured edge per σ from the committed run
-              (<code>experiments/q4_vessel/RESULTS.md</code>), not recomputed here.
-              <span id="q4-verdict"></span></p>
+            <p class="note"><span id="q4-band-cap">Hatched: the pre-registered band for r<sub>close</sub>(10 km, σ);
+              dots: the measured edge per σ.</span> <span id="q4-verdict"></span></p>
+            <details class="prose">
+              <summary>Where these numbers come from</summary>
+              <p class="note">The band was written before the run. The dots are copied from the committed run
+                (<code>experiments/q4_vessel/RESULTS.md</code>), not recomputed here.</p>
+            </details>
           </div>
         </div>
       </section>
@@ -308,24 +432,34 @@
 
         <aside class="panel isnot">
           <h2>WHAT THIS IS / IS NOT</h2>
-          <ul>
-            <li>An <strong>uncontained</strong> organism at a <strong>fixed tissue temperature</strong>
-                — the Q1 model. Net carbon is light in, respiration out; nothing holds it together.</li>
-            <li><strong>No pressure vessel.</strong> Liquid water cannot exist in vacuum at these
-                temperatures; the vessel that would contain it is unbuilt, and it is a
-                <em>precondition</em> of the modelling line, not a later extension.</li>
-            <li><strong>No spectral wall.</strong> A scalar attenuation coefficient <em>k</em> for a
-                wall was shown to be a category error (Q3): the wall's PAR attenuation is spectral
-                across a factor of ~701, so one number cannot stand for it.</li>
-            <li>The <strong>registered thermal predictions were falsified</strong> (Q2b): carbon was
-                predicted to bind, and temperature binds instead &mdash; <strong>for the algal class</strong>,
-                the only class the run answered. The gate that excluded the vascular class has since
-                been retired as uninformative, and running the same code on vascular gives carbon as
-                the binding limit at &#937; = 25 and 30, where the prediction would have held. The
-                falsification stands for algal; whether it generalises is open (see FINDINGS).</li>
-            <li>The hatched bands are <strong>predictions written before the run</strong>, not
-                results. For the algal class the prediction <strong>failed</strong>.</li>
+          <ul class="isnot-short">
+            <li>An uncontained organism at a fixed tissue temperature (the Q1 model).</li>
+            <li>No pressure vessel in this Q1 model; the vessel is a precondition, not a later extension.</li>
+            <li>No spectral wall: a scalar <em>k</em> for a wall is a category error (Q3).</li>
+            <li>Registered thermal predictions falsified for algal (Q2b).</li>
+            <li>Hatched bands are predictions written before the run; for algal, Q1's failed.</li>
           </ul>
+          <details class="prose">
+            <summary>The full statement</summary>
+            <ul>
+              <li>An <strong>uncontained</strong> organism at a <strong>fixed tissue temperature</strong>
+                  — the Q1 model. Net carbon is light in, respiration out; nothing holds it together.</li>
+              <li><strong>No pressure vessel.</strong> Liquid water cannot exist in vacuum at these
+                  temperatures; the vessel that would contain it is unbuilt, and it is a
+                  <em>precondition</em> of the modelling line, not a later extension.</li>
+              <li><strong>No spectral wall.</strong> A scalar attenuation coefficient <em>k</em> for a
+                  wall was shown to be a category error (Q3): the wall's PAR attenuation is spectral
+                  across a factor of ~701, so one number cannot stand for it.</li>
+              <li>The <strong>registered thermal predictions were falsified</strong> (Q2b): carbon was
+                  predicted to bind, and temperature binds instead &mdash; <strong>for the algal class</strong>,
+                  the only class the run answered. The gate that excluded the vascular class has since
+                  been retired as uninformative, and running the same code on vascular gives carbon as
+                  the binding limit at &#937; = 25 and 30, where the prediction would have held. The
+                  falsification stands for algal; whether it generalises is open (see FINDINGS).</li>
+              <li>The hatched bands are <strong>predictions written before the run</strong>, not
+                  results. For the algal class the prediction <strong>failed</strong>.</li>
+            </ul>
+          </details>
           <p>
             <a href="https://github.com/musharna/dyson-tree/blob/master/docs/FINDINGS.md" id="findings-link">Findings (falsifications first)</a><br />
             <a href="https://github.com/musharna/dyson-tree">Repository</a>
@@ -334,6 +468,8 @@
       </div>
 
       <footer id="provenance">
+        <details class="prose">
+          <summary>Provenance: how the page is pinned to the Python model</summary>
         <p>
           The browser model (<code>web/model.js</code>) is a port of <code>sim/physiology.py</code>,
           <code>sim/thermal.py</code>, <code>sim/organism.py</code> and <code>sim/vessel.py</code>. It is pinned to the Python
@@ -341,6 +477,7 @@
           its crossover values are checked against the committed
           <code>experiments/q1_crossover/crossover.csv</code>.
         </p>
+        </details>
         <p>
           © 2026 Jaret Arnold. Code (<code>sim/ tools/ tests/ web/</code>) is licensed
           <a href="./LICENSE">MIT</a>; documents, figures and results are
@@ -356,6 +493,8 @@
     <script src="./deck_rows.js"></script>
     <script src="./deck.js"></script>
     <script src="./picture.js"></script>
+    <script src="./map_data.js"></script>
+    <script src="./mapview.js"></script>
     <script src="./verdict.js"></script>
   </body>
 </html>

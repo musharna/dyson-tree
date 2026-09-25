@@ -73,6 +73,15 @@ function run(steps) {
   const g = (id) => { const e = document.getElementById(id); if (!e) throw new Error("no #" + id); return e.textContent; };
   const out = { lines: {}, summary: g("v-summary"), live: document.getElementById("v-summary").attrs["aria-live"] || null };
   for (const n of LINES) out.lines[n] = { status: g("v-status-" + n), margin: g("v-margin-" + n), cmp: g("v-cmp-" + n) };
+  // visual-first Task 4: the headroom bar per line (null when the page has no such row)
+  out.bars = {};
+  for (const n of LINES) {
+    if (!ids.has("hr-" + n)) { out.bars[n] = null; continue; }
+    const q = (s) => (ids.has("hr-" + n + s) ? document.getElementById("hr-" + n + s) : null);
+    const f = q("-fill"), c = q("-cap"), v = q("-val");
+    out.bars[n] = { attrs: document.getElementById("hr-" + n).attrs, fill: f ? f.attrs : null,
+      cap: c ? c.className : null, val: v ? v.textContent : null };
+  }
   for (const k of ["v-pstar", "v-tmin", "v-rfixed", "v-rauto", "v-Rwin", "v-Rfloor", "v-rslab", "v-albedo-freeze", "v-error", "deck-status", "deck-0-badge", "deck-1-badge", "deck-0-trait", "deck-1-trait", "deck-0-source"]) out[k] = g(k);
   return out;
 }
@@ -117,6 +126,8 @@ SCENARIOS = {
     # registered absolute floor (prereg starve_opaque_abs 1e-9) and scores HOLDS
     "r100": [{"id": "v-r", "value": "2"}],
     "r100_rd": [{"id": "v-r", "value": "2"}, {"id": "deck-1-count", "value": "1"}],
+    # (Task 4) 0.5 AU: the shell melts, sigma_eff is 0, BURST's headroom runs off the left end
+    "r0.5": [{"id": "v-r", "value": "-0.3011"}],
 }
 
 
@@ -291,9 +302,30 @@ def test_picture_draws_across_the_slider_range():
     assert node, "node is required; this test fails rather than skips"
     subprocess.run(["bash", str(ROOT / "tools" / "build_site.sh")], cwd=ROOT, check=True,
                    capture_output=True, timeout=120)
-    old = "res[name] = run(steps);"
-    assert DRIVER.count(old) == 1
-    drv_src = DRIVER.replace(old, "try { res[name] = run(steps); } catch (e) { res[name] = { error: String(e.message) }; }")
+    # (visual-first Task 5) the map must draw too: the stub DOM records children here, so the
+    # cells #map holds after the state is set can be counted
+    kids = ("children: [], appendChild(c) { this.children.push(c); return c; }, "
+            "get firstChild() { return this.children[0] || null; }, "
+            "removeChild(c) { this.children = this.children.filter((x) => x !== c); return c; }, ")
+    patches = [
+        ("res[name] = run(steps);",
+         "try { res[name] = run(steps); } catch (e) { res[name] = { error: String(e.message) }; }"),
+        ("          appendChild(c) { return c; },", "          " + kids),
+        ('const e = { setAttribute() {}, appendChild(c) { return c; }, textContent: "" };',
+         "const e = { attrs: {}, setAttribute(k, v) { this.attrs[k] = String(v); }, " + kids + 'textContent: "" };'),
+        ("  return out;\n",
+         "  const walk = (e) => [e].concat((e.children || []).flatMap(walk));\n"
+         '  out.mapCells = walk(document.getElementById("map")).filter((e) => e.attrs && "data-cell" in e.attrs).length;\n'
+         "  out.mapWant = ctx.DysonMap.grid.r_log10[2] * ctx.DysonMap.grid.R_log10[2];\n"
+         '  out.mapGrid = ctx.DysonMap.grid;\n'
+         '  const dot = walk(document.getElementById("map")).filter((e) => e.attrs && e.attrs.id === "map-dot");\n'
+         "  out.mapDot = dot.map((e) => e.attrs);\n"
+         "  return out;\n"),
+    ]
+    drv_src = DRIVER
+    for old, new in patches:
+        assert drv_src.count(old) == 1, old
+        drv_src = drv_src.replace(old, new)
     with tempfile.TemporaryDirectory() as tmp:
         drv = Path(tmp) / "sweep.cjs"
         drv.write_text(drv_src)
@@ -305,3 +337,146 @@ def test_picture_draws_across_the_slider_range():
     assert not thrown, thrown
     # positive control: these states do fail lines, so plates were actually placed
     assert all(violated(v) for v in res.values()), {k: violated(v) for k, v in res.items()}
+    # every state draws the map's cells, one per grid point
+    assert all(v["mapWant"] > 0 for v in res.values()), res
+    undrawn = {k: (v["mapCells"], v["mapWant"]) for k, v in res.items() if v["mapCells"] != v["mapWant"]}
+    assert not undrawn, undrawn
+    # drawn for THIS state: one dot, on the cell nearest the slider values the state set (the
+    # cells persist between draws, so they alone cannot tell a draw that skipped this state)
+    # (grid position in cell units; R 1 km sits on a half-cell tie, so either neighbour is nearest)
+    def pos(g, lv):
+        return min(g[2] - 1.0, max(0.0, (lv - g[0]) * (g[2] - 1) / (g[1] - g[0])))
+
+    offdot = {}
+    for k, v in res.items():
+        steps = {st["id"]: float(st["value"]) for st in SWEEP[k]}
+        g = v["mapGrid"]
+        want = (pos(g["r_log10"], steps["v-r"]), pos(g["R_log10"], steps["v-R"]))
+        got = [(d.get("data-i"), d.get("data-j")) for d in v["mapDot"]]
+        if len(got) != 1 or any(c is None or abs(int(c) - w) > 0.5 + 1e-6 for c, w in zip(got[0], want)):
+            offdot[k] = (got, want)
+    assert not offdot, offdot
+    # and the five headroom bars, each with a drawn fill
+    def barless(v):
+        return [n for n in LINES if not (v["bars"][n] and v["bars"][n]["fill"]
+                                         and "width:" in v["bars"][n]["fill"].get("style", ""))]
+    nobars = {k: barless(v) for k, v in res.items() if barless(v)}
+    assert not nobars, nobars
+
+
+# ---------------------------------------------------------------- visual-first Task 4: headroom bars
+def bar(r, n):
+    b = r["bars"][n]
+    assert b is not None, f"no headroom bar row #hr-{n}"
+    return b
+
+
+def norm(b) -> float:
+    return float(b["attrs"]["data-norm"])
+
+
+def rhs_value(cmp: str) -> float:
+    return num(cmp.split(" vs ")[1].split(" ", 1)[1])
+
+
+def test_five_headroom_bars_carry_the_line_and_its_normaliser(page):
+    r = page["res"]["defaults"]
+    for n in LINES:
+        b = bar(r, n)
+        # (data-line is static HTML, which this stub does not parse; smoke_page.py reads it)
+        assert b["attrs"].get("title", "").startswith(n + " headroom:"), (n, b["attrs"])
+        assert b["fill"] is not None and "width:" in b["fill"].get("style", ""), (n, b["fill"])
+    # the normaliser is named in the row's title, so the bar's length is honest
+    names = {"BURST": "σ_eff", "FREEZE": "10 K", "BOIL": "p_sat", "STARVE": "a_max", "OPAQUE": "f_floor"}
+    for n, want in names.items():
+        assert want in bar(r, n)["attrs"].get("title", ""), (n, bar(r, n)["attrs"].get("title"))
+
+
+def test_headroom_is_the_printed_margin_over_the_named_scale(page):
+    from sim.organism import ALGAL
+
+    r = page["res"]["defaults"]
+    f = r["lines"]["FREEZE"]
+    assert abs(norm(bar(r, "FREEZE")) - num(f["margin"]) / 10.0) < 1e-3, (f, bar(r, "FREEZE"))
+    s = r["lines"]["STARVE"]
+    assert abs(norm(bar(r, "STARVE")) - num(s["margin"]) / ALGAL.a_max) < 1e-3, (s, bar(r, "STARVE"))
+    o = r["lines"]["OPAQUE"]
+    assert abs(norm(bar(r, "OPAQUE")) - num(o["margin"]) / rhs_value(o["cmp"])) < 1e-3, (o, bar(r, "OPAQUE"))
+    # by construction: BURST and BOIL headroom is the solver residual, ~0
+    for n in ("BURST", "BOIL"):
+        assert abs(norm(bar(r, n))) < 1e-6, (n, bar(r, n))
+    # manual p above p*: BURST's margin over sigma_eff (the printed right side)
+    a = page["res"]["p_above"]
+    bu = a["lines"]["BURST"]
+    assert abs(norm(bar(a, "BURST")) - num(bu["margin"]) / rhs_value(bu["cmp"])) < 1e-3, (bu, bar(a, "BURST"))
+    bo = page["res"]["p_below"]["lines"]["BOIL"]
+    assert abs(norm(bar(page["res"]["p_below"], "BOIL")) - num(bo["margin"]) / rhs_value(bo["cmp"])) < 1e-3
+
+
+def test_violated_bar_is_marked_and_the_first_is_the_binding_row(page):
+    d, f = page["res"]["defaults"], page["res"]["R10km_r1.21"]
+    # positive control: at the defaults no row is marked
+    assert [n for n in LINES if bar(d, n)["attrs"].get("data-violated") == "true"] == []
+    assert [n for n in LINES if bar(f, n)["attrs"].get("data-violated") == "true"] == ["FREEZE"]
+    assert bar(f, "FREEZE")["attrs"].get("data-first") == "true"
+    assert norm(bar(f, "FREEZE")) < 0
+    # STARVE inside the registered floor: negative headroom, but the line HOLDS, so not marked
+    b = bar(page["res"]["r100_rd"], "STARVE")
+    assert norm(b) < 0 and b["attrs"].get("data-violated") == "false", b
+
+
+def test_bar_clamps_at_one_scale_and_says_so(page):
+    # positive control: r 1.20 AU at 10 km sits just inside r_close, FREEZE drawn at its true length
+    b0 = bar(page["res"]["R10km_r1.20"], "FREEZE")
+    assert 0 < norm(b0) < 1, b0
+    assert b0["attrs"].get("data-clamped") == "false" and float(b0["attrs"]["data-len"]) == norm(b0), b0
+    assert "hr-cap-" not in (b0["cap"] or ""), b0
+    # the defaults: FREEZE headroom is past +1 scale (10 K), drawn to the right end, capped there
+    b = bar(page["res"]["defaults"], "FREEZE")
+    assert norm(b) > 1, b
+    assert b["attrs"].get("data-clamped") == "true" and float(b["attrs"]["data-len"]) == 1.0, b
+    assert "hr-cap-right" in (b["cap"] or ""), b
+    # 100 AU: FREEZE far below, drawn to the left end
+    b = bar(page["res"]["r100"], "FREEZE")
+    assert norm(b) < -1 and b["attrs"].get("data-violated") == "true", b
+    assert b["attrs"].get("data-clamped") == "true" and float(b["attrs"]["data-len"]) == -1.0, b
+    assert "hr-cap-left" in (b["cap"] or ""), b
+    # 0.5 AU: the wall is water (sigma_eff 0), BURST's headroom is -inf, drawn to the left end
+    w = page["res"]["r0.5"]
+    assert "the wall is water" in w["lines"]["BURST"]["cmp"], w["lines"]["BURST"]
+    b = bar(w, "BURST")
+    assert norm(b) < -1 and b["attrs"].get("data-violated") == "true", b
+    assert b["attrs"].get("data-clamped") == "true" and float(b["attrs"]["data-len"]) == -1.0, b
+    assert "hr-cap-left" in (b["cap"] or ""), b
+
+
+def test_freeze_bar_title_carries_kelvin_on_both_sides(page):
+    # FREEZE's scale is 10 K; the margin it divides is in K too, so both sides say so
+    t = bar(page["res"]["defaults"], "FREEZE")["attrs"]["title"]
+    assert re.search(r"= [-+−]?\d+(?:\.\d+)? K ÷ 10(?:\.0+)? K = ", t), t
+    # positive control: a line in Pa still prints its unit, not K
+    assert " Pa ÷ " in bar(page["res"]["defaults"], "BURST")["attrs"]["title"]
+
+
+def test_verdict_line_heads_the_vessel_panel():
+    # (Task 5 fix round) the verdict is the first thing in the vessel panel, above the map
+    html = (ROOT / "web" / "index.html").read_text()
+    h, s, m = html.find('id="vessel-h"'), html.find('id="v-summary"'), html.find('id="map"')
+    assert 0 < h < s < m, (h, s, m)
+    # positive control: the headroom bars still follow the map
+    assert m < html.find('id="headroom"')
+
+
+def test_summary_names_what_is_drawn_without_repeating_the_verdict(page):
+    # (Task 5 polish) "VIOLATED: FREEZE — drawn: FREEZE (first to fail)", not "the picture is"
+    s = page["res"]["R10km_r1.21"]["summary"]
+    assert s == "VIOLATED: FREEZE — drawn: FREEZE (first to fail)", s
+    # positive control: a passing design keeps its line
+    assert page["res"]["defaults"]["summary"] == "alive: every line holds"
+
+
+def test_headroom_caption_follows_its_bars():
+    # (Task 5 polish) the key reads with the bars, below them, not above them at the fold
+    html = (ROOT / "web" / "index.html").read_text()
+    last_bar, key = html.find('id="hr-OPAQUE"'), html.find('class="hr-key"')
+    assert 0 < html.find('id="hr-BURST"') < last_bar < key, (last_bar, key)
