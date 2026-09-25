@@ -27,3 +27,13 @@ scale_colour_tolerance <- function(...) scale_colour_manual(values = palette_tol
 # Stress sigma (MPa) is encoded by shape, never colour.
 shapes_sigma <- c(`0.7` = 16, `1.5` = 17, `3.1` = 15)
 scale_shape_sigma <- function(...) scale_shape_manual(values = shapes_sigma, ...)
+# Mark vocabulary for measured-vs-prereg figures: one mark per meaning.
+shapes_mark <- c(`measured later root (not the edge)` = 124, `prereg expected: the edge` = 1,
+                 `prereg expected: a later root` = 5)
+scale_shape_mark <- function(...) scale_shape_manual(values = shapes_mark, ...)
+# A prereg expected mark is drawn this far (in rows) below its measured mark, so a value that
+# coincides with the measurement to 1e-5 AU is still a visible, separate mark (data unchanged).
+expected_nudge <- -0.3
+# Registered band: one fill, scoped to the registered row only.
+band_fill <- "grey40"
+band_alpha <- 0.12
