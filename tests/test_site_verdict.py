@@ -465,3 +465,18 @@ def test_verdict_line_heads_the_vessel_panel():
     assert 0 < h < s < m, (h, s, m)
     # positive control: the headroom bars still follow the map
     assert m < html.find('id="headroom"')
+
+
+def test_summary_names_what_is_drawn_without_repeating_the_verdict(page):
+    # (Task 5 polish) "VIOLATED: FREEZE — drawn: FREEZE (first to fail)", not "the picture is"
+    s = page["res"]["R10km_r1.21"]["summary"]
+    assert s == "VIOLATED: FREEZE — drawn: FREEZE (first to fail)", s
+    # positive control: a passing design keeps its line
+    assert page["res"]["defaults"]["summary"] == "alive: every line holds"
+
+
+def test_headroom_caption_follows_its_bars():
+    # (Task 5 polish) the key reads with the bars, below them, not above them at the fold
+    html = (ROOT / "web" / "index.html").read_text()
+    last_bar, key = html.find('id="hr-OPAQUE"'), html.find('class="hr-key"')
+    assert 0 < html.find('id="hr-BURST"') < last_bar < key, (last_bar, key)

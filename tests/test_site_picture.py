@@ -251,3 +251,18 @@ def test_clamp_note_is_neutral_and_says_sub_pixel_honestly(page):
     assert re.search(r"would draw 0\.\d\d px", text_of(d)), text_of(d)
     t = text_of(far)
     assert "would draw ≪ 1 px" in t and "0.00 px" not in t, t
+
+
+def test_clamp_note_prints_t_over_r_once_and_quietly(page):
+    # (Task 5 polish) the clamp note carries t/R; the footer does not repeat it; note at 13 px
+    for name in ("defaults", "far"):
+        pic = page[name]["pic"]
+        t = " ".join(text_of(n) for n in walk(pic) if n["tag"] == "text")  # what is drawn, not <title>
+        clamp = by_id(pic, "pic-clamp")
+        assert clamp is not None, name
+        m = re.search(r"t/R (\d\.\d\de-?\d+)", text_of(clamp))
+        assert m, text_of(clamp)
+        assert t.count("t/R " + m.group(1)) == 1, (name, t.count("t/R " + m.group(1)))
+        assert clamp["attrs"].get("font-size") == "13", name
+    # positive control: unclamped, the footer still prints t/R
+    assert "t/R " in text_of(page["t50"]["pic"])

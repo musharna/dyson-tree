@@ -502,3 +502,49 @@ def test_same_map_note_is_in_the_legend_not_the_title(page):
     v = page["vascular"]["map"]
     assert "same map for algal and vascular" not in text_of(need(v, "map-title"))
     assert "same map for algal and vascular" in text_of(need(v, "map-legend"))
+
+
+# (Task 5 polish) ---------------------------------------------------------------------------------
+def test_p2_off_map_note_is_literal_and_clear_of_the_dot(page):
+    hi, d = page["high"]["map"], page["defaults"]["map"]
+    assert "off map" not in text_of(need(d, "map-p2-label"))
+    note = text_of(need(d, "map-p2-offmap-note"))
+    assert "continues above" in note and "100 km" in note, note
+    for tree in (hi, d):
+        box = plate_of(tree, "map-p2-offmap-note")
+        assert not overlap(box, marks_box(tree)) and not overlap(box, plate_of(tree, "map-p2-label")), box
+        assert box[3] <= frame(tree)[1] - 15, (box, frame(tree))
+
+
+def test_registered_marks_are_drawn_above_the_dot(page):
+    for name in ("r1.21", "defaults"):
+        order = [n["attrs"].get("id") for n in walk(page[name]["map"])]
+        k = order.index("map-dot")
+        assert order.index("map-rclose") > k and order.index("map-p1") > k, (name, k)
+
+
+def test_p1_band_mark_is_at_least_12_px_tall(page):
+    a = need(page["defaults"]["map"], "map-p1")["attrs"]
+    assert float(a["height"]) >= 13, a  # 640-unit viewBox renders at ~0.98 px per unit
+
+
+def test_off_registered_labels_say_registered_run(page):
+    for name in ("card", "albedo"):
+        for i in REGISTERED_LABELS:
+            t = text_of(need(page[name]["map"], i))
+            assert t.endswith("· registered run †"), (name, i, t)
+    # positive control: at the registered inputs they do not
+    for i in REGISTERED_LABELS:
+        assert "registered run" not in text_of(need(page["defaults"]["map"], i))
+
+
+def test_crosshair_runs_under_the_band_labels_and_the_dot_over_them(page):
+    # the P1/r_close label plates span the dot's column at the defaults (1 AU): the dashed
+    # crosshair must not strike through them, and they must not hide the dot
+    for name in ("defaults", "card", "r1.21"):
+        nodes = list(walk(page[name]["map"]))
+        order = [n["attrs"].get("id") for n in nodes]
+        cross = [k for k, n in enumerate(nodes) if n["attrs"].get("data-mark") == "crosshair"]
+        assert len(cross) == 2, (name, len(cross))  # positive control: the crosshair is drawn
+        lab = min(order.index("map-p1-label"), order.index("map-rclose-label"))
+        assert max(cross) < lab < order.index("map-dot"), (name, cross, lab, order.index("map-dot"))

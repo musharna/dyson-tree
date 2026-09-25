@@ -1057,6 +1057,16 @@ def exercise_headroom(page, label: str, shoot: bool) -> None:
                           m: m.getBoundingClientRect().top}; }"""
     )
     check(vs["px"] >= 20 and vs["s"] <= vs["m"], f"[{label}] verdict line above the map at heading size: {vs}")
+    # (Task 5 polish) a passing verdict is a dark green, not the FREEZE blue; the bar key follows its bars
+    col = page.evaluate(
+        """() => { const c = getComputedStyle(document.getElementById('v-summary')).color.match(/\\d+/g).map(Number);
+                  const k = document.querySelector('#headroom .hr-key').getBoundingClientRect().top;
+                  const b = document.getElementById('hr-OPAQUE').getBoundingClientRect().bottom;
+                  return {rgb: c.slice(0, 3), key: k, bars: b}; }"""
+    )
+    r_, g_, b_ = col["rgb"]
+    check(g_ > r_ + 30 and g_ > b_ + 30 and g_ < 140, f"[{label}] passing verdict line is dark green: rgb {col['rgb']}")
+    check(col["key"] >= col["bars"], f"[{label}] headroom key sits below its bars: {col}")
     if shoot:
         page.locator("#vessel").evaluate("e => e.scrollIntoView({block: 'start'})")
         page.screenshot(path=str(SHOT_DIR / "task-4-shot-defaults.png"))
@@ -1116,6 +1126,8 @@ def exercise_q4_band(page, label: str) -> None:
     check(f"({want.get('P1')})" in m["label"], f"[{label}] Q4 band label {m['label']!r} carries RESULTS.md P1 {want.get('P1')}")
     check(f"P1 {want.get('P1')}" in m["verdict"] and f"P2 {want.get('P2')}" in m["verdict"],
           f"[{label}] Q4 verdict line {m['verdict']!r} matches RESULTS.md {want}")
+    check(m["verdict"].count("(registered run") == 2 and "registered run" in m["label"],
+          f"[{label}] Q4 HELD words say they are the registered run: {m['verdict']!r} / {m['label']!r}")
     inside = [m["x0"] <= d["x"] <= m["x1"] for d in m["dots"]]
     check(inside == [True] * 3 if want.get("P1") == "HELD" else not all(inside),
           f"[{label}] measured marks sit where the verdict says relative to the band: {inside}")

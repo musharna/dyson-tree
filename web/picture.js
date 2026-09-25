@@ -31,6 +31,8 @@
     MIN_BAND_PX = 3,
     FS = 17, // >= 12 px on screen at the page's figure width (smoke asserts it)
     LH = 19,
+    NOTE_FS = 13, // drawing notes (clamp, scale): quieter than the call-outs, still >= 12 px on screen
+    NOTE_LH = 16,
     PLATE_PAD = 10, // text inset inside a plate
     ORG_R = 34, // the organism disc: one size and one centre in every state
     KEEP_PAD = 3, // units every mark keeps clear of a plate
@@ -453,9 +455,10 @@
       var tip = pt(ro, (3 * Math.PI) / 4);
       el("line", { id: "pic-clamp-leader", x1: tip[0].toFixed(1), y1: tip[1].toFixed(1), x2: 40, y2: CLAMP_Y - 4,
         stroke: MUTED, "stroke-width": 1.2 }, svg);
-      var ct = el("text", { id: "pic-clamp", x: 16, y: CLAMP_Y + FS, "font-size": FS, fill: MUTED }, svg); // a drawing note, not a verdict
+      // a drawing note, not a verdict: quiet (NOTE_FS, grey), and the only place t/R is printed
+      var ct = el("text", { id: "pic-clamp", x: 16, y: CLAMP_Y + FS, "font-size": NOTE_FS, fill: MUTED }, svg);
       el("tspan", { x: 16, dy: 0 }, ct, "wall clamped to " + MIN_BAND_PX + " px;");
-      el("tspan", { x: 16, dy: LH }, ct,
+      el("tspan", { x: 16, dy: NOTE_LH }, ct,
         " true t/R " + fmtE(t / R) + " would draw " +
           (ro - riTrue < 0.005 ? "≪ 1 px" : (ro - riTrue).toFixed(2) + " px")); // never "0.00 px"
     }
@@ -466,8 +469,8 @@
       el("tspan", { x: 16, dy: 0 }, kt, "amber arc: f_photon reaching in;");
       el("tspan", { x: 16, dy: LH }, kt, " white tick: declared floor");
     }
-    el("text", { x: 16, y: H - 6, "font-size": FS, fill: MUTED }, svg,
-      "t/R " + fmtE(t / R) + " · size log-scaled in R + t");
+    el("text", { x: 16, y: H - 6, "font-size": NOTE_FS, fill: MUTED }, svg,
+      (clamped ? "" : "t/R " + fmtE(t / R) + " · ") + "size log-scaled in R + t");
   }
 
   function blank(msg) {

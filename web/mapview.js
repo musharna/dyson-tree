@@ -27,9 +27,10 @@
   var NS = "http://www.w3.org/2000/svg";
   var W = 640,
     L = 64, // frame left: y tick labels and the rotated axis title sit left of it
-    T = 90, // frame top: the title line, the status line (live recompute), then the P2 label line
+    T = 112, // frame top: title, status line (live recompute), P2 label, P2 off-map note
     STATUS_Y = 44, // baseline of the recompute status, above the frame, never over the cells
-    P2_Y = 68, // baseline of the P2 label: its plate ends 16 px above the frame, clear of any dot mark
+    P2_Y = 68, // baseline of the P2 label
+    P2_NOTE_Y = 90, // baseline of the P2 off-map note: its plate ends 16 px above the frame, clear of any dot mark
     PW = 540,
     PH = 405, // 80 × 60 cells at 6.75 px square
     FS = 14, // >= 12 px on screen at the page's map width (smoke asserts it)
@@ -216,36 +217,37 @@
     el("rect", Object.assign({ id: id + "-halo", fill: "none", stroke: "#ffffff", "stroke-width": 6 }, box), g);
     el("rect", Object.assign({ id: id, fill: "url(#map-hatch-band)", stroke: INK, "stroke-width": 2.5 }, box), g);
   }
-  function drawBands(g, sigma_MPa, off) {
-    var dag = off ? " †" : "";
+  // g: the band layer; labels: over the dot's crosshair, under the dot; top: over the dot, so the
+  // registered marks stay visible where the dot sits on them
+  function drawBands(g, labels, top, sigma_MPa, off) {
+    var dag = off ? " · registered run †" : "";
     if (!bands) throw new Error("mapview: bands not set (verdict.js calls DysonMapView.setBands)");
     var p1 = bands.P1;
     var x0 = X(lg(p1.band_au[0])), x1 = X(lg(p1.band_au[1]));
     var yc = Y(lg(p1.R_km * 1000));
-    var h = PH / (NRR - 1);
-    outline(g, "map-p1", { x: x0, y: yc - h / 2, width: x1 - x0, height: h });
+    var h = Math.max(PH / (NRR - 1), 16); // the row, drawn at least 16 tall so the mark reads as a box
+    outline(top, "map-p1", { x: x0, y: yc - h / 2, width: x1 - x0, height: h });
     // the measured edge for this slice's sigma (the committed Q4 run), a tick across the row
     var k = -1;
     p1.sigma_MPa.forEach(function (s, n) { if (Math.abs(s - sigma_MPa) < 1e-9) k = n; });
     if (k < 0) throw new Error("mapview: no measured r_close for sigma " + sigma_MPa);
     var xr = X(lg(p1.r_close_au[k]));
-    var ly = yc - h / 2 - 30, lx = x1 + 24; // label plate: above the row, right of the band
-    el("line", { x1: xr, y1: yc - h / 2 - 9, x2: xr, y2: yc + h / 2 + 9, stroke: "#ffffff", "stroke-width": 6 }, g);
+    var ly = yc - h / 2 - 30, lx = L + 8; // label plates: above the row, from the frame's left edge
+    el("line", { x1: xr, y1: yc - h / 2 - 9, x2: xr, y2: yc + h / 2 + 9, stroke: "#ffffff", "stroke-width": 6 }, top);
     el("line", { id: "map-rclose", x1: xr, y1: yc - h / 2 - 9, x2: xr, y2: yc + h / 2 + 9, stroke: INK,
-      "stroke-width": 3 }, g);
-    el("line", { x1: xr, y1: yc - h / 2 - 9, x2: lx - 4, y2: ly + 4, stroke: INK, "stroke-width": 1.2 }, g);
-    haloText(g, { id: "map-rclose-label", x: lx, y: ly },
+      "stroke-width": 3 }, top);
+    el("line", { x1: xr, y1: yc - h / 2 - 9, x2: xr, y2: ly + 6, stroke: INK, "stroke-width": 1.2 }, g);
+    haloText(labels, { id: "map-rclose-label", x: lx, y: ly },
       "measured r_close " + p1.r_close_au[k].toFixed(4) + " AU (σ " + sigma_MPa + ")" + dag);
-    el("line", { x1: x1, y1: yc - h / 2, x2: lx - 4, y2: ly - FS - 14, stroke: INK, "stroke-width": 1,
-      "stroke-dasharray": "3 2" }, g);
-    haloText(g, { id: "map-p1-label", x: lx, y: ly - FS - 8 },
+    haloText(labels, { id: "map-p1-label", x: lx, y: ly - FS - 8 },
       "P1 prediction [" + p1.band_au[0] + ", " + p1.band_au[1] + "] AU — " + outcome(p1.verdict) +
         " (" + p1.r_close_au[k].toFixed(4) + ")" + dag);
     var p2 = bands.P2;
     if (Math.abs(sigma_MPa - p2.sigma_MPa) > 1e-9) return;
     var xc = X(lg(p2.r_au)), w = PW / (NR - 1);
-    var top = Math.max(T, Y(lg(p2.band_km[1] * 1000))), bot = Y(lg(p2.band_km[0] * 1000));
-    outline(g, "map-p2", { x: xc - w / 2, y: top, width: w, height: bot - top });
+    var bot = Y(lg(p2.band_km[0] * 1000));
+    var yt = Math.max(T, Y(lg(p2.band_km[1] * 1000)));
+    outline(g, "map-p2", { x: xc - w / 2, y: yt, width: w, height: bot - yt });
     var clipped = p2.band_km[1] * 1000 > Math.pow(10, GRR[1]);
     if (clipped) {
       // the band runs above the map's top edge: an arrow out of the frame at its column
@@ -253,13 +255,16 @@
         points: [[xc, T - 13], [xc - 6, T - 3], [xc + 6, T - 3]].map(function (q) { return q.join(","); }).join(" ") }, g);
       el("title", {}, m, "P2 band continues to " + p2.band_km[1] + " km, above the map's " +
         Math.pow(10, GRR[1] - 3) + " km top");
+      haloText(g, { id: "map-p2-offmap-note", x: xc + 12, y: P2_NOTE_Y },
+        "↑ band continues above the map's " + Math.pow(10, GRR[1] - 3) + " km top");
     }
     haloText(g, { id: "map-p2-label", x: 8, y: P2_Y },
-      "P2 prediction R_window ∈ [" + p2.band_km[0] + ", " + p2.band_km[1] + "] km" + (clipped ? " (↑ off map)" : "") +
+      "P2 prediction R_window ∈ [" + p2.band_km[0] + ", " + p2.band_km[1] + "] km" +
         " — " + outcome(p2.verdict) + " (" + p2.measured_km + " km)" + dag);
   }
 
-  function drawDot(g, state, slice) {
+  // cross: the crosshair layer, under the band labels; g: the dot's layer, over them
+  function drawDot(g, cross, state, slice) {
     var lr = lg(state.r), lR = lg(state.R);
     var loX = lr <= GR[0] + EDGE_TOL, hiX = lr >= GR[1] - EDGE_TOL;
     var loY = lR <= GRR[0] + EDGE_TOL, hiY = lR >= GRR[1] - EDGE_TOL;
@@ -268,9 +273,9 @@
     var clamped = loX || hiX || loY || hiY;
     var c = cellAt(state.r, state.R);
     el("line", { x1: L, y1: cy, x2: L + PW, y2: cy, stroke: INK, "stroke-opacity": 0.55, "stroke-width": 1,
-      "stroke-dasharray": "4 3", "data-mark": "crosshair" }, g);
+      "stroke-dasharray": "4 3", "data-mark": "crosshair" }, cross);
     el("line", { x1: cx, y1: T, x2: cx, y2: T + PH, stroke: INK, "stroke-opacity": 0.55, "stroke-width": 1,
-      "stroke-dasharray": "4 3", "data-mark": "crosshair" }, g);
+      "stroke-dasharray": "4 3", "data-mark": "crosshair" }, cross);
     if (!(state.verdict in PAL)) throw new Error("mapview: dot has no verdict class (" + state.verdict + ")");
     // the dot is the exact design: filled with the verdict's class, ringed dark over white so it
     // reads on any cell colour; the nearest cell's class is kept apart as data-cell-class
@@ -376,8 +381,11 @@
     var off = offRegistered(state);
     var rows = legend(el("g", { id: "map-legend" }, svg), slice, H0, state.sigma_MPa, off, sameMap(state));
     layers.bands = el("g", { id: "map-bands" }, svg);
-    drawBands(layers.bands, state.sigma_MPa, off);
+    layers.cross = el("g", { id: "map-cross" }, svg);
+    layers.labels = el("g", { id: "map-band-labels" }, svg);
     layers.over = el("g", { id: "map-over" }, svg);
+    layers.top = el("g", { id: "map-top" }, svg);
+    drawBands(layers.bands, layers.labels, layers.top, state.sigma_MPa, off);
     el("rect", { id: "map-hit", x: L, y: T, width: PW, height: PH, fill: "transparent",
       style: "cursor: crosshair" }, svg);
     svg.setAttribute("viewBox", "0 0 " + W + " " + (H0 + (rows - 1) * KEY_ROW + 12));
@@ -443,7 +451,8 @@
     built.layers.cells.setAttribute("data-source", stale ? "stale" : src.kind === "live" ? src.level : "precomputed");
     built.layers.title.textContent = titleText(state);
     clear(built.layers.over);
-    drawDot(built.layers.over, state, stale ? null : slice);
+    clear(built.layers.cross);
+    drawDot(built.layers.over, built.layers.cross, state, stale ? null : slice);
     drawStatus(built.layers.over, state, stale);
   }
 

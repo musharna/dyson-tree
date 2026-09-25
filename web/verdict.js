@@ -402,7 +402,7 @@
       drawBar(n, res.report.lines[n], res, bad.length > 0 && bad[0] === n);
     });
     $("v-summary").textContent = bad.length
-      ? "VIOLATED: " + bad.join(", ") + " — the picture is " + bad[0]
+      ? "VIOLATED: " + bad.join(", ") + " — drawn: " + bad[0] + " (first to fail)"
       : "alive: every line holds";
     $("v-summary").className = "vsummary " + (bad.length ? "verdict-failed" : "verdict-held");
 
@@ -635,7 +635,7 @@
     mk("rect", { id: "q4-band-rect", x: x(b[0]), y: TOP, width: x(b[1]) - x(b[0]), height: BOT - TOP,
       fill: "url(#q4hatch)", stroke: "#8a8378", "stroke-dasharray": "4 3", "stroke-width": "1" });
     mk("text", { id: "q4-band-label", x: (x(b[0]) + x(b[1])) / 2, y: TOP - 9, "text-anchor": "middle",
-      "font-size": FS, fill: "#6b655c" }, "pre-registered [" + b[0] + ", " + b[1] + "] AU (" + Q4_RESULT.P1 + ")");
+      "font-size": FS, fill: "#6b655c" }, "pre-registered [" + b[0] + ", " + b[1] + "] AU (" + Q4_RESULT.P1 + ") — registered run");
     var LX = Math.max(Rt, x(b[1])) + 10; // the label column
     Q4_RESULT.r_close_au.forEach(function (r, i) {
       var y = TOP + 6 + ROW / 2 + i * ROW;
@@ -653,8 +653,8 @@
     mk("text", { x: 4, y: BOT + 42, "font-size": FS, fill: "#5d5d5d" },
       "r (AU): measured r_close; σ in MPa");
     var v = $("q4-verdict");
-    v.textContent = "P1 " + Q4_RESULT.P1 + " (binding FREEZE) · P2 " + Q4_RESULT.P2 +
-      " (R_window " + Q4_RESULT.R_window_km.toFixed(1) + " km, OPAQUE)";
+    v.textContent = "P1 " + Q4_RESULT.P1 + " (registered run, binding FREEZE) · P2 " + Q4_RESULT.P2 +
+      " (registered run, R_window " + Q4_RESULT.R_window_km.toFixed(1) + " km, OPAQUE)";
     v.className = Q4_RESULT.P1 === "HELD" ? "verdict-held" : "verdict-failed";
   }
   drawQ4Band();
