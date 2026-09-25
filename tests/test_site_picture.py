@@ -266,3 +266,12 @@ def test_clamp_note_prints_t_over_r_once_and_quietly(page):
         assert clamp["attrs"].get("font-size") == "13", name
     # positive control: unclamped, the footer still prints t/R
     assert "t/R " in text_of(page["t50"]["pic"])
+
+
+def test_callout_breaks_before_vs(page):
+    # (Task 5 critic r3) "T_int 272.700 K" / "vs T_freeze 273.150 K", never "T_freeze" / its value
+    ov = by_id(page["freeze"]["pic"], "pic-overlays")
+    assert ov is not None
+    lines = [t["text"] for n in walk(ov) if n["tag"] == "text" for t in n["children"] if t["tag"] == "tspan"]
+    i = [k for k, t in enumerate(lines) if t.startswith("T_int")]
+    assert i and lines[i[0] + 1].lstrip().startswith("vs T_freeze") and "273.150 K" in lines[i[0] + 1], lines

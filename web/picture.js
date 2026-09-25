@@ -158,6 +158,11 @@
   // space, so the concatenated textContent is exactly the input (the panel's string).
   function wrap(text, n) {
     n = n || WRAP;
+    // a comparison that does not fit breaks before " vs ", so each side keeps its value
+    if (text.length > n && text.indexOf(" vs ") > 0) {
+      var k = text.indexOf(" vs ");
+      return wrap(text.slice(0, k), n).concat(wrap(text.slice(k), n));
+    }
     var out = [],
       cur = "";
     text.split(/(?= )/).forEach(function (w) {

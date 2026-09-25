@@ -34,6 +34,7 @@
     PW = 540,
     PH = 405, // 80 × 60 cells at 6.75 px square
     FS = 14, // >= 12 px on screen at the page's map width (smoke asserts it)
+    LABEL_FS = 13, // the P1 / r_close labels: they sit right of the band, where the width is short
     KEY_ROW = 22,
     EDGE_TOL = 5e-4, // decades: r is read rounded to 0.001 AU, so 0.500 AU is 7e-5 inside the grid
     INK = "#1b1b1b",
@@ -205,9 +206,12 @@
   }
   // a label on a white plate, so it reads over any cell colour
   function haloText(parent, attrs, text) {
-    var w = textW(text) + 8, mid = attrs["text-anchor"] === "middle";
+    var fs = attrs["font-size"] || FS, mid = attrs["text-anchor"] === "middle";
+    var w = (textW(text) * fs) / FS + 8;
     var x0 = mid ? attrs.x - w / 2 : attrs.x - 4;
-    el("rect", { x: x0, y: attrs.y - FS, width: w, height: FS + 6, rx: 3, fill: "#ffffff", "fill-opacity": 0.9 },
+    // textW over-estimates (0.6 em against ~0.5 em drawn): a plate never runs past the figure
+    if (!mid) w = Math.min(w, W - 2 - x0);
+    el("rect", { x: x0, y: attrs.y - fs, width: w, height: fs + 6, rx: 3, fill: "#ffffff", "fill-opacity": 0.9 },
       parent);
     return el("text", Object.assign({ "font-size": FS, fill: INK }, attrs), parent, text);
   }
@@ -226,20 +230,30 @@
     var x0 = X(lg(p1.band_au[0])), x1 = X(lg(p1.band_au[1]));
     var yc = Y(lg(p1.R_km * 1000));
     var h = Math.max(PH / (NRR - 1), 16); // the row, drawn at least 16 tall so the mark reads as a box
-    outline(top, "map-p1", { x: x0, y: yc - h / 2, width: x1 - x0, height: h });
+    // the white under-stroke and hatch sit under the dot; over it only the hollow ink outline
+    var box = { x: x0, y: yc - h / 2, width: x1 - x0, height: h };
+    el("rect", Object.assign({ id: "map-p1-halo", fill: "none", stroke: "#ffffff", "stroke-width": 6 }, box), g);
+    el("rect", Object.assign({ fill: "url(#map-hatch-band)" }, box), g);
+    el("rect", Object.assign({ id: "map-p1", fill: "none", stroke: INK, "stroke-width": 2.5 }, box), top);
     // the measured edge for this slice's sigma (the committed Q4 run), a tick across the row
     var k = -1;
     p1.sigma_MPa.forEach(function (s, n) { if (Math.abs(s - sigma_MPa) < 1e-9) k = n; });
     if (k < 0) throw new Error("mapview: no measured r_close for sigma " + sigma_MPa);
     var xr = X(lg(p1.r_close_au[k]));
-    var ly = yc - h / 2 - 30, lx = L + 8; // label plates: above the row, from the frame's left edge
-    el("line", { x1: xr, y1: yc - h / 2 - 9, x2: xr, y2: yc + h / 2 + 9, stroke: "#ffffff", "stroke-width": 6 }, top);
+    // label plates: above the row, right of the band (off the HELD cells P1 is about), with leaders
+    var ly = yc - h / 2 - 30, lx = x1 + 22;
+    // the tick: 9 above the box, a gap the box's height (the dot shows through), 9 below
+    var dash = "9 " + h + " 9";
+    el("line", { x1: xr, y1: yc - h / 2 - 9, x2: xr, y2: yc + h / 2 + 9, stroke: "#ffffff", "stroke-width": 6,
+      "stroke-dasharray": dash }, g);
     el("line", { id: "map-rclose", x1: xr, y1: yc - h / 2 - 9, x2: xr, y2: yc + h / 2 + 9, stroke: INK,
-      "stroke-width": 3 }, top);
-    el("line", { x1: xr, y1: yc - h / 2 - 9, x2: xr, y2: ly + 6, stroke: INK, "stroke-width": 1.2 }, g);
-    haloText(labels, { id: "map-rclose-label", x: lx, y: ly },
+      "stroke-width": 3, "stroke-dasharray": dash }, top);
+    el("line", { x1: xr, y1: yc - h / 2 - 9, x2: lx - 4, y2: ly - 4, stroke: INK, "stroke-width": 1.2 }, g);
+    el("line", { x1: x1, y1: yc - h / 2, x2: lx - 4, y2: ly - FS - 12, stroke: INK, "stroke-width": 1,
+      "stroke-dasharray": "3 2" }, g);
+    haloText(labels, { id: "map-rclose-label", x: lx, y: ly, "font-size": LABEL_FS },
       "measured r_close " + p1.r_close_au[k].toFixed(4) + " AU (σ " + sigma_MPa + ")" + dag);
-    haloText(labels, { id: "map-p1-label", x: lx, y: ly - FS - 8 },
+    haloText(labels, { id: "map-p1-label", x: lx, y: ly - FS - 8, "font-size": LABEL_FS },
       "P1 prediction [" + p1.band_au[0] + ", " + p1.band_au[1] + "] AU — " + outcome(p1.verdict) +
         " (" + p1.r_close_au[k].toFixed(4) + ")" + dag);
     var p2 = bands.P2;

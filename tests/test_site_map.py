@@ -548,3 +548,31 @@ def test_crosshair_runs_under_the_band_labels_and_the_dot_over_them(page):
         assert len(cross) == 2, (name, len(cross))  # positive control: the crosshair is drawn
         lab = min(order.index("map-p1-label"), order.index("map-rclose-label"))
         assert max(cross) < lab < order.index("map-dot"), (name, cross, lab, order.index("map-dot"))
+
+
+# (Task 5 critic r3) -----------------------------------------------------------------------------
+def test_p1_mark_over_the_dot_is_hollow(page):
+    for name in ("r1.21", "defaults"):
+        tree = page[name]["map"]
+        order = [n["attrs"].get("id") for n in walk(tree)]
+        box, tick = need(tree, "map-p1")["attrs"], need(tree, "map-rclose")["attrs"]
+        # over the dot: stroke only, nothing filled across the dot
+        assert box.get("fill") == "none", box
+        # the white under-stroke stays under the dot, so it cannot cover the dot's fill
+        assert order.index("map-p1-halo") < order.index("map-dot") < order.index("map-p1"), name
+        # the tick is drawn outside the box only: a dash, a gap the box's height, a dash
+        dash = [float(v) for v in tick.get("stroke-dasharray", "").replace(",", " ").split()]
+        assert len(dash) == 3 and dash[1] >= float(box["height"]) - 1e-6, (tick, box["height"])
+
+
+def test_p1_labels_sit_off_the_held_band(page):
+    for name in ("defaults", "s15"):
+        tree = page[name]["map"]
+        held = [c for c in cells(tree) if c["attrs"]["data-class"] == "HELD"]
+        assert held, name  # positive control: the band is there
+        for lid in ("map-p1-label", "map-rclose-label"):
+            p = plate_of(tree, lid)
+            hit = [(c["attrs"]["data-i"], c["attrs"]["data-j"]) for c in held if overlap(p, (
+                float(c["attrs"]["x"]), float(c["attrs"]["y"]),
+                float(c["attrs"]["x"]) + float(c["attrs"]["width"]), float(c["attrs"]["y"]) + float(c["attrs"]["height"])))]
+            assert not hit, (name, lid, p, hit[:5])

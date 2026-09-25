@@ -1084,6 +1084,21 @@ def exercise_headroom(page, label: str, shoot: bool) -> None:
     )
     check(g["w"] > 1 and g["right"] is not None and g["right"] <= g["zero"] + 1,
           f"[{label}] headroom FREEZE bar drawn left of the zero line: {g}")
+    # (Task 5 critic r3) a bar's fill is never a map legend colour: one neutral fill for holding
+    # bars, one violated red for violated bars (checked here with both kinds on the page)
+    fills = page.evaluate(
+        """() => { const hex = (h) => { const n = parseInt(h.slice(1), 16);
+                     return 'rgb(' + [(n >> 16) & 255, (n >> 8) & 255, n & 255].join(', ') + ')'; };
+                  const pal = Object.entries(window.DysonPicture.PALETTE).map(([k, v]) => [k, hex(v)]);
+                  return { pal: pal, rows: ['BURST', 'FREEZE', 'BOIL', 'STARVE', 'OPAQUE'].map(n => ({ n: n,
+                    v: document.getElementById('hr-' + n).getAttribute('data-violated'),
+                    c: getComputedStyle(document.getElementById('hr-' + n + '-fill')).backgroundColor })) }; }"""
+    )
+    legend = {c: k for k, c in fills["pal"]}
+    clash = [(r["n"], legend[r["c"]]) for r in fills["rows"] if r["c"] in legend]
+    kinds = {v: {r["c"] for r in fills["rows"] if r["v"] == v} for v in ("true", "false")}
+    check(not clash and len(kinds["true"]) == 1 and len(kinds["false"]) == 1 and kinds["true"] != kinds["false"],
+          f"[{label}] headroom fills: no legend colour, one holding and one violated fill: clash {clash}, {kinds}")
     if shoot:
         page.locator("#vessel").evaluate("e => e.scrollIntoView({block: 'start'})")
         page.screenshot(path=str(SHOT_DIR / "task-4-shot-freeze.png"))

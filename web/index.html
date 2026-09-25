@@ -104,8 +104,9 @@
       .hr-status { font-size: 12px; }
       .hr-track { position: relative; height: 14px; background: #efece6; border-radius: 2px; }
       .hr-zero { position: absolute; left: 50%; top: -3px; bottom: -3px; width: 2px; margin-left: -1px; background: var(--ink); }
-      .hr-fill { position: absolute; top: 2px; bottom: 2px; background: var(--curve); }
-      .hr-row[data-violated="true"] .hr-fill { background: var(--warn); }
+      /* bar fills are never a map legend colour: neutral while the line holds, one red when violated */
+      .hr-fill { position: absolute; top: 2px; bottom: 2px; background: #a39d92; }
+      .hr-row[data-violated="true"] .hr-fill { background: #c62828; }
       /* the clamp cap: light on dark, over the bar's end, so it reads on either fill colour */
       .hr-cap { display: none; position: absolute; top: -2px; bottom: -2px; font-size: 13px; font-weight: 700;
         line-height: 18px; padding: 0 4px; border-radius: 3px; color: #ffffff; background: var(--ink); }
