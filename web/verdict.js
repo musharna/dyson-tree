@@ -345,7 +345,7 @@
 
     $("v-tR").textContent = (res.t / s.R).toExponential(3);
     PIC.draw(res, texts);
-    drawMap(s, bad.length ? bad[0] : "HELD");
+    drawMap(s, bad.length ? bad[0] : "HELD", res);
 
     $("v-pstar").textContent = fmt(res.pStar, 1) + " Pa";
     $("v-tmin").textContent = fmt(res.tMin, 3) + " m";
@@ -398,17 +398,78 @@
     }
   }
 
-  // The map slice for this state. This task always uses the precomputed slice for σ|org;
-  // Task 3 returns null here (the map shows "recomputing") when a card or an advanced input
-  // makes the precomputed slice not apply, and hands the recompute to a worker.
-  function mapSlice(state) {
-    var k = $("v-sigma").value + "|" + state.org;
-    var sl = window.DysonMap.slices[k];
-    if (typeof sl !== "string") throw new Error("map: no precomputed slice " + k);
-    return sl;
+  // The map's source. The precomputed slice (web/map_data.js) is the auto design at the page's
+  // default inputs, so it applies iff no card is played and every advanced input is at its
+  // default. Otherwise a Web Worker (web/map_worker.js) recomputes the slice with the organism and
+  // inputs this page's resolve() built, level by level (12×8, 40×30, 80×60); until the first
+  // level lands the precomputed slice is drawn greyed and labelled not current.
+  // Manual p/t does not change the map: it is the map of the AUTO design, labelled as such, and
+  // the dot carries the exact (manual) verdict.
+  // Every change of the map's inputs bumps mapGen; a worker message from an older gen is dropped.
+  var MAP_DEBOUNCE_MS = 250;
+  var MAP_FINAL = "80×60";
+  var map = { gen: 0, key: null, live: null, progress: null, error: null, worker: null, timer: null, last: null };
+
+  function stopWorker() {
+    if (map.timer !== null) clearTimeout(map.timer);
+    map.timer = null;
+    if (map.worker) map.worker.terminate();
+    map.worker = null;
   }
+  function startWorker(gen, req) {
+    map.timer = null;
+    if (gen !== map.gen) return;
+    if (typeof Worker === "undefined") {
+      map.error = "this browser has no Web Worker";
+      return redrawMap();
+    }
+    var w;
+    try {
+      w = new Worker("map_worker.js");
+    } catch (err) {
+      var fileUrl = typeof location !== "undefined" && location.protocol === "file:";
+      map.error = fileUrl
+        ? "browsers refuse workers on file:// pages; serve this folder over http"
+        : "the browser refused the worker: " + (err && err.message ? err.message : err);
+      return redrawMap();
+    }
+    map.worker = w;
+    w.onmessage = function (ev) { onMapMessage(ev.data); };
+    w.onerror = function (ev) {
+      if (gen !== map.gen) return;
+      map.error = "worker error: " + ((ev && ev.message) || "the worker script failed to load");
+      redrawMap();
+    };
+    req.gen = gen;
+    w.postMessage(req);
+  }
+  function onMapMessage(d) {
+    if (!d || d.gen !== map.gen) return; // a result for inputs the page no longer shows
+    if (d.error) {
+      map.error = "the model raised in the worker: " + String(d.error).split("\n")[0];
+      stopWorker();
+    } else if (d.progress) {
+      map.progress = d.progress;
+    } else {
+      var D = window.DysonMap, n = D.grid.r_log10[2] * D.grid.R_log10[2];
+      if (typeof d.slice !== "string" || d.slice.length !== n)
+        throw new Error("map worker: level " + d.level + " slice is not " + n + " cells");
+      map.live = { level: d.level, slice: d.slice };
+      map.progress = null;
+      if (d.level === MAP_FINAL) stopWorker();
+    }
+    redrawMap();
+  }
+  function redrawMap() {
+    if (map.last) drawMap(map.last[0], map.last[1], map.last[2]);
+  }
+  function spaced(level) {
+    return String(level).replace("×", " × ");
+  }
+
   // verdict: the class the summary names (first violated line, or HELD) at the exact design
-  function drawMap(s, verdict) {
+  function drawMap(s, verdict, res) {
+    map.last = [s, verdict, res];
     var state = {
       verdict: verdict,
       r: s.r,
@@ -419,8 +480,48 @@
       advancedChanged: ADVANCED.some(function (id) {
         return $(id).value !== DEFAULTS[id];
       }),
+      manualPT: s.pMode !== "auto" || s.tMode !== "auto",
     };
-    MV.draw($("map"), state, mapSlice(state));
+    var k = $("v-sigma").value + "|" + state.org;
+    var pre = window.DysonMap.slices[k];
+    if (typeof pre !== "string") throw new Error("map: no precomputed slice " + k);
+    var applies = state.cardsPlayed === 0 && !state.advancedChanged;
+    var key = applies ? "precomputed|" + k : JSON.stringify([s.sigma, res.org, res.inp]);
+    if (key !== map.key) {
+      map.key = key;
+      map.gen += 1;
+      map.live = map.progress = map.error = null;
+      stopWorker();
+      if (!applies) {
+        var D = window.DysonMap;
+        map.timer = setTimeout(startWorker.bind(null, map.gen, {
+          grid: D.grid, classes: D.classes, sigma_Pa: s.sigma, org: res.org, inputs: res.inp,
+        }), MAP_DEBOUNCE_MS);
+      }
+    }
+    var slice = pre;
+    if (applies) {
+      state.source = { kind: "precomputed" };
+    } else if (map.live) {
+      var p = map.progress;
+      state.source = {
+        kind: "live",
+        level: map.live.level,
+        status: map.live.level === MAP_FINAL
+          ? "recomputed for your design (" + spaced(MAP_FINAL) + ")"
+          : "your design, " + spaced(map.live.level) + " preview" +
+            (p ? " · computing " + spaced(p.level) + ": " + Math.floor((100 * p.done) / p.total) + "%" : ""),
+      };
+      slice = map.live.slice;
+    } else {
+      state.source = map.error
+        ? { kind: "stale", lines: ["live recompute unavailable", map.error,
+          "greyed: the precomputed map, not current"] }
+        : { kind: "stale", lines: ["recomputing for your design…" +
+          (map.progress ? " " + Math.floor((100 * map.progress.done) / map.progress.total) + "%" : ""),
+          "greyed: the precomputed map, not current"] };
+    }
+    MV.draw($("map"), state, slice);
   }
   // A click or drag on the map sets r and R, snapped to each slider's own step grid, and fires
   // the events a slider gesture fires (input while dragging, change on release).

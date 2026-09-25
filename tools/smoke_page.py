@@ -869,6 +869,97 @@ def exercise_map(page, label: str) -> None:
     settle()
 
 
+MAP_SHOT = (
+    ROOT / ".superpowers" / "sdd" / "2026-09-25-visual-first-dyson" / "task-3-shot.png"
+)
+
+
+def exercise_map_live(page, label: str, shoot: bool) -> None:
+    """Visual-first Task 3: playing a card greys the precomputed map and labels it "recomputing";
+    a Web Worker then paints its first level over the whole grid, without blocking the main thread.
+    From file:// Chromium refuses workers, so there the map must SAY so and stay greyed."""
+    page.reload(wait_until="load")
+    src = lambda: page.locator("#map-cells").get_attribute("data-source")  # noqa: E731
+    # positive control: at the defaults the precomputed map is current
+    check(
+        src() == "precomputed" and page.locator("#map-recomputing").count() == 0,
+        f"[{label}] map live: defaults draw the precomputed map as current ({src()})",
+    )
+    page.select_option("#deck-0-count", "1")
+    page.locator("#deck-0-value").fill("1.3")
+    page.locator("#deck-0-value").dispatch_event("input")
+    rc = page.locator("#map-recomputing")
+    check(
+        rc.count() == 1
+        and src() == "stale"
+        and page.locator("#map-cells").get_attribute("opacity") == "0.35",
+        f"[{label}] map live: card played -> greyed, label {rc.text_content() if rc.count() else None!r}",
+    )
+    note = page.locator("#map-stale-note")
+    check(
+        note.count() == 1 and "not current" in note.text_content(),
+        f"[{label}] map live: greyed map labelled not current",
+    )
+    if label == "file://":
+        page.wait_for_function(
+            "() => /unavailable/.test(document.getElementById('map-recomputing').textContent)",
+            timeout=10000,
+        )
+        said = page.locator("#map [data-state=recomputing]").all_text_contents()
+        check(
+            src() == "stale",
+            f"[{label}] map live: no worker from file://, the map says so, stays greyed: {said}",
+        )
+        page.select_option("#deck-0-count", "0")
+        check(
+            src() == "precomputed",
+            f"[{label}] map live: card off -> precomputed map current again",
+        )
+        return
+    t0 = page.evaluate("() => performance.now()")
+    page.wait_for_function(
+        "() => document.getElementById('map-cells').getAttribute('data-source') === '12×8'",
+        timeout=60000,
+    )
+    t1 = page.evaluate("() => performance.now()")
+    n = page.locator("#map rect[data-cell]").count()
+    status = page.locator("#map-live-status").text_content()
+    check(
+        n == 80 * 60
+        and page.locator("#map-recomputing").count() == 0
+        and "12 × 8" in status,
+        f"[{label}] map live: first worker level painted over the full grid in {(t1 - t0) / 1000:.1f} s "
+        f"({n} cells, status {status!r})",
+    )
+    # the main thread stays free while the worker runs the next level: r-drag latency as before
+    lat = page.evaluate(
+        """() => { const s = document.getElementById('v-r'); const out = [];
+                   for (let i = 0; i < 20; i++) { s.value = Math.log10(1.05 + i * 0.005).toFixed(4);
+                     const t0 = performance.now(); s.dispatchEvent(new Event('input'));
+                     void document.getElementById('v-status-FREEZE').textContent;
+                     out.push(performance.now() - t0); }
+                   out.sort((a, b) => a - b); return {max: out[19],
+                   src: document.getElementById('map-cells').getAttribute('data-source')}; }"""
+    )
+    check(
+        lat["max"] < 100 and lat["src"] not in ("stale", "precomputed"),
+        f"[{label}] map live: r-drag under 100 ms while the worker computes (max {lat['max']:.1f} ms, map {lat['src']})",
+    )
+    if shoot:
+        page.locator("#map").scroll_into_view_if_needed()
+        page.locator("#map").screenshot(path=str(MAP_SHOT))
+        notes.append(
+            f"NOTE  [{label}] map live screenshot -> {MAP_SHOT.relative_to(ROOT)}"
+        )
+    # card off: the precomputed map is current again, and the worker's later levels cannot repaint it
+    page.select_option("#deck-0-count", "0")
+    page.wait_for_timeout(1500)
+    check(
+        src() == "precomputed" and page.locator("#map-live-status").count() == 0,
+        f"[{label}] map live: card off -> precomputed map current again ({src()})",
+    )
+
+
 def exercise_q4_band(page, label: str) -> None:
     """M4: the r_close band hatched as Q1's is, the measured edges beside it, HELD/FAILED."""
     import re as _re
@@ -957,6 +1048,7 @@ def main() -> int:
             exercise_vessel(page, label)
             exercise_q4_band(page, label)
             exercise_map(page, label)
+            exercise_map_live(page, label, shoot=url.startswith("http"))
             exercise_picture(page, label, shoot=url.startswith("http"))
             page.close()
         browser.close()

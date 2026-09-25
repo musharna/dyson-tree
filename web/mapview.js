@@ -249,8 +249,53 @@
 
   function titleText(state) {
     var s = String(state.sigma_MPa), same = D.slices[s + "|algal"] === D.slices[s + "|vascular"];
+    var kind = sourceOf(state).kind;
     return "First line to fail · σ " + s + " MPa · " + state.org +
-      (same ? " · same map for algal and vascular" : "");
+      (kind === "live" ? " · your design" : kind === "precomputed" && same ? " · same map for algal and vascular" : "");
+  }
+  // state.source (verdict.js): {kind: "precomputed"} (the default), {kind: "stale", lines} (the
+  // precomputed slice drawn greyed while the worker recomputes), {kind: "live", level, status}
+  function sourceOf(state) {
+    return state.source || { kind: "precomputed" };
+  }
+  // split a status line into pieces that fit the frame's width (text width is estimated)
+  function wrap(t, maxW) {
+    var out = [], line = "";
+    String(t).split(" ").forEach(function (w) {
+      var next = line ? line + " " + w : w;
+      if (line && textW(next) + 8 > maxW) {
+        out.push(line);
+        line = w;
+      } else line = next;
+    });
+    if (line) out.push(line);
+    return out;
+  }
+  // the source's labels, redrawn with the dot on every draw (progress text changes often)
+  function drawStatus(g, state, stale) {
+    var src = sourceOf(state);
+    if (stale) {
+      var lines = src.lines || ["recomputing…"];
+      var rows = [];
+      lines.forEach(function (t, n) {
+        wrap(t, PW - 24).forEach(function (piece) {
+          rows.push({ t: piece, id: n === 0 ? "map-recomputing" : n === lines.length - 1 ? "map-stale-note" : null });
+        });
+      });
+      var y0 = T + PH / 2 - ((rows.length - 1) * KEY_ROW) / 2;
+      rows.forEach(function (row, n) {
+        var a = { x: L + PW / 2, y: y0 + n * KEY_ROW, "text-anchor": "middle", "data-state": "recomputing" };
+        // a line that wraps keeps its id on its first piece only
+        if (row.id && !rows.slice(0, n).some(function (o) { return o.id === row.id; })) a.id = row.id;
+        else if (row.id) a["data-part-of"] = row.id;
+        haloText(g, a, row.t);
+      });
+    } else if (src.kind === "live") {
+      haloText(g, { id: "map-live-status", x: L + 8, y: T + FS + 6, "data-level": src.level }, src.status);
+    }
+    if (state.manualPT)
+      haloText(g, { id: "map-manual-note", x: L + 8, y: T + PH - 8 },
+        "map shows the auto-designed vessel; your manual p/t is the dot");
   }
 
   function build(svg, state, slice) {
@@ -316,24 +361,24 @@
     });
   }
 
-  // slice: the class string for the current state, or null while it is being recomputed
-  // (Task 3's worker): the last cells stay, dimmed and labelled, the dot still follows the sliders
+  // slice: the class string to draw (precomputed, or a worker level painted over the full grid),
+  // or null (no cells known: the last cells stay). A null slice or state.source.kind "stale" is
+  // NOT current: the cells are greyed, labelled, and the dot does not vouch for their class.
   function draw(svg, state, slice) {
-    var key = String(state.sigma_MPa) + "|" + (slice === null ? "null" : slice);
+    var src = sourceOf(state), stale = slice === null || src.kind === "stale";
+    var key = String(state.sigma_MPa) + "|" + stale + "|" + (slice === null ? "null" : slice);
     if (!built || built.svg !== svg || built.key !== key) {
       var dim = slice === null && built && built.svg === svg ? built.lastSlice : null;
       var layers = build(svg, state, slice === null ? dim : slice);
       wire(svg);
       built = { svg: svg, key: key, layers: layers, lastSlice: slice === null ? dim : slice };
-      if (slice === null) {
-        layers.cells.setAttribute("opacity", "0.35");
-        haloText(layers.bands, { id: "map-recomputing", x: L + PW / 2, y: T + PH / 2, "text-anchor": "middle",
-          "data-state": "recomputing" }, "recomputing…");
-      }
+      if (stale) layers.cells.setAttribute("opacity", "0.35");
     }
+    built.layers.cells.setAttribute("data-source", stale ? "stale" : src.kind === "live" ? src.level : "precomputed");
     built.layers.title.textContent = titleText(state);
     clear(built.layers.over);
-    drawDot(built.layers.over, state, slice === null ? null : slice);
+    drawDot(built.layers.over, state, stale ? null : slice);
+    drawStatus(built.layers.over, state, stale);
   }
 
   window.DysonMapView = {
