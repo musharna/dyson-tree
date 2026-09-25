@@ -233,17 +233,40 @@ def test_verdict_pair_at_r_close_10km(page):
     )
 
 
-@pytest.mark.xfail(
-    strict=True,
-    reason=(
-        "grid resolution: r 1.21 AU's nearest map column is i = 13 (1.1955 AU, HELD); the verdict at "
-        "the exact point is FREEZE (edge 1.2049 AU). Reported, not bent (task-2 report)."
-    ),
-)
-def test_dot_cell_at_r_1_21_is_freeze(page):
-    b = page["r1.21"]
-    cb = cell_under_dot(b["map"])
-    assert cb["attrs"]["data-class"] == "FREEZE", (cb["attrs"], b["summary"])
+def test_dot_carries_the_exact_verdict_class_not_the_cell_class(page):
+    """Fix round 1 (F1): one r column is 0.0291 decades, wider than the P1 band, so at r 1.21 AU
+    the nearest cell is HELD while the verdict is FREEZE. The dot is the exact design: its class
+    and fill are the verdict's; the cell under it keeps the grid's class."""
+    a, b = page["r1.20"], page["r1.21"]
+    da, db = dot(a["map"]), dot(b["map"])
+    assert da["attrs"]["data-class"] == verdict_class(a["summary"]) == "HELD", (da["attrs"], a["summary"])
+    assert db["attrs"]["data-class"] == verdict_class(b["summary"]) == "FREEZE", (db["attrs"], b["summary"])
+    # the fill a reader sees is the legend's class colour
+    for r, d, c in ((a, da, "HELD"), (b, db, "FREEZE")):
+        sw = by_id(r["map"], "map-key-" + c)
+        assert sw is not None and d["attrs"]["fill"] == sw["attrs"]["fill"], (c, d["attrs"])
+    # why the dot needs its own class: the cell under it at 1.21 is still HELD
+    assert cell_under_dot(b["map"])["attrs"]["data-class"] == "HELD"
+    key = by_id(a["map"], "map-key-note")
+    assert key is not None and text_of(key) == "cells: model at cell centres · dot: your exact design"
+
+
+def test_measured_r_close_is_drawn_on_the_10km_row_per_sigma(page):
+    for name, want in (("defaults", "1.2049"), ("s15", "1.2303")):
+        m = page[name]["map"]
+        tick, lab, band = by_id(m, "map-rclose"), by_id(m, "map-rclose-label"), by_id(m, "map-p1")
+        assert tick is not None and lab is not None, name
+        assert want in text_of(lab) and "measured" in text_of(lab), text_of(lab)
+        bx0, bw = float(band["attrs"]["x"]), float(band["attrs"]["width"])
+        x = float(tick["attrs"]["x1"])
+        assert bx0 < x < bx0 + bw, (name, x, bx0, bw)  # r_close lies inside the registered band
+        # the tick spans the row; the label sits above it, off the row it annotates
+        by0 = float(band["attrs"]["y"])
+        assert float(tick["attrs"]["y1"]) < by0 and float(tick["attrs"]["y2"]) > by0 + float(band["attrs"]["height"])
+        assert float(lab["attrs"]["y"]) + 6 < by0, (lab["attrs"], by0)
+    # the tick moves with sigma (1.2303 > 1.2049)
+    assert float(by_id(page["s15"]["map"], "map-rclose")["attrs"]["x1"]) > float(
+        by_id(page["defaults"]["map"], "map-rclose")["attrs"]["x1"])
 
 
 def test_cell_centre_pair_dot_cell_matches_verdict(page):
@@ -300,6 +323,10 @@ def test_p2_band_on_sigma_07_only_and_p1_always(page):
         assert by_id(tree, "map-p1") is not None
         assert "[1.19, 1.27] AU" in text_of(by_id(tree, "map-p1-label"))
     assert "[60, 300] km" in text_of(by_id(s07, "map-p2-label"))
+    # (fix round 1) off sigma 0.7 the legend says where P2 lives; on sigma 0.7 the band does
+    assert by_id(s07, "map-p2-note") is None
+    note = by_id(s15, "map-p2-note")
+    assert note is not None and text_of(note) == "P2 registered at σ 0.7"
 
 
 def test_title_names_the_slice_and_the_no_design_key_is_always_present(page):

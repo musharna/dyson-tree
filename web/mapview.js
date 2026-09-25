@@ -136,7 +136,7 @@
     return t.length * FS * 0.6;
   }
   // a flowing key: each entry as wide as its label, wrapping inside the frame's width
-  function legend(g, slice, y0) {
+  function legend(g, slice, y0, sigma_MPa) {
     var present = D.classes.filter(function (c) {
       return c === "NO_DESIGN" || slice === null || slice.indexOf(String(D.classes.indexOf(c))) >= 0;
     });
@@ -153,6 +153,16 @@
       el("text", { x: x + 24, y: y, "font-size": FS, fill: INK }, g, LABEL[c]);
       x += w;
     });
+    y += KEY_ROW;
+    rows++;
+    el("text", { id: "map-key-note", x: L, y: y, "font-size": FS, fill: INK }, g,
+      "cells: model at cell centres · dot: your exact design");
+    if (bands && Math.abs(sigma_MPa - bands.P2.sigma_MPa) > 1e-9) {
+      y += KEY_ROW;
+      rows++;
+      el("text", { id: "map-p2-note", x: L, y: y, "font-size": FS, fill: INK }, g,
+        "P2 registered at σ " + bands.P2.sigma_MPa);
+    }
     return rows;
   }
   // a label on a white plate, so it reads over any cell colour
@@ -172,8 +182,22 @@
     var h = PH / (NRR - 1);
     el("rect", { id: "map-p1", x: x0, y: yc - h / 2, width: x1 - x0, height: h, fill: "url(#map-hatch-band)",
       stroke: INK, "stroke-width": 1.5, "stroke-dasharray": "3 2" }, g);
-    haloText(g, { id: "map-p1-label", x: x1 + 8, y: yc + 5 },
-      "P1 [" + p1.band_au[0] + ", " + p1.band_au[1] + "] AU at " + p1.R_km + " km: " + p1.verdict);
+    // the measured edge for this slice's sigma (the committed Q4 run), a tick across the row
+    var k = -1;
+    p1.sigma_MPa.forEach(function (s, n) { if (Math.abs(s - sigma_MPa) < 1e-9) k = n; });
+    if (k < 0) throw new Error("mapview: no measured r_close for sigma " + sigma_MPa);
+    var xr = X(lg(p1.r_close_au[k]));
+    var ly = yc - h / 2 - 30, lx = x1 + 40; // label plate: above the row, right of the band
+    el("line", { x1: xr, y1: yc - h / 2 - 9, x2: xr, y2: yc + h / 2 + 9, stroke: "#ffffff", "stroke-width": 6 }, g);
+    el("line", { id: "map-rclose", x1: xr, y1: yc - h / 2 - 9, x2: xr, y2: yc + h / 2 + 9, stroke: INK,
+      "stroke-width": 3 }, g);
+    el("line", { x1: xr, y1: yc - h / 2 - 9, x2: lx - 4, y2: ly + 4, stroke: INK, "stroke-width": 1.2 }, g);
+    haloText(g, { id: "map-rclose-label", x: lx, y: ly },
+      "measured r_close " + p1.r_close_au[k].toFixed(4) + " AU (σ " + sigma_MPa + ")");
+    el("line", { x1: x1, y1: yc - h / 2, x2: lx - 4, y2: ly - FS - 14, stroke: INK, "stroke-width": 1,
+      "stroke-dasharray": "3 2" }, g);
+    haloText(g, { id: "map-p1-label", x: lx, y: ly - FS - 8 },
+      "P1 band [" + p1.band_au[0] + ", " + p1.band_au[1] + "] AU at " + p1.R_km + " km: " + p1.verdict);
     var p2 = bands.P2;
     if (Math.abs(sigma_MPa - p2.sigma_MPa) > 1e-9) return;
     var xc = X(lg(p2.r_au)), w = PW / (NR - 1);
@@ -198,8 +222,13 @@
       "stroke-dasharray": "4 3", "data-mark": "crosshair" }, g);
     el("line", { x1: cx, y1: T, x2: cx, y2: T + PH, stroke: INK, "stroke-opacity": 0.55, "stroke-width": 1,
       "stroke-dasharray": "4 3", "data-mark": "crosshair" }, g);
-    el("circle", { id: "map-dot", cx: cx, cy: cy, r: 6.5, fill: "#ffffff", stroke: INK, "stroke-width": 2.5,
-      "data-i": c.i, "data-j": c.j, "data-class": slice === null ? "" : classOf(slice, c.i, c.j),
+    if (!(state.verdict in PAL)) throw new Error("mapview: dot has no verdict class (" + state.verdict + ")");
+    // the dot is the exact design: filled with the verdict's class, ringed dark over white so it
+    // reads on any cell colour; the nearest cell's class is kept apart as data-cell-class
+    el("circle", { cx: cx, cy: cy, r: 9, fill: INK, "data-mark": "dot-ring" }, g);
+    el("circle", { id: "map-dot", cx: cx, cy: cy, r: 6.5, fill: fillOf(state.verdict), stroke: "#ffffff",
+      "stroke-width": 2, "data-i": c.i, "data-j": c.j, "data-class": state.verdict,
+      "data-cell-class": slice === null ? "" : classOf(slice, c.i, c.j),
       "data-clamped": clamped ? "true" : "false" }, g);
     if (!clamped) return;
     // an outward arrowhead just outside each edge the dot is pinned to
@@ -236,7 +265,7 @@
     if (slice !== null) drawCells(layers.cells, slice);
     el("rect", { id: "map-frame", x: L, y: T, width: PW, height: PH, fill: "none", stroke: AXIS }, svg);
     axes(svg);
-    var rows = legend(el("g", { id: "map-legend" }, svg), slice, H0);
+    var rows = legend(el("g", { id: "map-legend" }, svg), slice, H0, state.sigma_MPa);
     layers.bands = el("g", { id: "map-bands" }, svg);
     drawBands(layers.bands, state.sigma_MPa);
     layers.over = el("g", { id: "map-over" }, svg);

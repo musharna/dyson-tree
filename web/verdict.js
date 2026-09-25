@@ -35,7 +35,8 @@
   };
   // P1 is r_close at R = 10 km (prereg P1); the map draws both registered bands from here
   MV.setBands({
-    P1: { band_au: Q4_RESULT.P1_band_au, R_km: 10, verdict: Q4_RESULT.P1 },
+    P1: { band_au: Q4_RESULT.P1_band_au, R_km: 10, verdict: Q4_RESULT.P1,
+      r_close_au: Q4_RESULT.r_close_au, sigma_MPa: Q4_RESULT.sigma_MPa },
     P2: { band_km: P2.band_km, r_au: P2.r_au, sigma_MPa: P2.sigma_MPa, verdict: Q4_RESULT.P2 },
   });
   // the <details> inputs: a change here moves the model off the precomputed map's inputs
@@ -344,7 +345,7 @@
 
     $("v-tR").textContent = (res.t / s.R).toExponential(3);
     PIC.draw(res, texts);
-    drawMap(s);
+    drawMap(s, bad.length ? bad[0] : "HELD");
 
     $("v-pstar").textContent = fmt(res.pStar, 1) + " Pa";
     $("v-tmin").textContent = fmt(res.tMin, 3) + " m";
@@ -406,8 +407,10 @@
     if (typeof sl !== "string") throw new Error("map: no precomputed slice " + k);
     return sl;
   }
-  function drawMap(s) {
+  // verdict: the class the summary names (first violated line, or HELD) at the exact design
+  function drawMap(s, verdict) {
     var state = {
+      verdict: verdict,
       r: s.r,
       R: s.R,
       sigma_MPa: Number($("v-sigma").value),

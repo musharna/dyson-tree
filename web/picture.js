@@ -46,11 +46,12 @@
     BUBBLE = "#b5651d", // BOIL's bubbles
     LIVE = "#2ecc40", // the organism's rim while net carbon > 0
     DEAD = "#8a8a8a", // the organism's rim at net carbon <= 0 (starving)
-    TRACK = "#d8d2c4"; // the OPAQUE gauge's empty track
+    TRACK = "#d8d2c4", // the OPAQUE gauge's empty track
+    GAUGE = "#ffb000"; // the OPAQUE gauge's amber arc: f_photon reaching in
   // One colour per first-failing line, for web/mapview.js: the picture's own marks, so the map
-  // and the cross-section speak one palette. OPAQUE is the veil's dark grey (MUTED).
+  // and the cross-section speak one palette. OPAQUE is the light gauge's amber arc.
   var PALETTE = {
-    HELD: LIVE, BURST: FAIL, FREEZE: FROST, BOIL: BUBBLE, STARVE: DEAD, OPAQUE: MUTED, NO_DESIGN: TRACK,
+    HELD: LIVE, BURST: FAIL, FREEZE: FROST, BOIL: BUBBLE, STARVE: DEAD, OPAQUE: GAUGE, NO_DESIGN: TRACK,
   };
 
   function el(tag, attrs, parent, text) {
@@ -375,7 +376,7 @@
       };
       var gg = el("g", { "data-mark": "light-gauge" }, g);
       segs(gg, arc(0, 1), { stroke: TRACK, "stroke-opacity": 0.75, "stroke-width": 2 }, geo.keep);
-      segs(gg, arc(0, f), { stroke: "#ffb000", "stroke-width": 6, "stroke-linecap": "butt" }, geo.keep);
+      segs(gg, arc(0, f), { stroke: GAUGE, "stroke-width": 6, "stroke-linecap": "butt" }, geo.keep);
       var fr = el("g", { "data-mark": "floor-ring" }, g);
       var af = -Math.PI / 2 + 2 * Math.PI * ff;
       segs(fr, [pt(rg - 9, af), pt(rg + 5, af)], { stroke: "#ffffff", "stroke-width": 3 }, geo.keep);
