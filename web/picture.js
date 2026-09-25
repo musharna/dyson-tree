@@ -222,11 +222,16 @@
       "stroke-width": 2, "data-mark": "anchor" }, g);
   }
   // an interior wound's anchor: between the disc and the wall, toward the plate
-  function interiorLabel(g, geo, text, n) {
+  function interiorAnchor(geo, n) {
     var pl = geo.plates[n];
     var ang = (pl.top ? -Math.PI / 2 : Math.PI / 2) + (pl.right ? 1 : -1) * (pl.top ? 0.45 : -0.45);
-    plateWithLeader(g, pl, text, pt((geo.rOrg + geo.ri) / 2, ang));
+    return pt((geo.rOrg + geo.ri) / 2, ang);
   }
+  function interiorLabel(g, geo, text, n) {
+    plateWithLeader(g, geo.plates[n], text, interiorAnchor(geo, n));
+  }
+  var INTERIOR = { FREEZE: 1, BOIL: 1, STARVE: 1 };
+  var ANCHOR_KEEP = 10; // frost and bubbles keep clear of an interior leader's end dot
   // the parts of segment ab outside every keep-out rect (padded), for marks near a plate
   function outside(a, b, rects) {
     var pieces = [[a, b]];
@@ -395,6 +400,11 @@
     var H = CLAMP_Y + 62; // clamp label (2 lines) or gauge key, then the footer
     var geo = { ro: ro, ri: ri, rOrg: rOrg, oy: CY, plates: plates };
     geo.keep = Object.keys(plates).map(function (n) { return plates[n].box; });
+    Object.keys(plates).forEach(function (n) {
+      if (!INTERIOR[n]) return;
+      var a = interiorAnchor(geo, n);
+      geo.keep.push({ x0: a[0] - ANCHOR_KEEP, y0: a[1] - ANCHOR_KEEP, x1: a[0] + ANCHOR_KEEP, y1: a[1] + ANCHOR_KEEP });
+    });
     svg.setAttribute("viewBox", "0 0 " + W + " " + H);
 
     el("title", {}, svg, "Cross-section of the vessel");

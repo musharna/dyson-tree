@@ -76,12 +76,14 @@ fig2 <- ggplot() +
                linewidth = connector_width, linetype = connector_linetype, colour = connector_colour) +
   geom_point(data = exp2, aes(expected, yi + dy, shape = mark), size = 3, colour = "grey35") +
   geom_point(data = win, aes(measured, yi, colour = binding), size = 3) +
-  geom_text(data = win, aes(measured, yi, label = sprintf("%.1f km", measured)), hjust = 1.35, size = 2.6) +
+  # a row that misses its tolerance shows the digit that misses it (10.58, not 10.6)
+  geom_text(data = win, aes(measured, yi, label = ifelse(config %in% bad$config, sprintf("%.2f km", measured),
+                                                          sprintf("%.1f km", measured))), hjust = 1.35, size = 2.6) +
   # the rule from run.py / RESULTS.md: within_tol = |delta| <= edge_R_rel (1e-3) x expected, in R
   geom_text(data = bad, aes(measured, yi, label = sprintf(
               "expected %g km (prereg printed 3 significant digits) vs measured %.4f: off by %.4f km,\nmore than the 1e-3 relative tolerance (%.4f km); agrees only after rounding",
               expected, measured, abs(delta), tolerance)),
-            hjust = -0.08, vjust = 0.5, size = 2.6, colour = annotation_colour) +
+            hjust = -0.08, vjust = 0.5, size = 3.1, colour = annotation_colour) +
   scale_x_log10(limits = c(5, 1600), breaks = c(10, 30, 60, 100, 300, 1000)) +
   scale_colour_failure(name = "measured edge (R_window), by binding line") +
   scale_y_continuous(breaks = seq_along(levels(p2$config)), labels = levels(p2$config)) +
