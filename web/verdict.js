@@ -233,6 +233,62 @@
     };
   }
 
+  // The headroom bars (visual-first Task 4). Each bar is the line's printed margin divided by that
+  // line's own scale, so five lines in different units share one axis. The scales are the model's
+  // own numbers for this design: σ_eff and p_sat are the right sides BURST and BOIL compare against,
+  // f_floor is OPAQUE's right side, a_max is the organism's (after any card). FREEZE has no model
+  // output of its size, so it uses FREEZE_SCALE_K, a display scale named by the task brief; the row's
+  // title says which scale each bar uses. Bars are clamped to ±1 scale and the clamp is marked.
+  var FREEZE_SCALE_K = 10;
+  function barScale(name, L, res) {
+    if (name === "BURST") return { v: L.rhs, name: "σ_eff(T_shell)", unit: "Pa" };
+    if (name === "FREEZE") return { v: FREEZE_SCALE_K, name: "10 K (a display scale, not a model output)", unit: "" };
+    if (name === "BOIL") return { v: L.rhs, name: "p_sat(T_int)", unit: "Pa" };
+    if (name === "STARVE") return { v: res.org.a_max, name: "a_max (the organism's)", unit: "µmol m⁻² s⁻¹" };
+    if (name === "OPAQUE") return { v: L.rhs, name: "f_floor (declared)", unit: "" };
+    throw new RangeError("headroom: no scale for line " + name);
+  }
+  function pct(x) {
+    return (Math.round(x * 1e4) / 100) + "%";
+  }
+  function drawBar(name, L, res, first) {
+    var sc = barScale(name, L, res);
+    var q = L.margin / sc.v; // ±Infinity when the scale is 0 (σ_eff of a water wall), NaN if 0/0
+    var row = $("hr-" + name), fill = $("hr-" + name + "-fill"), cap = $("hr-" + name + "-cap");
+    var val = $("hr-" + name + "-val");
+    var scaleText = "bar = margin ÷ " + sc.name + " = " + withUnit(fmt(L.margin, 3), sc.unit) + " ÷ " +
+      withUnit(fmt(sc.v, 3), sc.unit);
+    if (isNaN(q)) {
+      // 0 ÷ 0: no length can be drawn; said, not hidden
+      row.setAttribute("data-norm", "NaN");
+      row.setAttribute("data-len", "0");
+      row.setAttribute("data-clamped", "false");
+      fill.setAttribute("style", "left:50%;width:0%");
+      cap.className = "hr-cap";
+      val.textContent = "no scale";
+      scaleText += ": the scale is 0, so the bar has no length";
+    } else {
+      var len = Math.max(-1, Math.min(1, q)), clamped = len !== q;
+      row.setAttribute("data-norm", String(q));
+      row.setAttribute("data-len", String(len));
+      row.setAttribute("data-clamped", clamped ? "true" : "false");
+      fill.setAttribute("style", len >= 0
+        ? "left:50%;width:" + pct(len / 2)
+        : "left:" + pct(0.5 + len / 2) + ";width:" + pct(-len / 2));
+      cap.className = clamped ? "hr-cap " + (len > 0 ? "hr-cap-right" : "hr-cap-left") : "hr-cap";
+      cap.textContent = clamped ? (len > 0 ? "›" : "‹") : "";
+      val.textContent = res.byConstruction[name]
+        ? "0, auto"
+        : !isFinite(q) ? (q > 0 ? "+∞" : "−∞") : (q >= 0 ? "+" : "−") + fmt(Math.abs(q), 2);
+      scaleText += " = " + (isFinite(q) ? fmt(q, 3) : String(q)) +
+        (clamped ? "; drawn clamped at " + (len > 0 ? "+1" : "−1") + " scale" : "");
+    }
+    row.setAttribute("data-violated", L.violated ? "true" : "false");
+    row.setAttribute("data-first", first ? "true" : "false");
+    row.setAttribute("title", name + " headroom: " + scaleText);
+    $("hr-" + name + "-scale").textContent = scaleText;
+  }
+
   // [r_melt, r_freeze] for the current wall held fixed. T_int and T_shell both scale as
   // T_eq(r) ∝ r^-1/2 at a fixed wall (containedTemperature: (1 - R_s + τ)^¼·T_eq, τ and R_s
   // independent of r), so each edge is r·(T/T_threshold)² from the model's own temperatures.
@@ -309,10 +365,12 @@
       $("v-summary").textContent =
         "no verdict: the model raised (see the error line)";
       current = null;
+      $("headroom").setAttribute("data-error", "true"); // the bars are the last good design's
       PIC.blank("the model raised");
       return;
     }
     $("v-error").textContent = "";
+    $("headroom").setAttribute("data-error", "false");
     DECK.status(s.deck);
     current = res;
     $("v-R-out").textContent =
@@ -337,7 +395,8 @@
       $("v-margin-" + n).textContent = tx.margin;
       var st = $("v-status-" + n);
       st.textContent = tx.status;
-      st.className = tx.status === "HOLDS" ? "verdict-held" : "verdict-failed";
+      st.className = "hr-status " + (tx.status === "HOLDS" ? "verdict-held" : "verdict-failed");
+      drawBar(n, res.report.lines[n], res, bad.length > 0 && bad[0] === n);
     });
     $("v-summary").textContent = bad.length
       ? "VIOLATED: " + bad.join(", ") + " — the picture is " + bad[0]

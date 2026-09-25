@@ -960,6 +960,123 @@ def exercise_map_live(page, label: str, shoot: bool) -> None:
     )
 
 
+SHOT_DIR = ROOT / ".superpowers" / "sdd" / "2026-09-25-visual-first-dyson"
+
+
+def exercise_headroom(page, label: str, shoot: bool) -> None:
+    """Visual-first Task 4: five headroom bars in load order, the violated one marked; both sides
+    revealed on hover/focus; the bands' labels, the DECLARED badge, the summary, the bars and the map
+    visible with nothing opened, while prose in a closed <details> is not; bar and token text >= 12 px;
+    the map's registered labels qualified once a card is played."""
+
+    def settle():
+        page.wait_for_function(
+            "() => !['v-rauto','v-Rwin'].some(i => document.getElementById(i).textContent.includes('computing'))",
+            timeout=60000,
+        )
+
+    def set_range(sel, value):
+        page.locator(sel).fill(str(value))
+        page.locator(sel).dispatch_event("input")
+
+    def marked():
+        return page.eval_on_selector_all(
+            "#headroom [data-line][data-violated=true]", "els => els.map(e => e.dataset.line)"
+        )
+
+    def seen(ids):
+        return page.evaluate(
+            """(ids) => ids.map(id => { const e = document.getElementById(id);
+                 if (!e) return {id, missing: true};
+                 const b = e.getBoundingClientRect();
+                 return {id, w: b.width, h: b.height, closed: !!e.closest('details:not([open])'),
+                         shown: e.checkVisibility({visibilityProperty: true, opacityProperty: true})}; })""",
+            ids,
+        )
+
+    page.set_viewport_size({"width": 1400, "height": 900})
+    page.reload(wait_until="load")
+    settle()
+    rows = page.eval_on_selector_all("#headroom [data-line]", "els => els.map(e => e.dataset.line)")
+    check(rows == list(VLINES), f"[{label}] headroom: one bar per line in load order: {rows}")
+    check(marked() == [], f"[{label}] headroom defaults: no bar marked violated, got {marked()}")
+
+    # nothing opened: the things a reader must see are visible; closed-<details> prose is not
+    must = ["deck-1-badge", "v-summary", "headroom", "map", "map-p1-label", "map-p2-label",
+            "map-rclose-label", "q4-band-label", "q4-verdict"] + [f"hr-{n}" for n in VLINES]
+    got = seen(must)
+    bad = [g for g in got if g.get("missing") or not (g["shown"] and g["w"] > 0 and g["h"] > 0 and not g["closed"])]
+    check(not bad, f"[{label}] visible without interaction (DECLARED badge, summary, bars, map, band labels): {bad}")
+    check(page.locator("#deck-1-badge").inner_text() == "DECLARED", f"[{label}] the visible badge reads DECLARED")
+    prose = seen(["deck-0-source", "deck-1-cost", "deck-rule"])
+    # (Chromium keeps a layout box for closed-<details> content; checkVisibility is what the reader gets)
+    ctrl = [g for g in prose if g.get("missing") or not g["closed"] or g["shown"]
+            or page.locator("#" + g["id"]).is_visible()]
+    check(not ctrl, f"[{label}] control: card source/cost and the deck rule sit in a closed <details>, not visible: {ctrl}")
+
+    # both sides are in the row, hidden until hover or focus
+    def box(sel):
+        b = page.locator(sel).bounding_box()
+        return (round(b["width"]), round(b["height"])) if b else (0, 0)
+
+    has_rows = rows == list(VLINES)
+    before = focused = hovered = (0, 0)
+    if has_rows:  # without the rows there is nothing to focus: the check below FAILs, it does not hang
+        # the detail box is what clips its text: 1 x 1 px until hover/focus
+        before = box("#hr-FREEZE .hr-detail")
+        page.locator("#hr-FREEZE").focus()
+        focused = box("#hr-FREEZE .hr-detail")
+        page.locator("#v-R").focus()
+        page.locator("#hr-BURST").hover()
+        hovered = box("#hr-BURST .hr-detail")
+        page.mouse.move(0, 0)
+    check(before[0] <= 1 and focused[0] > 40 and hovered[0] > 40,
+          f"[{label}] headroom: both sides hidden until focus/hover (before {before}, focus {focused}, hover {hovered})")
+
+    fonts = page.evaluate(
+        """() => [...document.querySelectorAll('#headroom *, #deck *')].filter(e =>
+               [...e.childNodes].some(n => n.nodeType === 3 && n.textContent.trim()) &&
+               e.getBoundingClientRect().width > 0 && e.checkVisibility())
+             .map(e => ({t: e.textContent.trim().slice(0, 24), px: parseFloat(getComputedStyle(e).fontSize)}))"""
+    )
+    small = [(f["t"], f["px"]) for f in fonts if f["px"] < 12]
+    check(fonts and not small, f"[{label}] headroom and card tokens: every visible text >= 12 px ({len(fonts)} texts): {small}")
+    if shoot:
+        page.locator("#vessel").evaluate("e => e.scrollIntoView({block: 'start'})")
+        page.screenshot(path=str(SHOT_DIR / "task-4-shot-defaults.png"))
+
+    # FREEZE at sigma 0.7, R 10 km, r 1.21 AU: exactly that bar marked, drawn left of centre
+    set_range("#v-R", 4)
+    set_range("#v-r", 0.0828)
+    settle()
+    check(marked() == ["FREEZE"], f"[{label}] headroom FREEZE state: exactly FREEZE marked, got {marked()}")
+    g = page.evaluate(
+        """() => { if (!document.getElementById('hr-FREEZE-fill')) return {w: 0, right: null, zero: null};
+                  const f = document.getElementById('hr-FREEZE-fill').getBoundingClientRect();
+                  const z = document.querySelector('#hr-FREEZE .hr-zero').getBoundingClientRect();
+                  return {w: f.width, right: f.right, zero: (z.left + z.right) / 2}; }"""
+    )
+    check(g["w"] > 1 and g["right"] is not None and g["right"] <= g["zero"] + 1,
+          f"[{label}] headroom FREEZE bar drawn left of the zero line: {g}")
+    if shoot:
+        page.locator("#vessel").evaluate("e => e.scrollIntoView({block: 'start'})")
+        page.screenshot(path=str(SHOT_DIR / "task-4-shot-freeze.png"))
+
+    # the map's registered labels stay, qualified, once the design leaves the registered run
+    page.reload(wait_until="load")
+    settle()
+    check(page.locator("#map-registered-note").count() == 0, f"[{label}] map defaults: no registered-run note")
+    page.select_option("#deck-0-count", "1")
+    note = page.locator("#map-registered-note")
+    nb, fb = note.bounding_box() if note.count() else None, page.locator("#map-frame").bounding_box()
+    check(note.count() == 1 and note.is_visible() and nb is not None and fb is not None
+          and nb["y"] >= fb["y"] + fb["height"] and page.locator("#map-p1-label").is_visible(),
+          f"[{label}] card played: P1 label still visible and the note {note.text_content() if note.count() else None!r} "
+          f"sits below the map frame ({nb}, frame {fb})")
+    page.select_option("#deck-0-count", "0")
+    page.set_viewport_size({"width": 1280, "height": 720})
+
+
 def exercise_q4_band(page, label: str) -> None:
     """M4: the r_close band hatched as Q1's is, the measured edges beside it, HELD/FAILED."""
     import re as _re
@@ -1049,6 +1166,7 @@ def main() -> int:
             exercise_q4_band(page, label)
             exercise_map(page, label)
             exercise_map_live(page, label, shoot=url.startswith("http"))
+            exercise_headroom(page, label, shoot=url.startswith("http"))
             exercise_picture(page, label, shoot=url.startswith("http"))
             page.close()
         browser.close()

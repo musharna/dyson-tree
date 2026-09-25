@@ -136,7 +136,12 @@
     return t.length * FS * 0.6;
   }
   // a flowing key: each entry as wide as its label, wrapping inside the frame's width
-  function legend(g, slice, y0, sigma_MPa) {
+  // off the registered run (a card played, or a declared assumption off its default): the P1/P2 and
+  // r_close labels stay, marked †, and the key says they are the registered run's, not this design's
+  function offRegistered(state) {
+    return state.cardsPlayed > 0 || !!state.advancedChanged;
+  }
+  function legend(g, slice, y0, sigma_MPa, off) {
     var present = D.classes.filter(function (c) {
       return c === "NO_DESIGN" || slice === null || slice.indexOf(String(D.classes.indexOf(c))) >= 0;
     });
@@ -163,6 +168,12 @@
       el("text", { id: "map-p2-note", x: L, y: y, "font-size": FS, fill: INK }, g,
         "P2 registered at σ " + bands.P2.sigma_MPa);
     }
+    if (off) {
+      y += KEY_ROW;
+      rows++;
+      haloText(g, { id: "map-registered-note", x: L + 4, y: y },
+        "† labels: the registered run (no cards, default inputs)");
+    }
     return rows;
   }
   // a label on a white plate, so it reads over any cell colour
@@ -174,7 +185,8 @@
     return el("text", Object.assign({ "font-size": FS, fill: INK }, attrs), parent, text);
   }
 
-  function drawBands(g, sigma_MPa) {
+  function drawBands(g, sigma_MPa, off) {
+    var dag = off ? " †" : "";
     if (!bands) throw new Error("mapview: bands not set (verdict.js calls DysonMapView.setBands)");
     var p1 = bands.P1;
     var x0 = X(lg(p1.band_au[0])), x1 = X(lg(p1.band_au[1]));
@@ -193,11 +205,11 @@
       "stroke-width": 3 }, g);
     el("line", { x1: xr, y1: yc - h / 2 - 9, x2: lx - 4, y2: ly + 4, stroke: INK, "stroke-width": 1.2 }, g);
     haloText(g, { id: "map-rclose-label", x: lx, y: ly },
-      "measured r_close " + p1.r_close_au[k].toFixed(4) + " AU (σ " + sigma_MPa + ")");
+      "measured r_close " + p1.r_close_au[k].toFixed(4) + " AU (σ " + sigma_MPa + ")" + dag);
     el("line", { x1: x1, y1: yc - h / 2, x2: lx - 4, y2: ly - FS - 14, stroke: INK, "stroke-width": 1,
       "stroke-dasharray": "3 2" }, g);
     haloText(g, { id: "map-p1-label", x: lx, y: ly - FS - 8 },
-      "P1 band [" + p1.band_au[0] + ", " + p1.band_au[1] + "] AU at " + p1.R_km + " km: " + p1.verdict);
+      "P1 band [" + p1.band_au[0] + ", " + p1.band_au[1] + "] AU at " + p1.R_km + " km: " + p1.verdict + dag);
     var p2 = bands.P2;
     if (Math.abs(sigma_MPa - p2.sigma_MPa) > 1e-9) return;
     var xc = X(lg(p2.r_au)), w = PW / (NR - 1);
@@ -207,7 +219,7 @@
     var clipped = p2.band_km[1] * 1000 > Math.pow(10, GRR[1]);
     haloText(g, { id: "map-p2-label", x: xc - w / 2, y: T - 8 },
       "P2 [" + p2.band_km[0] + ", " + p2.band_km[1] + "] km at " + p2.r_au.toFixed(2) + " AU, σ " + p2.sigma_MPa +
-        " MPa: " + p2.verdict + (clipped ? " (map stops at " + Math.pow(10, GRR[1] - 3) + " km)" : ""));
+        " MPa: " + p2.verdict + (clipped ? " (map stops at " + Math.pow(10, GRR[1] - 3) + " km)" : "") + dag);
   }
 
   function drawDot(g, state, slice) {
@@ -310,9 +322,10 @@
     if (slice !== null) drawCells(layers.cells, slice);
     el("rect", { id: "map-frame", x: L, y: T, width: PW, height: PH, fill: "none", stroke: AXIS }, svg);
     axes(svg);
-    var rows = legend(el("g", { id: "map-legend" }, svg), slice, H0, state.sigma_MPa);
+    var off = offRegistered(state);
+    var rows = legend(el("g", { id: "map-legend" }, svg), slice, H0, state.sigma_MPa, off);
     layers.bands = el("g", { id: "map-bands" }, svg);
-    drawBands(layers.bands, state.sigma_MPa);
+    drawBands(layers.bands, state.sigma_MPa, off);
     layers.over = el("g", { id: "map-over" }, svg);
     el("rect", { id: "map-hit", x: L, y: T, width: PW, height: PH, fill: "transparent",
       style: "cursor: crosshair" }, svg);
@@ -366,7 +379,8 @@
   // NOT current: the cells are greyed, labelled, and the dot does not vouch for their class.
   function draw(svg, state, slice) {
     var src = sourceOf(state), stale = slice === null || src.kind === "stale";
-    var key = String(state.sigma_MPa) + "|" + stale + "|" + (slice === null ? "null" : slice);
+    var key = String(state.sigma_MPa) + "|" + stale + "|" + offRegistered(state) + "|" +
+      (slice === null ? "null" : slice);
     if (!built || built.svg !== svg || built.key !== key) {
       var dim = slice === null && built && built.svg === svg ? built.lastSlice : null;
       var layers = build(svg, state, slice === null ? dim : slice);

@@ -104,6 +104,9 @@ SCENARIOS = {
     # (d) sigma
     "s15": [{"id": "v-sigma", "value": "1.5"}],
     "vascular": [{"id": "v-org", "value": "vascular"}],
+    # (Task 4) off the registered run's inputs: a card, or an advanced input off its default
+    "card": [{"id": "deck-0-count", "value": "1"}, {"id": "deck-0-value", "value": "1.3"}],
+    "albedo": [{"id": "v-albedo", "value": "0.01"}],
 }
 
 
@@ -117,6 +120,13 @@ def by_id(tree, id_):
     hits = [n for n in walk(tree) if n["attrs"].get("id") == id_]
     assert len(hits) <= 1, (id_, len(hits))
     return hits[0] if hits else None
+
+
+def need(tree, id_):
+    """by_id for a node the test requires: fails with the id instead of returning None."""
+    n = by_id(tree, id_)
+    assert n is not None, f"no #{id_}"
+    return n
 
 
 def text_of(node):
@@ -254,7 +264,7 @@ def test_dot_carries_the_exact_verdict_class_not_the_cell_class(page):
 def test_measured_r_close_is_drawn_on_the_10km_row_per_sigma(page):
     for name, want in (("defaults", "1.2049"), ("s15", "1.2303")):
         m = page[name]["map"]
-        tick, lab, band = by_id(m, "map-rclose"), by_id(m, "map-rclose-label"), by_id(m, "map-p1")
+        tick, lab, band = need(m, "map-rclose"), need(m, "map-rclose-label"), need(m, "map-p1")
         assert tick is not None and lab is not None, name
         assert want in text_of(lab) and "measured" in text_of(lab), text_of(lab)
         bx0, bw = float(band["attrs"]["x"]), float(band["attrs"]["width"])
@@ -265,8 +275,8 @@ def test_measured_r_close_is_drawn_on_the_10km_row_per_sigma(page):
         assert float(tick["attrs"]["y1"]) < by0 and float(tick["attrs"]["y2"]) > by0 + float(band["attrs"]["height"])
         assert float(lab["attrs"]["y"]) + 6 < by0, (lab["attrs"], by0)
     # the tick moves with sigma (1.2303 > 1.2049)
-    assert float(by_id(page["s15"]["map"], "map-rclose")["attrs"]["x1"]) > float(
-        by_id(page["defaults"]["map"], "map-rclose")["attrs"]["x1"])
+    assert float(need(page["s15"]["map"], "map-rclose")["attrs"]["x1"]) > float(
+        need(page["defaults"]["map"], "map-rclose")["attrs"]["x1"])
 
 
 def test_cell_centre_pair_dot_cell_matches_verdict(page):
@@ -340,3 +350,24 @@ def test_title_names_the_slice_and_the_no_design_key_is_always_present(page):
     assert "vascular" in tv and "same map for algal and vascular" in tv, tv
     for name in ("defaults", "s15"):
         assert by_id(page[name]["map"], "map-key-NO_DESIGN") is not None
+
+
+# (Task 4) --------------------------------------------------------------------------------------
+REGISTERED_LABELS = ("map-p1-label", "map-rclose-label", "map-p2-label")
+
+
+def test_registered_labels_are_qualified_when_the_design_leaves_the_registered_run(page):
+    d = page["defaults"]["map"]
+    # positive control: at the registered inputs the labels carry no qualifier and no note
+    assert by_id(d, "map-registered-note") is None
+    for i in REGISTERED_LABELS:
+        assert not text_of(by_id(d, i)).endswith("†"), text_of(by_id(d, i))
+    for name in ("card", "albedo"):
+        tree = page[name]["map"]
+        note = by_id(tree, "map-registered-note")
+        assert note is not None and "registered run" in text_of(note) and text_of(note).startswith("†"), name
+        for i in REGISTERED_LABELS:  # still visible, and marked
+            assert text_of(by_id(tree, i)).endswith(" †"), (name, text_of(by_id(tree, i)))
+        # the note sits below the frame, over no cell
+        f = need(tree, "map-frame")["attrs"]
+        assert float(note["attrs"]["y"]) - 14 > float(f["y"]) + float(f["height"]), (name, note["attrs"], f)
