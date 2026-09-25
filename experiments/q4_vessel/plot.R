@@ -28,18 +28,18 @@ fig1 <- ggplot(p1, aes(y = yi)) +
   annotate("text", x = 1.19, y = reg1, hjust = 1.04, size = 2.8, colour = "grey30",
            label = "registered band\n[1.19, 1.27] AU") +
   geom_segment(aes(x = measured, xend = expected, y = yi, yend = yi + expected_nudge),
-               linewidth = 0.3, colour = "grey55") +
+               linewidth = connector_width, linetype = connector_linetype, colour = connector_colour) +
   geom_point(aes(x = expected, y = yi + expected_nudge), shape = shapes_mark[["prereg expected: the edge"]],
              size = 3, colour = "grey35") +
   geom_point(aes(x = measured, shape = sigma), size = 2.3, colour = palette_failure[["FREEZE"]]) +
-  geom_text(aes(x = measured, label = sprintf("%.4f", measured)), vjust = -1.1, size = 2.6) +
+  geom_text(aes(x = measured, label = sprintf("%.4f", measured)), vjust = -0.9, size = value_label_size) +
   scale_shape_sigma() +
   scale_y_continuous(breaks = seq_along(levels(p1$config)), labels = levels(p1$config), expand = expansion(add = c(0.6, 0.6))) +
   scale_x_continuous(limits = c(1.145, 1.285), breaks = seq(1.15, 1.275, 0.025)) +
   labs(x = expression(r[close]~"(AU), R = 10 km"), y = NULL, shape = expression(sigma~"(MPa)"),
        title = "Q4 P1: where the window closes in r — binding: FREEZE in every row",
-       subtitle = paste0("filled = measured (labelled); open ring just below, joined by a tick = prereg expected\n",
-                         "(|measured - expected| <= 5e-5 AU in every row, so each tick is vertical)")) +
+       subtitle = paste0("filled = measured (labelled); open ring just below, joined by a dotted link = prereg expected\n",
+                         "(|measured - expected| <= 5e-5 AU in every row, so each link is vertical)")) +
   theme_dyson()
 save(fig1, "p1_r_close_by_law.png")
 
@@ -72,7 +72,7 @@ fig2 <- ggplot() +
   # edge expecteds sit below their measured mark, later-root expecteds above theirs, so a later root
   # that nearly coincides with the edge (arm (ii) n_int 1.333) keeps two separate expected marks
   geom_segment(data = exp2, aes(x = measured, xend = expected, y = yi, yend = yi + dy),
-               linewidth = 0.3, colour = "grey55") +
+               linewidth = connector_width, linetype = connector_linetype, colour = connector_colour) +
   geom_point(data = exp2, aes(expected, yi + dy, shape = mark), size = 3, colour = "grey35") +
   geom_point(data = win, aes(measured, yi, colour = binding), size = 3) +
   geom_text(data = win, aes(measured, yi, label = sprintf("%.1f km", measured)), hjust = 1.35, size = 2.6) +
@@ -85,7 +85,7 @@ fig2 <- ggplot() +
   guides(colour = guide_legend(order = 1), shape = guide_legend(order = 2, nrow = 1)) +
   labs(x = "R (km, log), r = 1.10 AU, σ 0.7 MPa", y = NULL,
        title = "Q4 P2: R_window per configuration",
-       subtitle = paste0("each prereg expected mark is joined by a tick to the measured value it is compared with:\n",
+       subtitle = paste0("each prereg expected mark is joined by a dotted link to the measured value it is compared with:\n",
                          "below it for the edge, above it for a later root")) +
   theme_dyson() + theme(legend.box = "vertical")
 save(fig2, "p2_R_window_by_config.png", w = 10, h = 5.5)
@@ -111,6 +111,7 @@ labs_n <- setNames(sprintf("%s (%s nodes)", names(n), formatC(as.integer(n), big
 sweep <- subset(sweep, first_violated != "STARVE")  # never first-violated; named in the subtitle
 sweep$first_violated <- factor(sweep$first_violated, levels = setdiff(names(palette_failure), "STARVE"))
 sweep$sigma_lab <- paste0("σ = ", sweep$sigma_MPa, " MPa")
+p2read <- data.frame(sigma_lab = "σ = 0.7 MPa")
 reads1 <- data.frame(sigma_lab = sort(unique(sweep$sigma_lab))[1])  # read labels once: first panel
 fig4 <- ggplot(sweep, aes(r_au, R_m / 1e3)) +
   geom_tile(aes(fill = first_violated)) +
@@ -118,9 +119,10 @@ fig4 <- ggplot(sweep, aes(r_au, R_m / 1e3)) +
   annotate("segment", x = 1.19, xend = 1.27, y = 10, yend = 10, linewidth = 1.6, colour = "black") +
   geom_text(data = reads1, aes(x = 1.28, y = 10), hjust = 0, vjust = -0.6, size = 2.6,
             label = "P1 read: R = 10 km,\nband 1.19–1.27 AU") +
-  geom_vline(xintercept = 1.10, linetype = "dotted", colour = "black", linewidth = 0.3) +
-  annotate("segment", x = 1.10, xend = 1.10, y = 60, yend = 300, linewidth = 1.6, colour = "black") +
-  geom_text(data = reads1, aes(x = 1.115, y = 0.05), hjust = 0, size = 2.6,
+  # P2 was registered at sigma 0.7 MPa only: its read line and band appear in that panel alone
+  geom_vline(data = p2read, aes(xintercept = 1.10), linetype = "dotted", colour = "black", linewidth = 0.3) +
+  geom_segment(data = p2read, aes(x = 1.10, xend = 1.10, y = 60, yend = 300), linewidth = 1.6, colour = "black") +
+  geom_text(data = p2read, aes(x = 1.115, y = 0.05), hjust = 0, size = 2.6,
             label = "P2 read: r = 1.10 AU,\nband 60–300 km") +
   facet_wrap(~sigma_lab) +
   scale_y_log10(breaks = c(0.01, 0.1, 1, 10, 100, 1000), labels = c("0.01", "0.1", "1", "10", "100", "1000")) +

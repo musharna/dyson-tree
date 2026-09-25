@@ -37,3 +37,9 @@ expected_nudge <- -0.3
 # Registered band: one fill, scoped to the registered row only.
 band_fill <- "grey40"
 band_alpha <- 0.12
+# Measured-to-expected connector: thin dotted grey, never confusable with a "|" point glyph.
+connector_colour <- "grey60"
+connector_linetype <- "dotted"
+connector_width <- 0.45
+# Value labels on points: >= 12 px at 150 dpi.
+value_label_size <- 3.6

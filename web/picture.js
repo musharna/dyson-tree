@@ -28,7 +28,7 @@
     PLATE_GAP = 10, // units between the organism disc and a plate
     KEEP_PAD = 3, // units every mark keeps clear of a plate
     WRAP = 20,
-    MARGIN = 12, // every plate keeps this far inside the picture's edge
+    MARGIN = 20, // every plate keeps this far inside the picture's edge
     FIT_PAD = 14, // interior plates keep this far inside the wall (the OPAQUE gauge runs there)
     CLAMP_Y = 378;
   var NS = "http://www.w3.org/2000/svg";
@@ -207,7 +207,7 @@
         oy = top + Hs + PLATE_GAP + rOrg;
       }
       var bot = top + Hs - CY; // stack bottom below centre
-      var fits = Ws / 2 < rf && Math.hypot(Ws / 2, bot) <= rf && oy + rOrg <= CY + ri - 4;
+      var fits = Ws / 2 < rf && Math.hypot(Ws / 2, bot) <= rf && oy + rOrg <= CY + ri - FIT_PAD;
       var boxes = {}, y = top;
       names.forEach(function (k, i) {
         boxes[k] = { x0: CX - sz[i].w / 2, y0: y, x1: CX + sz[i].w / 2, y1: y + sz[i].h };
@@ -325,7 +325,8 @@
         var clear = Math.hypot(p[0] - CX, p[1] - CY) + s < geo.ri - 2 &&
           Math.hypot(p[0] - CX, p[1] - geo.oy) > geo.rOrg + s + 4 &&
           !geo.keep.some(function (R) {
-            return p[0] + s + KEEP_PAD > R.x0 && p[0] - s - KEEP_PAD < R.x1 && p[1] + s + KEEP_PAD > R.y0 && p[1] - s - KEEP_PAD < R.y1;
+            var q = s + KEEP_PAD + 3; // radius, stroke and a visible gap
+            return p[0] + q > R.x0 && p[0] - q < R.x1 && p[1] + q > R.y0 && p[1] - q < R.y1;
           });
         if (clear)
           el("circle", { cx: p[0].toFixed(1), cy: p[1].toFixed(1), r: s, fill: "none", stroke: "#b5651d",
@@ -424,6 +425,13 @@
       el("tspan", { x: 6, dy: 0 }, ct, "wall clamped to " + MIN_BAND_PX + " px;");
       el("tspan", { x: 6, dy: LH }, ct,
         " true t/R " + fmtE(t / R) + " would draw " + (ro - riTrue).toFixed(2) + " px");
+    }
+    // a key for the OPAQUE gauge, bottom left above the footer (the clamp label's place; a
+    // wall thin enough to clamp never darkens the interior below the floor)
+    if (rep.lines.OPAQUE.violated) {
+      var kt = el("text", { id: "pic-key", x: 6, y: H - 6 - 2 * LH, "font-size": FS, fill: MUTED }, svg);
+      el("tspan", { x: 6, dy: 0 }, kt, "amber arc: f_photon reaching in;");
+      el("tspan", { x: 6, dy: LH }, kt, " white tick: declared floor");
     }
     el("text", { x: 6, y: H - 6, "font-size": FS, fill: MUTED }, svg,
       "t/R " + fmtE(t / R) + " · size log-scaled in R + t");
