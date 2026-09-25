@@ -33,13 +33,13 @@ shapes_mark <- c(`measured later root (not the edge)` = 124, `prereg expected: t
 scale_shape_mark <- function(...) scale_shape_manual(values = shapes_mark, ...)
 # A prereg expected mark is drawn this far (in rows) below its measured mark, so a value that
 # coincides with the measurement to 1e-5 AU is still a visible, separate mark (data unchanged).
-expected_nudge <- -0.3
+expected_nudge <- -0.4
 # Registered band: one fill, scoped to the registered row only.
 band_fill <- "grey40"
 band_alpha <- 0.12
 # Measured-to-expected connector: thin dotted grey, never confusable with a "|" point glyph.
-connector_colour <- "grey60"
+connector_colour <- "grey25"
 connector_linetype <- "dotted"
-connector_width <- 0.45
+connector_width <- 0.6
 # Value labels on points: >= 12 px at 150 dpi.
 value_label_size <- 3.6

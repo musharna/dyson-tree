@@ -608,6 +608,17 @@ def exercise_picture(page, label: str, shoot: bool) -> None:
                 continue
             far = max(((x - I["cx"]) ** 2 + (y - I["cy"]) ** 2) ** 0.5 for x in (R["x0"], R["x1"]) for y in (R["y0"], R["y1"]))
             check(far <= I["r"] - 3, f"[{label}] {tag}: plate {R['owner']} clear of the wall band (corner at {far:.1f}, interior {I['r']:.1f})")
+        # critic round 2: interior shows between the disc (incl. its stroke) and the wall band's
+        # inner edge, measured on RENDERED px
+        w = page.evaluate(
+            """() => { const svg = document.getElementById('pic'), k = svg.getBoundingClientRect().width / svg.viewBox.baseVal.width;
+              const o = document.getElementById('pic-organism'), i = document.getElementById('pic-inner');
+              const ob = o.getBoundingClientRect(), ib = i.getBoundingClientRect();
+              const sw = parseFloat(getComputedStyle(o).strokeWidth) * k;
+              const dx = (ob.left + ob.right) / 2 - (ib.left + ib.right) / 2, dy = (ob.top + ob.bottom) / 2 - (ib.top + ib.bottom) / 2;
+              return {gap: ib.width / 2 - (Math.hypot(dx, dy) + ob.width / 2 + sw / 2), k}; }"""
+        )
+        check(w["gap"] >= 10, f"[{label}] {tag}: disc (with stroke) clears the wall band by {w['gap']:.1f} rendered px >= 10")
         d = g["disc"]
         for R in g["plates"]:
             if R["owner"] == "pic-ov-BURST":

@@ -186,34 +186,43 @@
   // rises as high as the widest plate's corners allow and the disc moves down beneath it.
   // Returns {boxes: {line: box}, oy: disc centre y}.
   function layoutInterior(ri, rOrg, names, texts) {
-    if (!names.length) return { boxes: {}, oy: CY, wrap: WRAP };
+    if (!names.length) return { boxes: {}, oy: CY, wrap: WRAP, rOrg: rOrg };
     var rf = ri - FIT_PAD, best = null;
-    // the widest wrap whose stack and disc both fit; narrower wraps trade width for height
-    for (var n = WRAP; n >= 10 && !(best && best.fits); n--) best = stackAt(n);
+    // the widest wrap whose stack and full-size disc both fit; failing that, the wrap that
+    // leaves the largest disc (the disc shrinks rather than touch the wall; it never used to)
+    for (var n = WRAP; n >= 10; n--) {
+      var c = stackAt(n);
+      if (!c) continue;
+      if (c.rOrg >= rOrg) return c;
+      if (!best || c.rOrg > best.rOrg) best = c;
+    }
+    if (!best || best.rOrg < 6)
+      throw new Error("picture: no interior layout fits the plates and a disc (ri " + ri.toFixed(1) + ")");
     return best;
 
     function stackAt(n) {
       var sz = names.map(function (k) { return plateSize(texts[k], n); });
       var Hs = sz.reduce(function (a, z) { return a + z.h; }, 0) + 6 * (sz.length - 1);
       var Ws = Math.max.apply(null, sz.map(function (z) { return z.w; }));
-      var a = rf > Ws / 2 ? Math.sqrt(rf * rf - (Ws * Ws) / 4) : 0; // highest top the corners allow
-      var centred = rOrg + PLATE_GAP + Hs; // top height above centre with the disc left centred
-      var top, oy;
-      if (centred <= a) {
-        top = CY - centred;
+      if (Ws / 2 >= rf) return null;
+      var a = Math.sqrt(rf * rf - (Ws * Ws) / 4); // highest top the corners allow
+      var top, oy, r = rOrg;
+      if (rOrg + PLATE_GAP + Hs <= a) {
+        top = CY - (rOrg + PLATE_GAP + Hs); // disc stays centred
         oy = CY;
       } else {
         top = CY - a;
-        oy = top + Hs + PLATE_GAP + rOrg;
+        var below = top + Hs + PLATE_GAP; // disc spans below..CY + rf
+        r = Math.min(rOrg, (CY + rf - below) / 2);
+        oy = below + r;
       }
-      var bot = top + Hs - CY; // stack bottom below centre
-      var fits = Ws / 2 < rf && Math.hypot(Ws / 2, bot) <= rf && oy + rOrg <= CY + ri - FIT_PAD;
+      if (Math.hypot(Ws / 2, top + Hs - CY) > rf) return null;
       var boxes = {}, y = top;
       names.forEach(function (k, i) {
         boxes[k] = { x0: CX - sz[i].w / 2, y0: y, x1: CX + sz[i].w / 2, y1: y + sz[i].h };
         y += sz[i].h + 6;
       });
-      return { boxes: boxes, oy: oy, wrap: n, fits: fits };
+      return { boxes: boxes, oy: oy, wrap: n, rOrg: r };
     }
   }
   function interiorLabel(g, geo, text, n) {
@@ -270,6 +279,10 @@
           " L" + P2(pt(r0, a + da)) + " Z",
         fill: BG, "data-mark": "gap",
       }, g);
+      // the cracks stop short of the plate (drawn below), with a visible gap
+      var ps = plateSize(text), GAP = 8;
+      var clearOf = geo.keep.concat([{ x0: W - MARGIN - ps.w - GAP, y0: MARGIN - 2 - GAP,
+        x1: W - MARGIN + GAP, y1: MARGIN - 2 + ps.h + GAP }]);
       [[-1, 0.6], [1, 0.6], [-1, -0.5], [1, -0.5], [0, 1], [0, -0.9]].forEach(function (c) {
         var side = a + c[0] * da * 1.3,
           out = c[1] > 0;
@@ -280,7 +293,7 @@
           var rr = (out ? r1 : r0) + (out ? 1 : -1) * (len * i) / steps;
           p.push(pt(rr, side + c[0] * 0.06 * i + (i % 2 ? 0.03 : -0.03)));
         }
-        segs(g, p, { stroke: FAIL, "stroke-width": 2, "stroke-linecap": "round" }, geo.keep);
+        segs(g, p, { stroke: FAIL, "stroke-width": 2, "stroke-linecap": "round" }, clearOf);
       });
       var b = label(g, W - MARGIN, MARGIN, "end", text, true);
       var from = pt(r1 + 26, a);
@@ -382,6 +395,7 @@
     var rOrg = Math.max(6, 0.28 * ri);
     var bad = rep.violated.slice();
     var lay = layoutInterior(ri, rOrg, bad.filter(function (n) { return n !== "BURST"; }), texts);
+    rOrg = lay.rOrg;
     var geo = { ro: ro, ri: ri, rOrg: rOrg, oy: lay.oy, boxes: lay.boxes, wrap: lay.wrap };
     geo.keep = Object.keys(lay.boxes).map(function (n) { return lay.boxes[n]; });
     svg.setAttribute("viewBox", "0 0 " + W + " " + H);
