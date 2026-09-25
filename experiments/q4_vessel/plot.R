@@ -38,7 +38,7 @@ fig1 <- ggplot(p1, aes(y = yi)) +
   scale_x_continuous(limits = c(1.145, 1.285), breaks = seq(1.15, 1.275, 0.025)) +
   labs(x = expression(r[close]~"(AU), R = 10 km"), y = NULL, shape = expression(sigma~"(MPa)"),
        title = "Q4 P1: where the window closes in r — binding: FREEZE in every row",
-       subtitle = paste0("filled = measured (labelled); open ring just below, joined by a dashed link = prereg expected\n",
+       subtitle = paste0("filled = measured (labelled); open ring just below, joined by a short link = prereg expected\n",
                          "(|measured - expected| <= 5e-5 AU in every row, so each link is vertical)")) +
   theme_dyson()
 save(fig1, "p1_r_close_by_law.png")
@@ -79,8 +79,8 @@ fig2 <- ggplot() +
   geom_text(data = win, aes(measured, yi, label = sprintf("%.1f km", measured)), hjust = 1.35, size = 2.6) +
   # the rule from run.py / RESULTS.md: within_tol = |delta| <= edge_R_rel (1e-3) x expected, in R
   geom_text(data = bad, aes(measured, yi, label = sprintf(
-              "OPAQUE root outside its edge tolerance (it matches the printed digits):\n|%.4f - %g| = %.4f km > 1e-3 x %g = %.4f km",
-              measured, expected, abs(delta), expected, tolerance)),
+              "expected %g km (prereg printed 3 significant digits) vs measured %.4f: off by %.4f km,\nmore than the 1e-3 relative tolerance (%.4f km); agrees only after rounding",
+              expected, measured, abs(delta), tolerance)),
             hjust = -0.08, vjust = 0.5, size = 2.6, colour = annotation_colour) +
   scale_x_log10(limits = c(5, 1600), breaks = c(10, 30, 60, 100, 300, 1000)) +
   scale_colour_failure(name = "measured edge (R_window), by binding line") +
@@ -89,7 +89,7 @@ fig2 <- ggplot() +
   guides(colour = guide_legend(order = 1), shape = guide_legend(order = 2, nrow = 1)) +
   labs(x = "R (km, log), r = 1.10 AU, σ 0.7 MPa", y = NULL,
        title = "Q4 P2: R_window per configuration",
-       subtitle = paste0("each prereg expected mark is joined by a dashed link to the measured value it is compared with;\n",
+       subtitle = paste0("each prereg expected mark is joined by a short link to the measured value it is compared with;\n",
                          "in every row: the edge on the line, its expected just below; later roots just above")) +
   theme_dyson() + theme(legend.box = "vertical")
 save(fig2, "p2_R_window_by_config.png", w = 10, h = 7.5)
