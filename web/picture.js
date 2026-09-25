@@ -19,9 +19,13 @@
   var W = 400,
     CX = 200,
     MARGIN = 20, // every plate keeps this far inside the picture's edge
-    STRIP_H = 110, // a plate strip above (and, past two plates, below) the vessel
+    // a plate strip above (and, past two plates, below) the vessel, tall enough for
+    // PLATE_LINES lines: BURST's "p·R/2t 700000.0 Pa vs σ_eff(T_shell) 0.0 Pa" needs 5 in a
+    // column, whose width holds exactly the 14-character σ_eff(T_shell)
+    PLATE_LINES = 5,
+    STRIP_H = PLATE_LINES * 19 + 2 * 10 - 2, // lines * LH + 2 * PLATE_PAD - 2, as plateSize
     STRIP_GAP = 12, // strip to the vessel's largest rim
-    CY = 20 + 110 + 12 + 148, // MARGIN + STRIP_H + STRIP_GAP + OUT_MAX: never moves
+    CY = 20 + STRIP_H + 12 + 148, // MARGIN + STRIP_H + STRIP_GAP + OUT_MAX: never moves
     OUT_MIN = 100, // px at R + t = 10 m
     OUT_MAX = 148, // px at R + t = 101 km
     MIN_BAND_PX = 3,

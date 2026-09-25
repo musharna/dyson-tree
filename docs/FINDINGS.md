@@ -469,6 +469,20 @@ finding requires to sit behind a blue-pass wall.** S5 removed a 1.16× error fro
 that number; the remaining overstatement is a further 1.2× to 5×10⁵× depending on
 wall thickness, and it is untouched. The frozen experiments stay frozen.
 
+A limit of the registered STARVE line, found 2026-09-25: its tolerance is an
+**absolute** 1e-9 µmol m⁻² s⁻¹ (`prereg.yaml` `starve_opaque_abs`), shared with
+OPAQUE, whose quantity is a fraction near 0.25. Net carbon has no such scale: far
+out, gross is ~0 (1e-81 at 100 AU) and cold Q10 respiration is tiny, so the deficit
+shrinks with it. At a 100 m wall with the preset algal `r_d` 0.24 the 100 AU deficit is −3.4e-9 and
+STARVE fires; with the deck's DECLARED tenfold cut it is −3.4e-10 (−4.5e-10 at the
+page's solved wall), inside the floor,
+and the line scores HOLDS on an organism that is still losing carbon. The registered
+edges are untouched (near 1–3 AU |net| ≥ 1e-6, and FREEZE binds long before), and the
+prereg stays frozen; the page's STARVE row prints the negative value and says it is
+inside the floor (`tests/test_site_verdict.py`,
+`test_starve_deficit_inside_the_registered_floor_is_named`). A future prereg should
+scale this tolerance to respiration.
+
 ---
 
 ## Reproduce

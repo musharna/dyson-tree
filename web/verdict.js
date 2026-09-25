@@ -195,9 +195,8 @@
       " " +
       withUnit(fmt(L.lhs, d), u) +
       " vs " +
-      rhsName +
-      " " +
-      withUnit(fmt(L.rhs, d), u);
+      // STARVE's right side is the constant 0, named once, not "0 0.000 <unit>"
+      (name === "STARVE" ? rhsName : rhsName + " " + withUnit(fmt(L.rhs, d), u));
     if (name === "BURST" && res.report.sigma_eff === 0)
       cmp +=
         " — the wall is water (T_shell " +
@@ -209,6 +208,14 @@
         fmt(L.margin, 2) +
         ")"
       : withUnit(signed(L.margin, d), u);
+    /* a deficit smaller than the registered absolute floor (prereg
+     * starve_opaque_abs 1e-9) scores HOLDS; far out, cold respiration is that
+     * small, so say the organism is still losing carbon */
+    if (name === "STARVE" && L.margin < 0 && !L.violated)
+      margin +=
+        " — net is negative but inside the registered detection floor (" +
+        fmt(M.EPS_STARVE_OPAQUE, 0) +
+        "), so this line scores HOLDS";
     return {
       cmp: cmp,
       margin: margin,
@@ -314,7 +321,8 @@
     var texts = {};
     M.LOAD_ORDER.forEach(function (n) {
       var tx = lineText(n, res.report.lines[n], res);
-      texts[n] = tx.cmp;
+      // the wound prints the panel's both sides; a " — " explanation stays in the panel
+      texts[n] = tx.cmp.split(" — ")[0];
       $("v-cmp-" + n).textContent = tx.cmp;
       $("v-margin-" + n).textContent = tx.margin;
       var st = $("v-status-" + n);

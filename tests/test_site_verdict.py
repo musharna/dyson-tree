@@ -113,6 +113,10 @@ SCENARIOS = {
     # P2 window (r 1.10, sigma 0.7, R 95.55 km): STARVE +3.11 -> +3.20 with the DECLARED r_d card
     "P2_edge": [{"id": "v-R", "value": "4.98027"}],
     "P2_edge_rd": [{"id": "v-R", "value": "4.98027"}, {"id": "deck-1-count", "value": "1"}],
+    # 100 AU: cold respiration is tiny; with the r_d card the deficit falls inside the
+    # registered absolute floor (prereg starve_opaque_abs 1e-9) and scores HOLDS
+    "r100": [{"id": "v-r", "value": "2"}],
+    "r100_rd": [{"id": "v-r", "value": "2"}, {"id": "deck-1-count", "value": "1"}],
 }
 
 
@@ -255,3 +259,49 @@ def test_declared_respiration_card_allowed_on_page_moves_starve_margin(page):
     for n in LINES:
         rhs = lambda r: r["lines"][n]["cmp"].split(" vs ")[1]  # noqa: E731
         assert rhs(a) == rhs(b), n
+
+
+def test_starve_deficit_inside_the_registered_floor_is_named(page):
+    a, b = page["res"]["r100"], page["res"]["r100_rd"]
+    # positive control: without the card the 100 AU deficit clears the floor
+    assert a["lines"]["STARVE"]["status"] == "VIOLATED", a["lines"]["STARVE"]
+    assert "detection floor" not in a["lines"]["STARVE"]["margin"]
+    # with it, net is still negative but HOLDS, and the row says why
+    assert b["lines"]["STARVE"]["status"] == "HOLDS", b["lines"]["STARVE"]
+    assert -1e-9 < num(b["lines"]["STARVE"]["margin"]) < 0, b["lines"]["STARVE"]
+    assert "inside the registered detection floor (1e-9)" in b["lines"]["STARVE"]["margin"], b["lines"]["STARVE"]
+
+
+# The picture must draw anywhere on the sliders, not only in the six shot states: at
+# f1761b9 107 of a 150-state grid threw "plate ... fits no wrap" (STARVE from 2 AU out,
+# BURST at 0.5 AU and at 1 AU / 100 km). These are the states of each failing class.
+SWEEP = {
+    f"r{r}_R{R}{c}": [{"id": "v-R", "value": str(R)}]
+    + ([{"id": "deck-1-count", "value": "1"}] if c else [])
+    + [{"id": "v-r", "value": str(r)}]
+    for r, R, c in [
+        (-0.3011, 1, ""), (-0.3011, 5, ""), (0, 5, ""), (0.3, 3, ""),
+        (1, 3, ""), (1.5, 1, "_rd"), (2, 3, ""), (2, 5, "_rd"),
+    ]
+}
+
+
+def test_picture_draws_across_the_slider_range():
+    node = shutil.which("node")
+    assert node, "node is required; this test fails rather than skips"
+    subprocess.run(["bash", str(ROOT / "tools" / "build_site.sh")], cwd=ROOT, check=True,
+                   capture_output=True, timeout=120)
+    old = "res[name] = run(steps);"
+    assert DRIVER.count(old) == 1
+    drv_src = DRIVER.replace(old, "try { res[name] = run(steps); } catch (e) { res[name] = { error: String(e.message) }; }")
+    with tempfile.TemporaryDirectory() as tmp:
+        drv = Path(tmp) / "sweep.cjs"
+        drv.write_text(drv_src)
+        proc = subprocess.run([node, str(drv), str(ROOT / "site")], input=json.dumps(SWEEP),
+                              capture_output=True, text=True, timeout=900)
+    assert proc.returncode == 0, proc.stderr
+    res = json.loads(proc.stdout)["res"]
+    thrown = {k: v["error"] for k, v in res.items() if "error" in v}
+    assert not thrown, thrown
+    # positive control: these states do fail lines, so plates were actually placed
+    assert all(violated(v) for v in res.values()), {k: violated(v) for k, v in res.items()}
