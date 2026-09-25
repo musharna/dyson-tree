@@ -448,3 +448,11 @@ def test_bar_clamps_at_one_scale_and_says_so(page):
     assert norm(b) < -1 and b["attrs"].get("data-violated") == "true", b
     assert b["attrs"].get("data-clamped") == "true" and float(b["attrs"]["data-len"]) == -1.0, b
     assert "hr-cap-left" in (b["cap"] or ""), b
+
+
+def test_freeze_bar_title_carries_kelvin_on_both_sides(page):
+    # FREEZE's scale is 10 K; the margin it divides is in K too, so both sides say so
+    t = bar(page["res"]["defaults"], "FREEZE")["attrs"]["title"]
+    assert re.search(r"= [-+−]?\d+(?:\.\d+)? K ÷ 10(?:\.0+)? K = ", t), t
+    # positive control: a line in Pa still prints its unit, not K
+    assert " Pa ÷ " in bar(page["res"]["defaults"], "BURST")["attrs"]["title"]

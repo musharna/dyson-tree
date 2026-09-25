@@ -242,7 +242,7 @@
   var FREEZE_SCALE_K = 10;
   function barScale(name, L, res) {
     if (name === "BURST") return { v: L.rhs, name: "σ_eff(T_shell)", unit: "Pa" };
-    if (name === "FREEZE") return { v: FREEZE_SCALE_K, name: "10 K (a display scale, not a model output)", unit: "" };
+    if (name === "FREEZE") return { v: FREEZE_SCALE_K, name: "10 K (a display scale, not a model output)", unit: "K" };
     if (name === "BOIL") return { v: L.rhs, name: "p_sat(T_int)", unit: "Pa" };
     if (name === "STARVE") return { v: res.org.a_max, name: "a_max (the organism's)", unit: "µmol m⁻² s⁻¹" };
     if (name === "OPAQUE") return { v: L.rhs, name: "f_floor (declared)", unit: "" };

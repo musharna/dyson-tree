@@ -19,6 +19,7 @@ from __future__ import annotations
 
 import http.server
 import json
+import os
 import re
 import signal
 import socketserver
@@ -36,6 +37,8 @@ ROOT = Path(__file__).resolve().parents[1]
 SITE = ROOT / "site"
 FIXTURES = json.loads((ROOT / "web" / "fixtures.json").read_text())
 SUBPATH = "dyson-tree"
+# review screenshots (not the tracked docs/m3_shots): $DT_SMOKE_SHOT_DIR, else _scratch/ (gitignored)
+SHOT_DIR = Path(os.environ.get("DT_SMOKE_SHOT_DIR") or ROOT / "_scratch" / "smoke_shots")
 
 failures: list[str] = []
 notes: list[str] = []
@@ -869,9 +872,7 @@ def exercise_map(page, label: str) -> None:
     settle()
 
 
-MAP_SHOT = (
-    ROOT / ".superpowers" / "sdd" / "2026-09-25-visual-first-dyson" / "task-3-shot.png"
-)
+MAP_SHOT = SHOT_DIR / "task-3-shot.png"
 
 
 def exercise_map_live(page, label: str, shoot: bool) -> None:
@@ -958,9 +959,6 @@ def exercise_map_live(page, label: str, shoot: bool) -> None:
         src() == "precomputed" and page.locator("#map-live-status").count() == 0,
         f"[{label}] map live: card off -> precomputed map current again ({src()})",
     )
-
-
-SHOT_DIR = ROOT / ".superpowers" / "sdd" / "2026-09-25-visual-first-dyson"
 
 
 def exercise_headroom(page, label: str, shoot: bool) -> None:
@@ -1126,6 +1124,7 @@ def main() -> int:
     import shutil
     import tempfile
 
+    SHOT_DIR.mkdir(parents=True, exist_ok=True)
     tmp = Path(tempfile.mkdtemp(prefix="dt-smoke-"))
     shutil.copytree(SITE, tmp / SUBPATH)
     httpd, port = serve(tmp)

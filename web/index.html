@@ -104,10 +104,11 @@
       .hr-zero { position: absolute; left: 50%; top: -3px; bottom: -3px; width: 2px; margin-left: -1px; background: var(--ink); }
       .hr-fill { position: absolute; top: 2px; bottom: 2px; background: var(--curve); }
       .hr-row[data-violated="true"] .hr-fill { background: var(--warn); }
-      .hr-cap { display: none; position: absolute; top: 50%; transform: translateY(-50%); font-size: 16px;
-        font-weight: 700; line-height: 1; color: var(--ink); }
-      .hr-cap-left { display: block; left: -2px; }
-      .hr-cap-right { display: block; right: -2px; }
+      /* the clamp cap: light on dark, over the bar's end, so it reads on either fill colour */
+      .hr-cap { display: none; position: absolute; top: -2px; bottom: -2px; font-size: 13px; font-weight: 700;
+        line-height: 18px; padding: 0 4px; border-radius: 3px; color: #ffffff; background: var(--ink); }
+      .hr-cap-left { display: block; left: 0; }
+      .hr-cap-right { display: block; right: 0; }
       .hr-val { font-size: 12px; text-align: right; font-variant-numeric: tabular-nums; color: var(--muted); }
       /* both sides and the printed margin: in the row for screen readers, shown on hover/focus */
       .hr-detail { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%);
@@ -177,8 +178,8 @@
             <div class="headroom" id="headroom">
               <p id="v-summary" class="vsummary" role="status" aria-live="polite"></p>
               <p id="v-error" class="verdict-failed" role="alert"></p>
-              <p class="hr-key">Headroom = margin ÷ the line's own scale: right of centre holds, left fails;
-                › or ‹ = past ±1 scale. Hover or focus a row for both sides.</p>
+              <p class="hr-key">Headroom = margin ÷ the line's own scale. Right of centre: headroom · left: short of
+                the limit · the row's label is the verdict; › or ‹ = past ±1 scale. Hover or focus a row for both sides.</p>
               <div class="hr-row" id="hr-BURST" data-line="BURST" tabindex="0" role="group" aria-labelledby="hr-BURST-name">
                 <span class="hr-name" id="hr-BURST-name">BURST</span>
                 <span class="hr-status" id="v-status-BURST"></span>
@@ -430,7 +431,7 @@
           <h2>WHAT THIS IS / IS NOT</h2>
           <ul class="isnot-short">
             <li>An uncontained organism at a fixed tissue temperature (the Q1 model).</li>
-            <li>No pressure vessel here; see the vessel above.</li>
+            <li>No pressure vessel in this Q1 model; the vessel is a precondition, not a later extension.</li>
             <li>No spectral wall: a scalar <em>k</em> for a wall is a category error (Q3).</li>
             <li>Registered thermal predictions falsified for algal (Q2b).</li>
             <li>Hatched bands are predictions written before the run; for algal, Q1's failed.</li>
