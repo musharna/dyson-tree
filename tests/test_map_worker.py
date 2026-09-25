@@ -457,3 +457,19 @@ def test_no_worker_says_so_and_never_shows_the_map_as_current(gens):
         text_of(by_id(z, "map-recomputing")) + " " + text_of(by_id(z, "map-stale-note"))
     )
     assert "unavailable" in txt and "not current" in txt, txt
+
+
+# (Task 5 fix round) a coarse preview is provisional: desaturated and hatched, the progress text
+# above the frame, not over the cells; the final level is drawn plain
+def test_preview_is_drawn_provisional_and_progress_sits_above_the_frame(gens):
+    lv, fin, st = gens["live"], gens["final"], gens["stale"]
+    fy = float(need(lv, "map-frame")["attrs"]["y"])
+    c = need(lv, "map-cells")["attrs"]
+    assert c.get("data-provisional") == "true" and c.get("filter") == "url(#map-desat)", c
+    assert need(lv, "map-provisional")["attrs"].get("fill") == "url(#map-hatch-prov)"
+    assert float(need(lv, "map-live-status")["attrs"]["y"]) < fy - 4
+    assert float(need(st, "map-recomputing")["attrs"]["y"]) < fy - 4
+    # positive control: the final level is not provisional and carries no overlay
+    f = need(fin, "map-cells")["attrs"]
+    assert f.get("data-provisional") == "false" and f.get("filter") is None, f
+    assert by_id(fin, "map-provisional") is None

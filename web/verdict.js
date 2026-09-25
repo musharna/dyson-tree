@@ -37,7 +37,9 @@
   MV.setBands({
     P1: { band_au: Q4_RESULT.P1_band_au, R_km: 10, verdict: Q4_RESULT.P1,
       r_close_au: Q4_RESULT.r_close_au, sigma_MPa: Q4_RESULT.sigma_MPa },
-    P2: { band_km: P2.band_km, r_au: P2.r_au, sigma_MPa: P2.sigma_MPa, verdict: Q4_RESULT.P2 },
+    P2: { band_km: P2.band_km, r_au: P2.r_au, sigma_MPa: P2.sigma_MPa, verdict: Q4_RESULT.P2,
+      measured_km: Q4_RESULT.R_window_km.toFixed(1) },
+    order: M.LOAD_ORDER, // the model's check order: a map cell names the first line to fail
   });
   // the <details> inputs: a change here moves the model off the precomputed map's inputs
   var ADVANCED = ["v-albedo", "v-emissivity", "v-topt", "v-omega", "v-ffloor", "v-dust", "v-interior",
@@ -364,6 +366,7 @@
         "model error: " + (err && err.message ? err.message : err);
       $("v-summary").textContent =
         "no verdict: the model raised (see the error line)";
+      $("v-summary").className = "vsummary verdict-failed";
       current = null;
       $("headroom").setAttribute("data-error", "true"); // the bars are the last good design's
       PIC.blank("the model raised");
@@ -401,6 +404,7 @@
     $("v-summary").textContent = bad.length
       ? "VIOLATED: " + bad.join(", ") + " — the picture is " + bad[0]
       : "alive: every line holds";
+    $("v-summary").className = "vsummary " + (bad.length ? "verdict-failed" : "verdict-held");
 
     $("v-tR").textContent = (res.t / s.R).toExponential(3);
     PIC.draw(res, texts);
@@ -441,8 +445,8 @@
       P2.band_km[1] +
       "] km — measured " +
       Q4_RESULT.R_window_km.toFixed(1) +
-      " km, OPAQUE: " +
-      Q4_RESULT.P2;
+      " km, OPAQUE: prediction " +
+      (Q4_RESULT.P2 === "HELD" ? "confirmed" : "falsified");
 
     var pending =
       !(edgeKey("rClose", res) in edgeCache) ||
@@ -567,6 +571,7 @@
       state.source = {
         kind: "live",
         level: map.live.level,
+        provisional: map.live.level !== MAP_FINAL, // a coarse preview, drawn as such
         status: map.live.level === MAP_FINAL
           ? "recomputed for your design (" + spaced(MAP_FINAL) + ")"
           : "your design, " + spaced(map.live.level) + " preview" +

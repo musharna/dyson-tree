@@ -456,3 +456,12 @@ def test_freeze_bar_title_carries_kelvin_on_both_sides(page):
     assert re.search(r"= [-+−]?\d+(?:\.\d+)? K ÷ 10(?:\.0+)? K = ", t), t
     # positive control: a line in Pa still prints its unit, not K
     assert " Pa ÷ " in bar(page["res"]["defaults"], "BURST")["attrs"]["title"]
+
+
+def test_verdict_line_heads_the_vessel_panel():
+    # (Task 5 fix round) the verdict is the first thing in the vessel panel, above the map
+    html = (ROOT / "web" / "index.html").read_text()
+    h, s, m = html.find('id="vessel-h"'), html.find('id="v-summary"'), html.find('id="map"')
+    assert 0 < h < s < m, (h, s, m)
+    # positive control: the headroom bars still follow the map
+    assert m < html.find('id="headroom"')

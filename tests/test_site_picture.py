@@ -93,6 +93,8 @@ SCENARIOS = {
     "boil": [{"id": "v-p-mode", "value": "manual"}, {"id": "v-p", "value": "3.25"}],
     "opaque": [{"id": "v-t-mode", "value": "manual"}, {"id": "v-t", "value": "2"}],
     "P2_edge": [{"id": "v-R", "value": "4.98027"}],
+    # (Task 5 fix round) the far corner: r 100 AU, R 100 km, where the true band is far below 1 px
+    "far": [{"id": "v-R", "value": "5"}, {"id": "v-r", "value": "2"}],
 }
 GESTURE = {"freeze": "FREEZE", "burst": "BURST", "boil": "BOIL", "opaque": "OPAQUE"}
 
@@ -218,7 +220,9 @@ def test_organism_saturation_tracks_net_over_amax(page):
 
 def test_interior_blue_shifts_as_the_wall_thickens(page):
     def rgb(r):
-        fill = by_id(r["pic"], "pic-inner")["attrs"]["fill"]
+        n = by_id(r["pic"], "pic-inner")
+        assert n is not None, "no #pic-inner"
+        fill = n["attrs"]["fill"]
         m = re.fullmatch(r"rgb\((\d+), (\d+), (\d+)\)", fill)
         assert m, fill
         return [int(x) for x in m.groups()]
@@ -235,3 +239,15 @@ def test_svg_is_accessible(page):
     assert "title" in kids and "desc" in kids, kids
     desc = text_of(next(c for c in pic["children"] if c["tag"] == "desc"))
     assert "t/R" in desc, desc
+
+
+# (Task 5 fix round) the clamp note is a drawing note, not a verdict: neutral grey, and a size
+# far below a pixel is said as such, never as "0.00 px"
+def test_clamp_note_is_neutral_and_says_sub_pixel_honestly(page):
+    d, far = by_id(page["defaults"]["pic"], "pic-clamp"), by_id(page["far"]["pic"], "pic-clamp")
+    assert d is not None and far is not None
+    assert d["attrs"].get("fill") == "#5d5d5d", d["attrs"]
+    # positive control: at the defaults the true band is a printable fraction of a pixel
+    assert re.search(r"would draw 0\.\d\d px", text_of(d)), text_of(d)
+    t = text_of(far)
+    assert "would draw ≪ 1 px" in t and "0.00 px" not in t, t

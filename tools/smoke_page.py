@@ -869,6 +869,17 @@ def exercise_map(page, label: str) -> None:
         on_y = min(abs(g["cy"] - g["f"][1]), abs(g["cy"] - g["f"][3])) < 1
         check(g["clamped"] == "true" and on_x and on_y and g["marker"] > 20,
               f"[{label}] r {rv}, R {Rv}: dot on the map corner with a visible edge marker: {g}")
+        # (Task 5 fix round) no registered label under the dot or its edge marker, in real pixels
+        hit = page.evaluate(
+            """() => { const r = (e) => { const b = e.getBoundingClientRect(); return [b.left, b.top, b.right, b.bottom]; };
+                      const marks = [document.getElementById('map-dot')]
+                        .concat([...document.querySelectorAll('#map-clamp polygon')]).map(r);
+                      const labs = ['map-p2-label', 'map-p1-label', 'map-rclose-label']
+                        .map(i => document.getElementById(i)).filter(Boolean);
+                      const ov = (a, b) => a[0] < b[2] && b[0] < a[2] && a[1] < b[3] && b[1] < a[3];
+                      return {n: labs.length, hits: labs.filter(l => marks.some(m => ov(r(l), m))).map(l => l.id)}; }"""
+        )
+        check(hit["n"] >= 2 and not hit["hits"], f"[{label}] r {rv}, R {Rv}: no band label under the dot: {hit}")
     settle()
 
 
@@ -1039,6 +1050,13 @@ def exercise_headroom(page, label: str, shoot: bool) -> None:
     )
     small = [(f["t"], f["px"]) for f in fonts if f["px"] < 12]
     check(fonts and not small, f"[{label}] headroom and card tokens: every visible text >= 12 px ({len(fonts)} texts): {small}")
+    # (Task 5 fix round) the verdict line heads the vessel panel at heading size, above the map
+    vs = page.evaluate(
+        """() => { const s = document.getElementById('v-summary'), m = document.getElementById('map');
+                  return {px: parseFloat(getComputedStyle(s).fontSize), s: s.getBoundingClientRect().bottom,
+                          m: m.getBoundingClientRect().top}; }"""
+    )
+    check(vs["px"] >= 20 and vs["s"] <= vs["m"], f"[{label}] verdict line above the map at heading size: {vs}")
     if shoot:
         page.locator("#vessel").evaluate("e => e.scrollIntoView({block: 'start'})")
         page.screenshot(path=str(SHOT_DIR / "task-4-shot-defaults.png"))

@@ -347,7 +347,9 @@ def test_title_names_the_slice_and_the_no_design_key_is_always_present(page):
     assert "σ 0.7 MPa" in t07 and "σ 1.5 MPa" in t15, (t07, t15)
     # the data: organism does not change the map (algal and vascular slices are identical)
     tv = text_of(by_id(page["vascular"]["map"], "map-title"))
-    assert "vascular" in tv and "same map for algal and vascular" in tv, tv
+    assert "vascular" in tv, tv
+    # (Task 5 fix round, N8) the same-map note moved from the title to the legend line
+    assert "same map for algal and vascular" in text_of(need(page["vascular"]["map"], "map-legend"))
     for name in ("defaults", "s15"):
         assert by_id(page[name]["map"], "map-key-NO_DESIGN") is not None
 
@@ -371,3 +373,132 @@ def test_registered_labels_are_qualified_when_the_design_leaves_the_registered_r
         # the note sits below the frame, over no cell
         f = need(tree, "map-frame")["attrs"]
         assert float(note["attrs"]["y"]) - 14 > float(f["y"]) + float(f["height"]), (name, note["attrs"], f)
+
+
+# (Task 5 fix round) ----------------------------------------------------------------------------
+OUTCOME = {"HELD": "confirmed", "FAILED": "falsified"}
+
+
+def q4_results():
+    t = (ROOT / "experiments" / "q4_vessel" / "RESULTS.md").read_text()
+    got = dict(re.findall(r"^Q4_(P[12])=(HELD|FAILED)$", t, re.M))
+    assert set(got) == {"P1", "P2"}, got
+    return got
+
+
+def run_map(site: Path, scenarios: dict) -> dict:
+    node = shutil.which("node")
+    assert node, "node is required"
+    with tempfile.TemporaryDirectory() as tmp:
+        drv = Path(tmp) / "map.cjs"
+        drv.write_text(DRIVER)
+        proc = subprocess.run([node, str(drv), str(site)], input=json.dumps(scenarios),
+                              capture_output=True, text=True, timeout=600)
+    assert proc.returncode == 0, proc.stderr
+    return json.loads(proc.stdout)
+
+
+def test_registered_labels_name_the_prediction_outcome_never_held(page):
+    want = q4_results()
+    for name, rc in (("defaults", "1.2049"), ("s15", "1.2303"), ("card", "1.2049")):
+        tree = page[name]["map"]
+        texts = {i: text_of(need(tree, i)) for i in REGISTERED_LABELS if by_id(tree, i) is not None}
+        assert "map-p1-label" in texts, (name, texts)  # positive control: the labels are drawn
+        # a registered label never says HELD: that word is the legend's "your design survives"
+        assert not [i for i, t in texts.items() if "HELD" in t], (name, texts)
+        p1 = texts["map-p1-label"]
+        assert p1.startswith("P1 prediction") and "[1.19, 1.27] AU" in p1, p1
+        assert f"— {OUTCOME[want['P1']]} ({rc})" in p1, (p1, want)
+    p2 = text_of(need(page["defaults"]["map"], "map-p2-label"))
+    assert p2.startswith("P2 prediction") and "[60, 300] km" in p2, p2
+    assert f"— {OUTCOME[want['P2']]} (95.6 km)" in p2, (p2, want)
+
+
+def test_registered_outcome_word_follows_the_recorded_result(tmp_path):
+    # the word comes from the recorded result, not from the label: flip P1 in a copy of the
+    # built page and the label must say the other word
+    site = tmp_path / "site"
+    shutil.copytree(ROOT / "site", site)
+    v = site / "verdict.js"
+    src = v.read_text()
+    old = 'P1: "HELD",'
+    assert src.count(old) == 1, "Q4_RESULT.P1 not found as recorded"
+    v.write_text(src.replace(old, 'P1: "FAILED",'))
+    flipped = text_of(need(run_map(site, {"d": []})["d"]["map"], "map-p1-label"))
+    assert "— falsified (1.2049)" in flipped and "confirmed" not in flipped, flipped
+
+
+def plate_of(tree, id_):
+    """The white plate haloText draws just before a label: its box (x0, y0, x1, y1)."""
+    for n in walk(tree):
+        ids = [c["attrs"].get("id") for c in n["children"]]
+        if id_ in ids:
+            k = ids.index(id_)
+            assert k > 0 and n["children"][k - 1]["tag"] == "rect", id_
+            a = n["children"][k - 1]["attrs"]
+            x, y = float(a["x"]), float(a["y"])
+            return (x, y, x + float(a["width"]), y + float(a["height"]))
+    raise AssertionError(f"no #{id_}")
+
+
+def marks_box(tree):
+    """The union box of the dot's ring and any clamp arrowheads."""
+    d = dot(tree)["attrs"]
+    cx, cy = float(d["cx"]), float(d["cy"])
+    xs, ys = [cx - 9, cx + 9], [cy - 9, cy + 9]
+    c = by_id(tree, "map-clamp")
+    for p in [n for n in walk(c)] if c else []:
+        for pt in p["attrs"].get("points", "").split():
+            x, y = map(float, pt.split(","))
+            xs.append(x)
+            ys.append(y)
+    return (min(xs), min(ys), max(xs), max(ys))
+
+
+def overlap(a, b):
+    return a[0] < b[2] and b[0] < a[2] and a[1] < b[3] and b[1] < a[3]
+
+
+def test_p2_label_never_under_the_dot_at_the_clamped_corner(page):
+    hi, d = page["high"]["map"], page["defaults"]["map"]
+    assert by_id(hi, "map-clamp") is not None  # the corner case: dot clamped top right
+    lab = plate_of(hi, "map-p2-label")
+    assert not overlap(lab, marks_box(hi)), (lab, marks_box(hi))
+    # the label sits above the frame, so no in-frame dot position can reach it
+    assert lab[3] <= frame(hi)[1] - 15, (lab, frame(hi))
+    # positive control: the overlap test sees a real overlap (the label against itself)
+    assert overlap(lab, lab) and overlap(plate_of(d, "map-p2-label"), plate_of(d, "map-p2-label"))
+
+
+def test_registered_bands_have_a_thick_outline_and_p2_marks_its_off_map_part(page):
+    tree = page["defaults"]["map"]
+    x0, y0, x1, y1 = frame(tree)
+    for b in ("map-p1", "map-p2"):
+        a = need(tree, b)["attrs"]
+        assert a.get("stroke") == "#1b1b1b" and float(a.get("stroke-width", 0)) >= 2.5, (b, a)
+        h = need(tree, b + "-halo")["attrs"]  # a white under-stroke, so the outline reads on any cell
+        assert h.get("stroke") == "#ffffff" and float(h.get("stroke-width", 0)) >= 5, (b, h)
+    # P2's band runs to 300 km; the map stops at 100 km: an arrow at the top edge says so
+    arrow = need(tree, "map-p2-offmap")
+    pts = [tuple(map(float, p.split(","))) for p in arrow["attrs"]["points"].split()]
+    p2 = need(tree, "map-p2")["attrs"]
+    xc = float(p2["x"]) + float(p2["width"]) / 2
+    assert max(y for _, y in pts) <= y0 and min(y for _, y in pts) < y0 - 6, pts
+    assert all(abs(x - xc) <= 8 for x, _ in pts), (pts, xc)
+    assert by_id(tree, "map-p1-offmap") is None  # control: P1 lies inside the map
+
+
+def test_order_note_is_always_on_the_map(page):
+    import yaml
+
+    order = yaml.safe_load((ROOT / "experiments" / "q4_vessel" / "prereg.yaml").read_text())["load_order"]
+    want = " → ".join(order)
+    for name in ("defaults", "s15", "card", "high"):
+        t = text_of(need(page[name]["map"], "map-order-note"))
+        assert want in t and "first to fail" in t, (name, t)
+
+
+def test_same_map_note_is_in_the_legend_not_the_title(page):
+    v = page["vascular"]["map"]
+    assert "same map for algal and vascular" not in text_of(need(v, "map-title"))
+    assert "same map for algal and vascular" in text_of(need(v, "map-legend"))

@@ -27,7 +27,9 @@
   var NS = "http://www.w3.org/2000/svg";
   var W = 640,
     L = 64, // frame left: y tick labels and the rotated axis title sit left of it
-    T = 58, // frame top: the title line, then the P2 label line
+    T = 90, // frame top: the title line, the status line (live recompute), then the P2 label line
+    STATUS_Y = 44, // baseline of the recompute status, above the frame, never over the cells
+    P2_Y = 68, // baseline of the P2 label: its plate ends 16 px above the frame, clear of any dot mark
     PW = 540,
     PH = 405, // 80 × 60 cells at 6.75 px square
     FS = 14, // >= 12 px on screen at the page's map width (smoke asserts it)
@@ -99,6 +101,15 @@
     }
     hatch("map-hatch-nd", PAL.NO_DESIGN, 1, "#faf8f4");
     hatch("map-hatch-band", "#ffffff", 0.8, null);
+    hatch("map-hatch-prov", "#ffffff", 0.6, null); // over a coarse preview: provisional
+    var f = el("filter", { id: "map-desat" }, d);
+    el("feColorMatrix", { type: "saturate", values: 0.3 }, f);
+  }
+  // a registered result as a prediction outcome; the legend's HELD means "your design survives"
+  function outcome(v) {
+    var o = { HELD: "confirmed", FAILED: "falsified" }[v];
+    if (!o) throw new Error("mapview: registered result is neither HELD nor FAILED (" + v + ")");
+    return o;
   }
 
   function axes(svg) {
@@ -141,7 +152,7 @@
   function offRegistered(state) {
     return state.cardsPlayed > 0 || !!state.advancedChanged;
   }
-  function legend(g, slice, y0, sigma_MPa, off) {
+  function legend(g, slice, y0, sigma_MPa, off, same) {
     var present = D.classes.filter(function (c) {
       return c === "NO_DESIGN" || slice === null || slice.indexOf(String(D.classes.indexOf(c))) >= 0;
     });
@@ -162,6 +173,21 @@
     rows++;
     el("text", { id: "map-key-note", x: L, y: y, "font-size": FS, fill: INK }, g,
       "cells: model at cell centres · dot: your exact design");
+    if (same) {
+      y += KEY_ROW;
+      rows++;
+      el("text", { id: "map-same-note", x: L, y: y, "font-size": FS, fill: MUTED }, g,
+        "same map for algal and vascular at this σ");
+    }
+    // the order the lines are checked in: a cell names only the first to fail
+    if (!bands || !bands.order) throw new Error("mapview: line order not set (verdict.js passes LOAD_ORDER)");
+    var ord = el("text", { id: "map-order-note", x: L, y: y + KEY_ROW, "font-size": FS, fill: INK }, g);
+    wrap("checked in order: " + bands.order.join(" → ") + "; the map shows the first to fail", PW).forEach(
+      function (piece, n) {
+        el("tspan", { x: L, dy: n ? KEY_ROW : 0 }, ord, piece);
+        y += KEY_ROW;
+        rows++;
+      });
     if (bands && Math.abs(sigma_MPa - bands.P2.sigma_MPa) > 1e-9) {
       y += KEY_ROW;
       rows++;
@@ -185,6 +211,11 @@
     return el("text", Object.assign({ "font-size": FS, fill: INK }, attrs), parent, text);
   }
 
+  // a registered band: a white under-stroke, then a solid ink outline, so it reads on any cell colour
+  function outline(g, id, box) {
+    el("rect", Object.assign({ id: id + "-halo", fill: "none", stroke: "#ffffff", "stroke-width": 6 }, box), g);
+    el("rect", Object.assign({ id: id, fill: "url(#map-hatch-band)", stroke: INK, "stroke-width": 2.5 }, box), g);
+  }
   function drawBands(g, sigma_MPa, off) {
     var dag = off ? " †" : "";
     if (!bands) throw new Error("mapview: bands not set (verdict.js calls DysonMapView.setBands)");
@@ -192,14 +223,13 @@
     var x0 = X(lg(p1.band_au[0])), x1 = X(lg(p1.band_au[1]));
     var yc = Y(lg(p1.R_km * 1000));
     var h = PH / (NRR - 1);
-    el("rect", { id: "map-p1", x: x0, y: yc - h / 2, width: x1 - x0, height: h, fill: "url(#map-hatch-band)",
-      stroke: INK, "stroke-width": 1.5, "stroke-dasharray": "3 2" }, g);
+    outline(g, "map-p1", { x: x0, y: yc - h / 2, width: x1 - x0, height: h });
     // the measured edge for this slice's sigma (the committed Q4 run), a tick across the row
     var k = -1;
     p1.sigma_MPa.forEach(function (s, n) { if (Math.abs(s - sigma_MPa) < 1e-9) k = n; });
     if (k < 0) throw new Error("mapview: no measured r_close for sigma " + sigma_MPa);
     var xr = X(lg(p1.r_close_au[k]));
-    var ly = yc - h / 2 - 30, lx = x1 + 40; // label plate: above the row, right of the band
+    var ly = yc - h / 2 - 30, lx = x1 + 24; // label plate: above the row, right of the band
     el("line", { x1: xr, y1: yc - h / 2 - 9, x2: xr, y2: yc + h / 2 + 9, stroke: "#ffffff", "stroke-width": 6 }, g);
     el("line", { id: "map-rclose", x1: xr, y1: yc - h / 2 - 9, x2: xr, y2: yc + h / 2 + 9, stroke: INK,
       "stroke-width": 3 }, g);
@@ -209,17 +239,24 @@
     el("line", { x1: x1, y1: yc - h / 2, x2: lx - 4, y2: ly - FS - 14, stroke: INK, "stroke-width": 1,
       "stroke-dasharray": "3 2" }, g);
     haloText(g, { id: "map-p1-label", x: lx, y: ly - FS - 8 },
-      "P1 band [" + p1.band_au[0] + ", " + p1.band_au[1] + "] AU at " + p1.R_km + " km: " + p1.verdict + dag);
+      "P1 prediction [" + p1.band_au[0] + ", " + p1.band_au[1] + "] AU — " + outcome(p1.verdict) +
+        " (" + p1.r_close_au[k].toFixed(4) + ")" + dag);
     var p2 = bands.P2;
     if (Math.abs(sigma_MPa - p2.sigma_MPa) > 1e-9) return;
     var xc = X(lg(p2.r_au)), w = PW / (NR - 1);
     var top = Math.max(T, Y(lg(p2.band_km[1] * 1000))), bot = Y(lg(p2.band_km[0] * 1000));
-    el("rect", { id: "map-p2", x: xc - w / 2, y: top, width: w, height: bot - top, fill: "url(#map-hatch-band)",
-      stroke: INK, "stroke-width": 1.5, "stroke-dasharray": "3 2" }, g);
+    outline(g, "map-p2", { x: xc - w / 2, y: top, width: w, height: bot - top });
     var clipped = p2.band_km[1] * 1000 > Math.pow(10, GRR[1]);
-    haloText(g, { id: "map-p2-label", x: xc - w / 2, y: T - 8 },
-      "P2 [" + p2.band_km[0] + ", " + p2.band_km[1] + "] km at " + p2.r_au.toFixed(2) + " AU, σ " + p2.sigma_MPa +
-        " MPa: " + p2.verdict + (clipped ? " (map stops at " + Math.pow(10, GRR[1] - 3) + " km)" : "") + dag);
+    if (clipped) {
+      // the band runs above the map's top edge: an arrow out of the frame at its column
+      var m = el("polygon", { id: "map-p2-offmap", fill: INK, stroke: "#ffffff", "stroke-width": 1,
+        points: [[xc, T - 13], [xc - 6, T - 3], [xc + 6, T - 3]].map(function (q) { return q.join(","); }).join(" ") }, g);
+      el("title", {}, m, "P2 band continues to " + p2.band_km[1] + " km, above the map's " +
+        Math.pow(10, GRR[1] - 3) + " km top");
+    }
+    haloText(g, { id: "map-p2-label", x: 8, y: P2_Y },
+      "P2 prediction R_window ∈ [" + p2.band_km[0] + ", " + p2.band_km[1] + "] km" + (clipped ? " (↑ off map)" : "") +
+        " — " + outcome(p2.verdict) + " (" + p2.measured_km + " km)" + dag);
   }
 
   function drawDot(g, state, slice) {
@@ -259,11 +296,14 @@
     if (hiY) tri(cx, T - 2, 0, -1);
   }
 
+  // the data: at this sigma the algal and vascular precomputed slices are identical
+  function sameMap(state) {
+    var s = String(state.sigma_MPa);
+    return sourceOf(state).kind === "precomputed" && D.slices[s + "|algal"] === D.slices[s + "|vascular"];
+  }
   function titleText(state) {
-    var s = String(state.sigma_MPa), same = D.slices[s + "|algal"] === D.slices[s + "|vascular"];
-    var kind = sourceOf(state).kind;
-    return "First line to fail · σ " + s + " MPa · " + state.org +
-      (kind === "live" ? " · your design" : kind === "precomputed" && same ? " · same map for algal and vascular" : "");
+    return "First line to fail · σ " + String(state.sigma_MPa) + " MPa · " + state.org +
+      (sourceOf(state).kind === "live" ? " · your design" : "");
   }
   // state.source (verdict.js): {kind: "precomputed"} (the default), {kind: "stale", lines} (the
   // precomputed slice drawn greyed while the worker recomputes), {kind: "live", level, status}
@@ -294,16 +334,19 @@
           rows.push({ t: piece, id: n === 0 ? "map-recomputing" : n === lines.length - 1 ? "map-stale-note" : null });
         });
       });
-      var y0 = T + PH / 2 - ((rows.length - 1) * KEY_ROW) / 2;
+      // the progress line sits above the frame; the notes about the greyed cells stay on them
+      var head = rows.filter(function (o) { return o.id === "map-recomputing"; }).length;
+      var y0 = T + PH / 2 - ((rows.length - head - 1) * KEY_ROW) / 2;
       rows.forEach(function (row, n) {
-        var a = { x: L + PW / 2, y: y0 + n * KEY_ROW, "text-anchor": "middle", "data-state": "recomputing" };
+        var a = n < head ? { x: 8 + (n ? 12 : 0), y: STATUS_Y + n * KEY_ROW, "data-state": "recomputing" }
+          : { x: L + PW / 2, y: y0 + (n - head) * KEY_ROW, "text-anchor": "middle", "data-state": "recomputing" };
         // a line that wraps keeps its id on its first piece only
         if (row.id && !rows.slice(0, n).some(function (o) { return o.id === row.id; })) a.id = row.id;
         else if (row.id) a["data-part-of"] = row.id;
         haloText(g, a, row.t);
       });
     } else if (src.kind === "live") {
-      haloText(g, { id: "map-live-status", x: L + 8, y: T + FS + 6, "data-level": src.level }, src.status);
+      haloText(g, { id: "map-live-status", x: 8, y: STATUS_Y, "data-level": src.level }, src.status);
     }
     if (state.manualPT)
       haloText(g, { id: "map-manual-note", x: L + 8, y: T + PH - 8 },
@@ -320,10 +363,18 @@
       titleText(state));
     layers.cells = el("g", { id: "map-cells", "shape-rendering": "crispEdges" }, svg);
     if (slice !== null) drawCells(layers.cells, slice);
+    var prov = sourceOf(state).kind === "live" && !!sourceOf(state).provisional;
+    layers.cells.setAttribute("data-provisional", prov ? "true" : "false");
+    if (prov) {
+      // a coarse preview: desaturated and hatched, so it is not read as the recomputed map
+      layers.cells.setAttribute("filter", "url(#map-desat)");
+      el("rect", { id: "map-provisional", x: L, y: T, width: PW, height: PH, fill: "url(#map-hatch-prov)",
+        "pointer-events": "none" }, svg);
+    }
     el("rect", { id: "map-frame", x: L, y: T, width: PW, height: PH, fill: "none", stroke: AXIS }, svg);
     axes(svg);
     var off = offRegistered(state);
-    var rows = legend(el("g", { id: "map-legend" }, svg), slice, H0, state.sigma_MPa, off);
+    var rows = legend(el("g", { id: "map-legend" }, svg), slice, H0, state.sigma_MPa, off, sameMap(state));
     layers.bands = el("g", { id: "map-bands" }, svg);
     drawBands(layers.bands, state.sigma_MPa, off);
     layers.over = el("g", { id: "map-over" }, svg);
@@ -379,7 +430,8 @@
   // NOT current: the cells are greyed, labelled, and the dot does not vouch for their class.
   function draw(svg, state, slice) {
     var src = sourceOf(state), stale = slice === null || src.kind === "stale";
-    var key = String(state.sigma_MPa) + "|" + stale + "|" + offRegistered(state) + "|" +
+    var key = String(state.sigma_MPa) + "|" + stale + "|" + offRegistered(state) + "|" + !!src.provisional + "|" +
+      state.org + "|" + src.kind + "|" +
       (slice === null ? "null" : slice);
     if (!built || built.svg !== svg || built.key !== key) {
       var dim = slice === null && built && built.svg === svg ? built.lastSlice : null;

@@ -453,10 +453,11 @@
       var tip = pt(ro, (3 * Math.PI) / 4);
       el("line", { id: "pic-clamp-leader", x1: tip[0].toFixed(1), y1: tip[1].toFixed(1), x2: 40, y2: CLAMP_Y - 4,
         stroke: MUTED, "stroke-width": 1.2 }, svg);
-      var ct = el("text", { id: "pic-clamp", x: 16, y: CLAMP_Y + FS, "font-size": FS, fill: FAIL }, svg);
+      var ct = el("text", { id: "pic-clamp", x: 16, y: CLAMP_Y + FS, "font-size": FS, fill: MUTED }, svg); // a drawing note, not a verdict
       el("tspan", { x: 16, dy: 0 }, ct, "wall clamped to " + MIN_BAND_PX + " px;");
       el("tspan", { x: 16, dy: LH }, ct,
-        " true t/R " + fmtE(t / R) + " would draw " + (ro - riTrue).toFixed(2) + " px");
+        " true t/R " + fmtE(t / R) + " would draw " +
+          (ro - riTrue < 0.005 ? "≪ 1 px" : (ro - riTrue).toFixed(2) + " px")); // never "0.00 px"
     }
     // a key for the OPAQUE gauge, bottom left above the footer (the clamp label's place; a
     // wall thin enough to clamp never darkens the interior below the floor)
