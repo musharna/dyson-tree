@@ -18,7 +18,9 @@ A DECLARED card applied to a registered run raises here; the page allows it.
 
 from __future__ import annotations
 
+from collections.abc import Mapping, Sequence
 from dataclasses import fields, replace
+from typing import TypedDict
 
 from sim.organism import Organism
 from sim.vessel import VesselInputs
@@ -26,7 +28,29 @@ from sim.vessel import VesselInputs
 ANCHORS = ("MEASURED", "DEMONSTRATED", "DECLARED")
 ROW_KEYS = ("organism", "trait", "input", "delta_or_range", "cost", "anchor", "source")
 
-ROWS = (
+
+
+class DeltaOrRange(TypedDict):
+    op: str
+    param: str
+    unit: str
+    range: list[float]
+    total_cap: float | None
+    max_stack: int
+    clip_note: str
+
+
+class Row(TypedDict):
+    organism: str
+    trait: str
+    input: str
+    delta_or_range: DeltaOrRange
+    cost: str
+    anchor: str
+    source: str
+
+
+ROWS: tuple[Row, ...] = (
     {
         "organism": "fish, insects",
         "trait": "antifreeze proteins",
@@ -87,18 +111,18 @@ class DeclaredInRegisteredRun(ValueError):
     """A DECLARED card may not be played in a registered run (§12)."""
 
 
-def input_exists(row) -> bool:
+def input_exists(row: Row) -> bool:
     return row["input"] in VESSEL_FIELDS or row["input"] in ORGANISM_FIELDS
 
 
-def row_by_trait(trait: str, rows=ROWS):
+def row_by_trait(trait: str, rows: Sequence[Row] = ROWS) -> Row:
     for r in rows:
         if r["trait"] == trait:
             return r
     raise KeyError(trait)
 
 
-def total(row, values) -> tuple[float, str | None]:
+def total(row: Row, values: Sequence[float]) -> tuple[float, str | None]:
     """The combined effect of playing `values` (one per card) of `row`; (total, clip)."""
     d = row["delta_or_range"]
     if len(values) > d["max_stack"]:
@@ -123,7 +147,7 @@ def total(row, values) -> tuple[float, str | None]:
     return tot, None
 
 
-def reach(row) -> list[float]:
+def reach(row: Row) -> list[float]:
     """Every total the row can reach at its edges: both card endpoints, and the max stack."""
     d = row["delta_or_range"]
     lo, hi = d["range"]
@@ -132,28 +156,34 @@ def reach(row) -> list[float]:
     return sorted(pts)
 
 
-def apply(row, tot: float, inputs: VesselInputs, organism: Organism):
+def apply(
+    row: Row, tot: float, inputs: VesselInputs, organism: Organism
+) -> tuple[VesselInputs, Organism]:
     """Move the row's ONE input by the total `tot`; returns (inputs, organism)."""
     name, op = row["input"], row["delta_or_range"]["op"]
+
+    def moved(old: float) -> float:
+        return old - tot if op == "subtract" else old * tot
+
     if name in VESSEL_FIELDS:
-        obj = inputs
-    elif name in ORGANISM_FIELDS:
-        obj = organism
-    else:
-        raise KeyError(f"{row['trait']}: input {name!r} does not exist")
-    old = getattr(obj, name)
-    new = old - tot if op == "subtract" else old * tot
-    obj = replace(obj, **{name: new})
-    return (obj, organism) if name in VESSEL_FIELDS else (inputs, obj)
+        return replace(inputs, **{name: moved(getattr(inputs, name))}), organism
+    if name in ORGANISM_FIELDS:
+        return inputs, replace(organism, **{name: moved(getattr(organism, name))})
+    raise KeyError(f"{row['trait']}: input {name!r} does not exist")
 
 
 def play(
-    plays, inputs: VesselInputs, organism: Organism, *, registered: bool, rows=ROWS
-):
+    plays: Mapping[str, Sequence[float]],
+    inputs: VesselInputs,
+    organism: Organism,
+    *,
+    registered: bool,
+    rows: Sequence[Row] = ROWS,
+) -> tuple[VesselInputs, Organism, list[str]]:
     """Play {trait: [value per card]}; returns (inputs, organism, clips).
 
     Raises DeclaredInRegisteredRun if a DECLARED card is played with registered=True."""
-    clips = []
+    clips: list[str] = []
     for trait, values in plays.items():
         if not values:
             continue

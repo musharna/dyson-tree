@@ -494,6 +494,8 @@ def exercise_picture(page, label: str, shoot: bool) -> None:
         page.reload(wait_until="load")
         settle()
 
+    discs = []  # (cx, cy, r) of the organism disc per measured state: must never move or resize
+
     def measure(tag, line=None):
         """Critic round 1: text size, wound anchoring, rim clearance, disc colour, clamp leader."""
         m = page.evaluate(
@@ -532,9 +534,18 @@ def exercise_picture(page, label: str, shoot: bool) -> None:
             near = min(dist_rect(b) for b in m["lab"])
             check(near > C["ro"] + 2, f"[{label}] {tag}: fracture label clear of the rim (nearest {near:.1f} px, rim {C['ro']:.1f} px)")
         elif line in ("FREEZE", "BOIL", "OPAQUE"):
-            cy = [((b["l"] + b["r"]) / 2 - C["x"], (b["t"] + b["b"]) / 2 - C["y"]) for b in m["lab"]]
-            inside = all((x * x + y * y) ** 0.5 < C["ri"] for x, y in cy)
-            check(inside, f"[{label}] {tag}: killing number anchored inside the interior wound {cy} (ri {C['ri']:.1f})")
+            # critic round 3: the plate may sit outside the vessel; it is anchored to the wound by
+            # a leader from its edge whose far end lies inside the interior
+            ends = page.evaluate(
+                """(line) => [...document.querySelectorAll('#pic-ov-' + line + ' [data-mark=leader]')].map(l => {
+                     const svg = document.getElementById('pic'), pt = svg.createSVGPoint();
+                     pt.x = parseFloat(l.getAttribute('x1')); pt.y = parseFloat(l.getAttribute('y1'));
+                     const q = pt.matrixTransform(svg.getScreenCTM()); return [q.x, q.y]; })""",  # getScreenCTM is viewport space, as getBoundingClientRect
+                line,
+            )
+            d_in = [((x - C["x"]) ** 2 + (y - C["y"]) ** 2) ** 0.5 for x, y in ends]
+            check(bool(d_in) and all(d < C["ri"] for d in d_in),
+                  f"[{label}] {tag}: killing number anchored to the interior wound by a leader ending inside (ends at {[round(d, 1) for d in d_in]} px, ri {C['ri']:.1f})")
         rgb = [int(x) for x in re.findall(r"\d+", m["fill"])[:3]]
         mx, mn = max(rgb) / 255, min(rgb) / 255
         lum = (mx + mn) / 2
@@ -557,15 +568,19 @@ def exercise_picture(page, label: str, shoot: bool) -> None:
               const plates = [...svg.querySelectorAll('#pic-overlays rect')].map(r => ({owner: r.parentNode.id,
                 x0: n(r,'x'), y0: n(r,'y'), x1: n(r,'x') + n(r,'width'), y1: n(r,'y') + n(r,'height')}));
               const segs = [];
-              const add = (e, pts) => { for (let i = 1; i < pts.length; i++) segs.push({id: (e.id || e.parentNode.id) + ':' + e.tagName, a: pts[i-1], b: pts[i]}); };
+              const add = (e, pts) => { for (let i = 1; i < pts.length; i++) segs.push({id: (e.id || e.parentNode.id) + ':' + e.tagName, a: pts[i-1], b: pts[i], sw: parseFloat(getComputedStyle(e).strokeWidth) || 0}); };
               svg.querySelectorAll('#pic-overlays line, #pic-clamp-leader').forEach(e =>
                 add(e, [[n(e,'x1'), n(e,'y1')], [n(e,'x2'), n(e,'y2')]]));
               svg.querySelectorAll('#pic-overlays polyline').forEach(e =>
                 add(e, e.getAttribute('points').trim().split(/\\s+/).map(p => p.split(',').map(Number))));
               const rings = [...svg.querySelectorAll('#pic-overlays circle')].filter(c => c.getAttribute('fill') === 'none')
                 .map(c => ({id: c.parentNode.id + ':ring', cx: n(c,'cx'), cy: n(c,'cy'), r: n(c,'r')}));
-              const o = document.getElementById('pic-organism');
-              return {plates, segs, rings, disc: {cx: n(o,'cx'), cy: n(o,'cy'), r: n(o,'r')}}; }"""
+              const o = document.getElementById('pic-organism'), inn = document.getElementById('pic-inner');
+              const vb = svg.viewBox.baseVal;
+              return {plates, segs, rings, disc: {cx: n(o,'cx'), cy: n(o,'cy'), r: n(o,'r')},
+                      inner: {cx: n(inn,'cx'), cy: n(inn,'cy'), r: n(inn,'r')},
+                      outer: (() => { const e = document.getElementById('pic-outer');
+                        return {cx: n(e,'cx'), cy: n(e,'cy'), r: n(e,'r'), sw: parseFloat(e.getAttribute('stroke-width')) || 0}; })(), vb: {w: vb.width, h: vb.height}}; }"""
         )
 
         def seg_hits(a, b, R):
@@ -595,7 +610,60 @@ def exercise_picture(page, label: str, shoot: bool) -> None:
         hits = [f"{s_['id']} x plate {R['owner']}" for R in g["plates"] for s_ in g["segs"] if seg_hits(s_["a"], s_["b"], R)]
         hits += [f"{c['id']} x plate {R['owner']}" for R in g["plates"] for c in g["rings"] if ring_hits(c, R)]
         check(not hits, f"[{label}] {tag}: no overlay mark or leader crosses a label plate: {sorted(set(hits))[:6]}")
+        # polish item 7: every plate keeps a margin inside the picture's edge
+        for R in g["plates"]:
+            m_ = min(R["x0"], R["y0"], g["vb"]["w"] - R["x1"], g["vb"]["h"] - R["y1"])
+            check(m_ >= 8, f"[{label}] {tag}: plate {R['owner']} keeps >= 8 units inside the picture edge ({m_:.1f})")
+        # polish item 6: a plate never overlaps the wall band: wholly inside the interior, or
+        # wholly outside the rim (incl. its outline)
+        I, O = g["inner"], g["outer"]
+        for R in g["plates"]:
+            far = max(((x - I["cx"]) ** 2 + (y - I["cy"]) ** 2) ** 0.5 for x in (R["x0"], R["x1"]) for y in (R["y0"], R["y1"]))
+            nx = min(max(O["cx"], R["x0"]), R["x1"]) - O["cx"]
+            ny = min(max(O["cy"], R["y0"]), R["y1"]) - O["cy"]
+            near = (nx * nx + ny * ny) ** 0.5
+            check(far <= I["r"] - 3 or near >= O["r"] + O["sw"] / 2 + 3,
+                  f"[{label}] {tag}: plate {R['owner']} clear of the wall band (inner corner reach {far:.1f} vs interior {I['r']:.1f}; nearest {near:.1f} vs rim {O['r']:.1f})")
+        # critic round 2: interior shows between the disc (incl. its stroke) and the wall band's
+        # inner edge, measured on RENDERED px
+        w = page.evaluate(
+            """() => { const svg = document.getElementById('pic'), k = svg.getBoundingClientRect().width / svg.viewBox.baseVal.width;
+              const o = document.getElementById('pic-organism'), i = document.getElementById('pic-inner');
+              const ob = o.getBoundingClientRect(), ib = i.getBoundingClientRect();
+              const sw = parseFloat(getComputedStyle(o).strokeWidth) * k;
+              const dx = (ob.left + ob.right) / 2 - (ib.left + ib.right) / 2, dy = (ob.top + ob.bottom) / 2 - (ib.top + ib.bottom) / 2;
+              return {gap: ib.width / 2 - (Math.hypot(dx, dy) + ob.width / 2 + sw / 2), k}; }"""
+        )
+        check(w["gap"] >= 10, f"[{label}] {tag}: disc (with stroke) clears the wall band by {w['gap']:.1f} rendered px >= 10")
+        # critic round 3: marks keep >= 6 rendered px from every plate; a leader (a segment with
+        # an endpoint on a plate's boundary) is the one mark allowed to meet it
+        k_ = page.evaluate("() => { const s = document.getElementById('pic'); return s.getBoundingClientRect().width / s.viewBox.baseVal.width; }")
+
+        def on_edge(q, R):
+            inx, iny = R["x0"] - 0.6 <= q[0] <= R["x1"] + 0.6, R["y0"] - 0.6 <= q[1] <= R["y1"] + 0.6
+            return inx and iny and min(abs(q[0] - R["x0"]), abs(q[0] - R["x1"]), abs(q[1] - R["y0"]), abs(q[1] - R["y1"])) <= 0.6
+
+        def seg_rect_dist(a, b, R):
+            best = float("inf")
+            for i in range(41):
+                t = i / 40
+                x, y = a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t
+                dx = max(R["x0"] - x, 0, x - R["x1"])
+                dy = max(R["y0"] - y, 0, y - R["y1"])
+                best = min(best, (dx * dx + dy * dy) ** 0.5)
+            return best
+
+        near_ = []
+        for R in g["plates"]:
+            for s_ in g["segs"]:
+                if s_["id"].startswith("pic-clamp") or on_edge(s_["a"], R) or on_edge(s_["b"], R):
+                    continue
+                dd = (seg_rect_dist(s_["a"], s_["b"], R) - s_["sw"] / 2) * k_  # to the stroke's edge
+                if dd < 6:
+                    near_.append(f"{s_['id']} {dd:.1f}px from plate {R['owner']}")
+        check(not near_, f"[{label}] {tag}: every mark keeps >= 6 px from every plate: {near_[:4]}")
         d = g["disc"]
+        discs.append((tag, round(d["cx"], 2), round(d["cy"], 2), round(d["r"], 2)))
         for R in g["plates"]:
             if R["owner"] == "pic-ov-BURST":
                 continue
@@ -608,7 +676,7 @@ def exercise_picture(page, label: str, shoot: bool) -> None:
         m = page.evaluate(
             """() => { const g = document.getElementById('pic-ov-OPAQUE');
               const cs = (e, p) => getComputedStyle(e)[p];
-              const hatch = [...g.querySelectorAll('line')].map(l => ({c: cs(l, 'stroke'), a: parseFloat(cs(l, 'strokeOpacity'))}));
+              const hatch = [...g.querySelectorAll('line:not([data-mark^=leader])')].map(l => ({c: cs(l, 'stroke'), a: parseFloat(cs(l, 'strokeOpacity'))}));
               const veil = g.querySelector('[data-mark=veil]');
               return {hatch, inner: cs(document.getElementById('pic-inner'), 'fill'),
                       veil: veil ? {c: cs(veil, 'fill'), a: parseFloat(cs(veil, 'fillOpacity'))} : null}; }"""
@@ -706,6 +774,9 @@ def exercise_picture(page, label: str, shoot: bool) -> None:
         shot(name)
         settle()
     reload()
+    geo_ = sorted({d[1:] for d in discs})
+    check(len(discs) == 6 and len(geo_) == 1,
+          f"[{label}] organism disc (cx, cy, r) identical in all six states: {discs}")
 
 
 
@@ -735,6 +806,20 @@ def exercise_q4_band(page, label: str) -> None:
     inside = [m["x0"] <= d["x"] <= m["x1"] for d in m["dots"]]
     check(inside == [True] * 3 if want.get("P1") == "HELD" else not all(inside),
           f"[{label}] measured marks sit where the verdict says relative to the band: {inside}")
+    # critic round 5: every text >= 12 rendered px; no text straddles the band's left/right edge
+    t = page.evaluate(
+        """() => { const svg = document.getElementById('q4-band'); svg.scrollIntoView({block: 'center'});
+                  const k = svg.getBoundingClientRect().width / svg.viewBox.baseVal.width;
+                  const rb = document.getElementById('q4-band-rect').getBoundingClientRect();
+                  return { x0: rb.left, x1: rb.right, y0: rb.top, y1: rb.bottom, texts: [...svg.querySelectorAll('text')].map(e => {
+                    const b = e.getBoundingClientRect();
+                    return {t: e.textContent.slice(0, 24), px: parseFloat(getComputedStyle(e).fontSize) * k, l: b.left, r: b.right, t0: b.top, t1: b.bottom}; }) }; }"""
+    )
+    small = [(x["t"], round(x["px"], 1)) for x in t["texts"] if x["px"] < 12]
+    check(t["texts"] and not small, f"[{label}] Q4 band: every text >= 12 px rendered: {small}")
+    cross = [x["t"] for x in t["texts"] if any(x["l"] + 2 < e < x["r"] - 2 for e in (t["x0"], t["x1"]))
+             and x["t1"] > t["y0"] and x["t0"] < t["y1"]]  # text beside the band, not the title/axis
+    check(not cross, f"[{label}] Q4 band: no label runs across a band edge: {cross}")
 
 
 def main() -> int:
