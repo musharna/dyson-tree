@@ -162,7 +162,7 @@ COMPARATOR = {
 }
 
 
-def _probe_states():
+def _probe_states() -> list[tuple[float, float, float, float, float]]:
     """Resolved (p, t, r, R, sigma) states the comparators are read at: P1 and P2."""
     out = []
     for r, R, s in ((1.20, 10e3, 0.7e6), (1.10, 95e3, 0.7e6), (1.10, 1e3, 3.1e6)):
@@ -209,8 +209,9 @@ def test_rule1_inputs_exist_and_comparators_are_semantic():
     ghost = dict(copy.deepcopy(RD), input="leaf_armour")
     assert "does not exist" in rule1_failures(ghost)[0]
     # an f_floor card: a real input that IS a comparator; a name test on "T_freeze" misses it
-    ffl = dict(copy.deepcopy(RD), input="f_floor", trait="brighter chloroplasts")
-    ffl["delta_or_range"].update(op="subtract", range=[0.0, 0.1])
+    ffl = fixture(
+        dict(RD, input="f_floor", trait="brighter chloroplasts"), op="subtract", range=[0.0, 0.1]
+    )
     assert "{'f_floor'}" in rule1_failures(ffl)[0]
     # an antifreeze row wired to a non-comparator input moves nothing: also rejected
     afp_wrong = dict(copy.deepcopy(AFP), input="t_opt_K")
@@ -401,7 +402,8 @@ def test_rule3_cap_is_where_the_sigma_31_edge_leaves_the_box():
         mid = 0.5 * (lo + hi)
         lo, hi = (mid, hi) if top(mid) < 0 else (lo, mid)
     assert round(0.5 * (lo + hi), 3) == 1.343
-    assert AFP["delta_or_range"]["total_cap"] <= 0.5 * (lo + hi)
+    cap = AFP["delta_or_range"]["total_cap"]
+    assert cap is not None and cap <= 0.5 * (lo + hi)
 
 
 def test_declared_card_refused_in_registered_run():
