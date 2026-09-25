@@ -145,6 +145,13 @@ def by_id(tree, id_):
     return hits[0] if hits else None
 
 
+def need(tree, id_):
+    """by_id for a node the test requires: fails with the id instead of returning None."""
+    n = by_id(tree, id_)
+    assert n is not None, f"no #{id_}"
+    return n
+
+
 def text_of(node):
     return node["text"] + "".join(text_of(c) for c in node["children"])
 
@@ -180,7 +187,11 @@ def test_worker_mapcell_is_make_map_mapcell_verbatim():
     a, b = fn_source(ref, "mapCell"), fn_source(wk, "mapCell")
     assert a == b, f"\nmake_map.mjs: {a}\nmap_worker.js: {b}"
     # the grid axis the worker places cells with is make_map's too
-    ax = lambda t: re.sub(r"\s+", " ", re.search(r"const axis = [^\n]+", t).group(0))  # noqa: E731
+    def ax(t: str) -> str:
+        m = re.search(r"const axis = [^\n]+", t)
+        assert m, "no const axis"
+        return re.sub(r"\s+", " ", m.group(0))
+
     assert ax(ref).replace("export ", "") == ax(wk), (ax(ref), ax(wk))
     # positive control: the normaliser does see a one-token drift
     assert fn_source(wk.replace('"HELD"', '"HOLD"'), "mapCell") != a
@@ -353,7 +364,7 @@ def stored_map(g):
 
 
 def source(tree):
-    return by_id(tree, "map-cells")["attrs"].get("data-source")
+    return need(tree, "map-cells")["attrs"].get("data-source")
 
 
 def test_stale_generation_is_dropped_and_precomputed_stays(gens):
@@ -397,12 +408,12 @@ def test_precomputed_is_greyed_and_labelled_not_current_while_recomputing(gens):
     # positive control: at the defaults the precomputed map is current, not dimmed, no label
     assert (
         source(d) == "precomputed"
-        and by_id(d, "map-cells")["attrs"].get("opacity") is None
+        and need(d, "map-cells")["attrs"].get("opacity") is None
     )
     assert by_id(d, "map-recomputing") is None and by_id(d, "map-live-status") is None
     assert cell_classes(s) == stored_map(gens)
     assert (
-        source(s) == "stale" and by_id(s, "map-cells")["attrs"].get("opacity") == "0.35"
+        source(s) == "stale" and need(s, "map-cells")["attrs"].get("opacity") == "0.35"
     )
     rc = by_id(s, "map-recomputing")
     assert rc is not None and "recomputing for your design" in text_of(rc), (
@@ -411,8 +422,8 @@ def test_precomputed_is_greyed_and_labelled_not_current_while_recomputing(gens):
     note = by_id(s, "map-stale-note")
     assert note is not None and "not current" in text_of(note)
     # the dot does not vouch for a cell class that is not current
-    assert by_id(s, "map-dot")["attrs"]["data-cell-class"] == ""
-    assert by_id(d, "map-dot")["attrs"]["data-cell-class"] == "HELD"
+    assert need(s, "map-dot")["attrs"]["data-cell-class"] == ""
+    assert need(d, "map-dot")["attrs"]["data-cell-class"] == "HELD"
     assert "same map for algal and vascular" not in text_of(by_id(s, "map-title"))
 
 
@@ -440,7 +451,7 @@ def test_advanced_input_off_default_recomputes(gens):
 def test_no_worker_says_so_and_never_shows_the_map_as_current(gens):
     z = gens["noWorker"]
     assert (
-        source(z) == "stale" and by_id(z, "map-cells")["attrs"].get("opacity") == "0.35"
+        source(z) == "stale" and need(z, "map-cells")["attrs"].get("opacity") == "0.35"
     )
     txt = (
         text_of(by_id(z, "map-recomputing")) + " " + text_of(by_id(z, "map-stale-note"))

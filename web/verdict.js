@@ -438,6 +438,7 @@
     w.onerror = function (ev) {
       if (gen !== map.gen) return;
       map.error = "worker error: " + ((ev && ev.message) || "the worker script failed to load");
+      stopWorker();
       redrawMap();
     };
     req.gen = gen;
