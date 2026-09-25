@@ -806,6 +806,20 @@ def exercise_q4_band(page, label: str) -> None:
     inside = [m["x0"] <= d["x"] <= m["x1"] for d in m["dots"]]
     check(inside == [True] * 3 if want.get("P1") == "HELD" else not all(inside),
           f"[{label}] measured marks sit where the verdict says relative to the band: {inside}")
+    # critic round 5: every text >= 12 rendered px; no text straddles the band's left/right edge
+    t = page.evaluate(
+        """() => { const svg = document.getElementById('q4-band'); svg.scrollIntoView({block: 'center'});
+                  const k = svg.getBoundingClientRect().width / svg.viewBox.baseVal.width;
+                  const rb = document.getElementById('q4-band-rect').getBoundingClientRect();
+                  return { x0: rb.left, x1: rb.right, y0: rb.top, y1: rb.bottom, texts: [...svg.querySelectorAll('text')].map(e => {
+                    const b = e.getBoundingClientRect();
+                    return {t: e.textContent.slice(0, 24), px: parseFloat(getComputedStyle(e).fontSize) * k, l: b.left, r: b.right, t0: b.top, t1: b.bottom}; }) }; }"""
+    )
+    small = [(x["t"], round(x["px"], 1)) for x in t["texts"] if x["px"] < 12]
+    check(t["texts"] and not small, f"[{label}] Q4 band: every text >= 12 px rendered: {small}")
+    cross = [x["t"] for x in t["texts"] if any(x["l"] + 2 < e < x["r"] - 2 for e in (t["x0"], t["x1"]))
+             and x["t1"] > t["y0"] and x["t0"] < t["y1"]]  # text beside the band, not the title/axis
+    check(not cross, f"[{label}] Q4 band: no label runs across a band edge: {cross}")
 
 
 def main() -> int:

@@ -391,7 +391,10 @@
       svg.appendChild(n);
       return n;
     }
-    var X0 = 1.1, X1 = 1.35, L = 30, Rt = 385, TOP = 22, BOT = 88;
+    // text >= 12 px rendered at the page width (smoke asserts it); dot labels sit in a column
+    // right of the band, so none straddles a band edge
+    var FS = 13, X0 = 1.1, X1 = 1.35, L = 24, Rt = 300, TOP = 34, ROW = 26, BOT = TOP + 12 + 3 * ROW;
+    svg.setAttribute("viewBox", "0 0 400 " + (BOT + 52));
     var x = function (r) { return L + ((r - X0) / (X1 - X0)) * (Rt - L); };
     var defs = mk("defs", {});
     var pat = document.createElementNS(NS, "pattern");
@@ -405,22 +408,24 @@
     var b = Q4_RESULT.P1_band_au;
     mk("rect", { id: "q4-band-rect", x: x(b[0]), y: TOP, width: x(b[1]) - x(b[0]), height: BOT - TOP,
       fill: "url(#q4hatch)", stroke: "#8a8378", "stroke-dasharray": "4 3", "stroke-width": "1" });
-    mk("text", { id: "q4-band-label", x: (x(b[0]) + x(b[1])) / 2, y: TOP - 6, "text-anchor": "middle",
-      "font-size": "11", fill: "#6b655c" }, "pre-registered [" + b[0] + ", " + b[1] + "] AU (" + Q4_RESULT.P1 + ")");
+    mk("text", { id: "q4-band-label", x: (x(b[0]) + x(b[1])) / 2, y: TOP - 9, "text-anchor": "middle",
+      "font-size": FS, fill: "#6b655c" }, "pre-registered [" + b[0] + ", " + b[1] + "] AU (" + Q4_RESULT.P1 + ")");
+    var LX = Math.max(Rt, x(b[1])) + 10; // the label column
     Q4_RESULT.r_close_au.forEach(function (r, i) {
-      var y = TOP + 14 + i * 20;
-      mk("circle", { "data-mark": "q4-measured", cx: x(r), cy: y, r: 4, fill: "#1565C0" });
-      mk("text", { x: x(r) + 8, y: y + 4, "font-size": "11", fill: "#1f1f1f" },
-        "σ " + Q4_RESULT.sigma_MPa[i] + " MPa: " + r.toFixed(4) + " AU");
+      var y = TOP + 6 + ROW / 2 + i * ROW;
+      mk("line", { x1: x(r) + 5, y1: y, x2: LX - 4, y2: y, stroke: "#b5b0a6", "stroke-dasharray": "2 3" });
+      mk("circle", { "data-mark": "q4-measured", cx: x(r), cy: y, r: 4.5, fill: "#1565C0" });
+      mk("text", { x: LX, y: y + 4.5, "font-size": FS, fill: "#1f1f1f" },
+        "σ " + Q4_RESULT.sigma_MPa[i] + ": " + r.toFixed(4));
     });
     mk("line", { x1: L, y1: BOT, x2: Rt, y2: BOT, stroke: "#9a948b" });
     [1.1, 1.15, 1.2, 1.25, 1.3, 1.35].forEach(function (t) {
       mk("line", { x1: x(t), y1: BOT, x2: x(t), y2: BOT + 4, stroke: "#9a948b" });
-      mk("text", { x: x(t), y: BOT + 16, "text-anchor": "middle", "font-size": "10", fill: "#5d5d5d" },
+      mk("text", { x: x(t), y: BOT + 19, "text-anchor": "middle", "font-size": FS, fill: "#5d5d5d" },
         t.toFixed(2));
     });
-    mk("text", { x: (L + Rt) / 2, y: BOT + 30, "text-anchor": "middle", "font-size": "11", fill: "#5d5d5d" },
-      "r (AU): measured r_close, model output");
+    mk("text", { x: 4, y: BOT + 42, "font-size": FS, fill: "#5d5d5d" },
+      "r (AU): measured r_close; σ in MPa");
     var v = $("q4-verdict");
     v.textContent = "P1 " + Q4_RESULT.P1 + " (binding FREEZE) · P2 " + Q4_RESULT.P2 +
       " (R_window " + Q4_RESULT.R_window_km.toFixed(1) + " km, OPAQUE)";

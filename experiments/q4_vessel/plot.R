@@ -51,7 +51,7 @@ oth <- subset(p2, quantity != "R_window")
 # a root that IS the edge (f_floor 0.50: OPAQUE binds) is not a later root
 oth <- oth[!mapply(function(c, m) any(abs(win$measured[win$config == c] - m) < 1e-9), oth$config, oth$measured), ]
 oth$what <- paste0(sub("_root", "", oth$quantity), " root (not the edge)")
-bad <- subset(p2, tol_status == "outside")
+bad <- subset(p2, tol_status == "outside" & !is.na(expected))
 exp2 <- subset(p2, !is.na(expected))
 # a root row that IS its edge (f_floor 0.50: its R_window row carries no expected) is an edge ring
 is_edge <- exp2$quantity == "R_window" |
@@ -77,10 +77,13 @@ fig2 <- ggplot() +
   geom_point(data = exp2, aes(expected, yi + dy, shape = mark), size = 3, colour = "grey35") +
   geom_point(data = win, aes(measured, yi, colour = binding), size = 3) +
   geom_text(data = win, aes(measured, yi, label = sprintf("%.1f km", measured)), hjust = 1.35, size = 2.6) +
-  geom_text(data = bad, aes(measured, yi, label = "OPAQUE root outside tolerance\n(10.584 vs printed 10.6 km)"),
-            hjust = -0.12, vjust = 0.5, size = 2.6, colour = palette_tolerance[["outside"]]) +
+  # the rule from run.py / RESULTS.md: within_tol = |delta| <= edge_R_rel (1e-3) x expected, in R
+  geom_text(data = bad, aes(measured, yi, label = sprintf(
+              "OPAQUE root outside its edge tolerance (it matches the printed digits):\n|%.4f - %g| = %.4f km > 1e-3 x %g = %.4f km",
+              measured, expected, abs(delta), expected, tolerance)),
+            hjust = -0.08, vjust = 0.5, size = 2.6, colour = annotation_colour) +
   scale_x_log10(limits = c(5, 1600), breaks = c(10, 30, 60, 100, 300, 1000)) +
-  scale_colour_failure(name = "R_window binding") +
+  scale_colour_failure(name = "measured edge (R_window), by binding line") +
   scale_y_continuous(breaks = seq_along(levels(p2$config)), labels = levels(p2$config)) +
   scale_shape_mark(name = NULL) +
   guides(colour = guide_legend(order = 1), shape = guide_legend(order = 2, nrow = 1)) +

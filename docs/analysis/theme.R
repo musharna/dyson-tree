@@ -53,3 +53,5 @@ root_lift <- 0.14
 root_expected_dy <- 0.44
 # P2 edge expecteds: below their dot by this much (rows); well under half a row.
 edge_expected_dy_p2 <- -0.3
+# Neutral annotation text on a figure (notes, not data): never a status colour.
+annotation_colour <- "grey20"
