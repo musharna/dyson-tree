@@ -564,8 +564,10 @@ def exercise_picture(page, label: str, shoot: bool) -> None:
                 add(e, e.getAttribute('points').trim().split(/\\s+/).map(p => p.split(',').map(Number))));
               const rings = [...svg.querySelectorAll('#pic-overlays circle')].filter(c => c.getAttribute('fill') === 'none')
                 .map(c => ({id: c.parentNode.id + ':ring', cx: n(c,'cx'), cy: n(c,'cy'), r: n(c,'r')}));
-              const o = document.getElementById('pic-organism');
-              return {plates, segs, rings, disc: {cx: n(o,'cx'), cy: n(o,'cy'), r: n(o,'r')}}; }"""
+              const o = document.getElementById('pic-organism'), inn = document.getElementById('pic-inner');
+              const vb = svg.viewBox.baseVal;
+              return {plates, segs, rings, disc: {cx: n(o,'cx'), cy: n(o,'cy'), r: n(o,'r')},
+                      inner: {cx: n(inn,'cx'), cy: n(inn,'cy'), r: n(inn,'r')}, vb: {w: vb.width, h: vb.height}}; }"""
         )
 
         def seg_hits(a, b, R):
@@ -595,6 +597,17 @@ def exercise_picture(page, label: str, shoot: bool) -> None:
         hits = [f"{s_['id']} x plate {R['owner']}" for R in g["plates"] for s_ in g["segs"] if seg_hits(s_["a"], s_["b"], R)]
         hits += [f"{c['id']} x plate {R['owner']}" for R in g["plates"] for c in g["rings"] if ring_hits(c, R)]
         check(not hits, f"[{label}] {tag}: no overlay mark or leader crosses a label plate: {sorted(set(hits))[:6]}")
+        # polish item 7: every plate keeps a margin inside the picture's edge
+        for R in g["plates"]:
+            m_ = min(R["x0"], R["y0"], g["vb"]["w"] - R["x1"], g["vb"]["h"] - R["y1"])
+            check(m_ >= 8, f"[{label}] {tag}: plate {R['owner']} keeps >= 8 units inside the picture edge ({m_:.1f})")
+        # polish item 6: an interior plate lies inside the interior, clear of the wall band
+        I = g["inner"]
+        for R in g["plates"]:
+            if R["owner"] == "pic-ov-BURST":
+                continue
+            far = max(((x - I["cx"]) ** 2 + (y - I["cy"]) ** 2) ** 0.5 for x in (R["x0"], R["x1"]) for y in (R["y0"], R["y1"]))
+            check(far <= I["r"] - 3, f"[{label}] {tag}: plate {R['owner']} clear of the wall band (corner at {far:.1f}, interior {I['r']:.1f})")
         d = g["disc"]
         for R in g["plates"]:
             if R["owner"] == "pic-ov-BURST":

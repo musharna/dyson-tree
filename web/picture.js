@@ -28,10 +28,13 @@
     PLATE_GAP = 10, // units between the organism disc and a plate
     KEEP_PAD = 3, // units every mark keeps clear of a plate
     WRAP = 20,
+    MARGIN = 12, // every plate keeps this far inside the picture's edge
+    FIT_PAD = 14, // interior plates keep this far inside the wall (the OPAQUE gauge runs there)
     CLAMP_Y = 378;
   var NS = "http://www.w3.org/2000/svg";
   var BG = "#faf8f4",
     INK = "#1b1b1b",
+    RIM = "#3d6f8e", // outer-circle outline: the vessel edge against the page
     MUTED = "#5d5d5d",
     FAIL = "#8a3b2a";
 
@@ -135,11 +138,12 @@
 
   // Break text into lines of <= WRAP chars at spaces; each later line keeps its leading
   // space, so the concatenated textContent is exactly the input (the panel's string).
-  function wrap(text) {
+  function wrap(text, n) {
+    n = n || WRAP;
     var out = [],
       cur = "";
     text.split(/(?= )/).forEach(function (w) {
-      if (cur && (cur + w).length > WRAP) {
+      if (cur && (cur + w).length > n) {
         out.push(cur);
         cur = w;
       } else cur += w;
@@ -150,8 +154,8 @@
 
   // The killing text: first line (the violated side) bold in the failure colour.
   // (x, y) is the top-left for anchor "start", top-right for "end", top-centre for "middle".
-  function label(parent, x, y, anchor, text, plate) {
-    var lines = wrap(text);
+  function label(parent, x, y, anchor, text, plate, n) {
+    var lines = wrap(text, n);
     var wmax = Math.max.apply(null, lines.map(function (l) { return l.trim().length; }));
     var w = wmax * FS * 0.64 + 10,
       h = lines.length * LH + 6;
@@ -172,20 +176,49 @@
   }
 
   // plate size for a text, before anything is drawn (marks are clipped around it)
-  function plateSize(text) {
-    var lines = wrap(text);
+  function plateSize(text, n) {
+    var lines = wrap(text, n);
     var wmax = Math.max.apply(null, lines.map(function (l) { return l.trim().length; }));
     return { w: wmax * FS * 0.64 + 10, h: lines.length * LH + 6 };
   }
-  // an interior wound's plate: centred above the disc with a gap, stacked upward by slot
-  function interiorBox(geo, text, slot) {
-    var sz = plateSize(text);
-    var y1 = CY - geo.rOrg - PLATE_GAP - slot * (sz.h + 6);
-    return { x0: CX - sz.w / 2, y0: y1 - sz.h, x1: CX + sz.w / 2, y1: y1 };
+  // Interior plates: one stack, centred on x, inside the interior clear of the wall band by
+  // FIT_PAD. The disc stays at the centre when the stack fits above it; otherwise the stack
+  // rises as high as the widest plate's corners allow and the disc moves down beneath it.
+  // Returns {boxes: {line: box}, oy: disc centre y}.
+  function layoutInterior(ri, rOrg, names, texts) {
+    if (!names.length) return { boxes: {}, oy: CY, wrap: WRAP };
+    var rf = ri - FIT_PAD, best = null;
+    // the widest wrap whose stack and disc both fit; narrower wraps trade width for height
+    for (var n = WRAP; n >= 10 && !(best && best.fits); n--) best = stackAt(n);
+    return best;
+
+    function stackAt(n) {
+      var sz = names.map(function (k) { return plateSize(texts[k], n); });
+      var Hs = sz.reduce(function (a, z) { return a + z.h; }, 0) + 6 * (sz.length - 1);
+      var Ws = Math.max.apply(null, sz.map(function (z) { return z.w; }));
+      var a = rf > Ws / 2 ? Math.sqrt(rf * rf - (Ws * Ws) / 4) : 0; // highest top the corners allow
+      var centred = rOrg + PLATE_GAP + Hs; // top height above centre with the disc left centred
+      var top, oy;
+      if (centred <= a) {
+        top = CY - centred;
+        oy = CY;
+      } else {
+        top = CY - a;
+        oy = top + Hs + PLATE_GAP + rOrg;
+      }
+      var bot = top + Hs - CY; // stack bottom below centre
+      var fits = Ws / 2 < rf && Math.hypot(Ws / 2, bot) <= rf && oy + rOrg <= CY + ri - 4;
+      var boxes = {}, y = top;
+      names.forEach(function (k, i) {
+        boxes[k] = { x0: CX - sz[i].w / 2, y0: y, x1: CX + sz[i].w / 2, y1: y + sz[i].h };
+        y += sz[i].h + 6;
+      });
+      return { boxes: boxes, oy: oy, wrap: n, fits: fits };
+    }
   }
-  function interiorLabel(g, geo, text, slot) {
-    var b = interiorBox(geo, text, slot);
-    label(g, CX, b.y0 + 2, "middle", text, true);
+  function interiorLabel(g, geo, text, n) {
+    var b = geo.boxes[n];
+    label(g, CX, b.y0 + 2, "middle", text, true, geo.wrap);
   }
   // the parts of segment ab outside every keep-out rect (padded), for marks near a plate
   function outside(a, b, rects) {
@@ -249,17 +282,17 @@
         }
         segs(g, p, { stroke: FAIL, "stroke-width": 2, "stroke-linecap": "round" }, geo.keep);
       });
-      var b = label(g, W - 4, 6, "end", text, true);
+      var b = label(g, W - MARGIN, MARGIN, "end", text, true);
       var from = pt(r1 + 26, a);
       el("line", { x1: P2(from).split(",")[0], y1: P2(from).split(",")[1],
         x2: (b.x0 + b.w / 2).toFixed(1), y2: (b.y0 + b.h).toFixed(1), stroke: FAIL, "stroke-width": 1.5 }, g);
     },
     // frost at the wall, inward to the disc's edge: it never covers the organism
-    FREEZE: function (g, geo, text, slot) {
+    FREEZE: function (g, geo, text, n) {
       var inner = geo.rOrg + 4;
       el("path", {
         d: "M" + (CX - geo.ri) + "," + CY + " a" + geo.ri + "," + geo.ri + " 0 1,0 " + 2 * geo.ri + ",0 a" +
-          geo.ri + "," + geo.ri + " 0 1,0 " + -2 * geo.ri + ",0 Z M" + (CX - inner) + "," + CY + " a" + inner + "," +
+          geo.ri + "," + geo.ri + " 0 1,0 " + -2 * geo.ri + ",0 Z M" + (CX - inner) + "," + geo.oy + " a" + inner + "," +
           inner + " 0 1,1 " + 2 * inner + ",0 a" + inner + "," + inner + " 0 1,1 " + -2 * inner + ",0 Z",
         fill: "#ffffff", "fill-opacity": 0.6, "fill-rule": "evenodd", "data-mark": "frost",
       }, g);
@@ -277,38 +310,55 @@
             stroke: "#5f8fb3", "stroke-width": 1.5 }, g);
         }
       }
-      interiorLabel(g, geo, text, slot);
+      interiorLabel(g, geo, text, n);
     },
-    // dried: a cracked tan floor around the disc
-    BOIL: function (g, geo, text, slot) {
-      el("circle", { cx: CX, cy: CY, r: geo.ri, fill: "#b89a64", "fill-opacity": 0.75, "data-mark": "dry" }, g);
-      for (var i = 0; i < 9; i++) {
-        var a = (i * 2 * Math.PI) / 9 + 0.3;
-        segs(g, [pt(geo.rOrg + 3, a), pt(geo.ri * 0.6, a + 0.12), pt(geo.ri * 0.97, a)],
-          { stroke: "#6b5431", "stroke-width": 1.5 }, geo.keep);
+    // boiling off: a warm vapour haze with rising bubbles (round, open marks: nothing here
+    // reads as a crack, which is BURST's mark)
+    BOIL: function (g, geo, text, n) {
+      el("circle", { cx: CX, cy: CY, r: geo.ri, fill: "#f3e3c4", "fill-opacity": 0.7, "data-mark": "vapour" }, g);
+      var bg = el("g", { "data-mark": "bubbles" }, g);
+      for (var i = 0; i < 26; i++) {
+        var a = i * 2.39996, // golden-angle scatter over the interior
+          rr = geo.ri * (0.25 + 0.68 * Math.sqrt(((i * 7) % 26) / 25)),
+          p = pt(rr, a),
+          s = 3 + (i % 4) * 2;
+        var clear = Math.hypot(p[0] - CX, p[1] - CY) + s < geo.ri - 2 &&
+          Math.hypot(p[0] - CX, p[1] - geo.oy) > geo.rOrg + s + 4 &&
+          !geo.keep.some(function (R) {
+            return p[0] + s + KEEP_PAD > R.x0 && p[0] - s - KEEP_PAD < R.x1 && p[1] + s + KEEP_PAD > R.y0 && p[1] - s - KEEP_PAD < R.y1;
+          });
+        if (clear)
+          el("circle", { cx: p[0].toFixed(1), cy: p[1].toFixed(1), r: s, fill: "none", stroke: "#b5651d",
+            "stroke-width": 1.8 }, bg);
       }
-      interiorLabel(g, geo, text, slot);
+      interiorLabel(g, geo, text, n);
     },
     // the disc fades (draw() lowers its opacity); a dashed ring marks it
-    STARVE: function (g, geo, text, slot) {
-      el("circle", { cx: CX, cy: CY, r: geo.rOrg + 5, fill: "none", stroke: FAIL, "stroke-dasharray": "4 3",
+    STARVE: function (g, geo, text, n) {
+      el("circle", { cx: CX, cy: geo.oy, r: geo.rOrg + 5, fill: "none", stroke: FAIL, "stroke-dasharray": "4 3",
         "stroke-width": 1.5, "data-mark": "fade-ring" }, g);
-      interiorLabel(g, geo, text, slot);
+      interiorLabel(g, geo, text, n);
     },
-    // under its own wall: a veil with hatching, and a ring for the declared floor
-    OPAQUE: function (g, geo, text, slot) {
+    // under its own wall: a veil, and a light gauge just inside the wall: the amber arc runs
+    // clockwise from 12 o'clock for f_photon of the turn, the white tick stands at the declared
+    // f_floor; the arc stopping short of the tick is the failure
+    OPAQUE: function (g, geo, text, n, rep) {
       el("circle", { cx: CX, cy: CY, r: geo.ri, fill: "#000000", "fill-opacity": 0.35, "data-mark": "veil" }, g);
-      // hatch in a light amber at reduced opacity, so it reads against the dark veil
-      var hg = el("g", { "data-mark": "hatch" }, g);
-      for (var d = -geo.ri + 10; d < geo.ri; d += 14) {
-        var c = Math.sqrt(geo.ri * geo.ri - d * d); // half-chord at offset d along the 45° normal
-        var S = Math.SQRT1_2;
-        segs(hg, [[CX + d * S - c * S, CY + d * S + c * S], [CX + d * S + c * S, CY + d * S - c * S]],
-          { stroke: "#f2c86a", "stroke-opacity": 0.6, "stroke-width": 1.5 }, geo.keep);
-      }
+      var rg = geo.ri - 7,
+        f = Math.max(0, Math.min(1, rep.lines.OPAQUE.lhs)),
+        ff = Math.max(0, Math.min(1, rep.lines.OPAQUE.rhs));
+      var arc = function (f0, f1) {
+        var pts = [], k = Math.max(2, Math.ceil((f1 - f0) * 96));
+        for (var i = 0; i <= k; i++) pts.push(pt(rg, -Math.PI / 2 + 2 * Math.PI * (f0 + ((f1 - f0) * i) / k)));
+        return pts;
+      };
+      var gg = el("g", { "data-mark": "light-gauge" }, g);
+      segs(gg, arc(0, 1), { stroke: "#d8d2c4", "stroke-opacity": 0.75, "stroke-width": 2 }, geo.keep);
+      segs(gg, arc(0, f), { stroke: "#ffb000", "stroke-width": 6, "stroke-linecap": "butt" }, geo.keep);
       var fr = el("g", { "data-mark": "floor-ring" }, g);
-      ring(fr, geo.ri - 4, { stroke: "#f2c86a", "stroke-width": 2.5 }, geo.keep);
-      interiorLabel(g, geo, text, slot);
+      var af = -Math.PI / 2 + 2 * Math.PI * ff;
+      segs(fr, [pt(rg - 9, af), pt(rg + 5, af)], { stroke: "#ffffff", "stroke-width": 3 }, geo.keep);
+      interiorLabel(g, geo, text, n);
     },
   };
 
@@ -329,12 +379,10 @@
     var clamped = ro - riTrue < MIN_BAND_PX;
     var ri = clamped ? ro - MIN_BAND_PX : riTrue;
     var rOrg = Math.max(6, 0.28 * ri);
-    var geo = { ro: ro, ri: ri, rOrg: rOrg };
     var bad = rep.violated.slice();
-    var ks = 0;
-    geo.keep = bad
-      .filter(function (n) { return n !== "BURST"; })
-      .map(function (n) { return interiorBox(geo, texts[n], ks++); });
+    var lay = layoutInterior(ri, rOrg, bad.filter(function (n) { return n !== "BURST"; }), texts);
+    var geo = { ro: ro, ri: ri, rOrg: rOrg, oy: lay.oy, boxes: lay.boxes, wrap: lay.wrap };
+    geo.keep = Object.keys(lay.boxes).map(function (n) { return lay.boxes[n]; });
     svg.setAttribute("viewBox", "0 0 " + W + " " + H);
 
     el("title", {}, svg, "Cross-section of the vessel");
@@ -346,23 +394,23 @@
         "; " + (bad.length ? "violated: " + bad.join(", ") : "every line holds") + ".");
 
     var rgb = interiorColour(res);
-    el("circle", { id: "pic-outer", cx: CX, cy: CY, r: ro.toFixed(4), fill: "#b9d3e3" }, svg);
+    el("circle", { id: "pic-outer", cx: CX, cy: CY, r: ro.toFixed(4), fill: "#b9d3e3", stroke: RIM,
+      "stroke-width": 1.5 }, svg);
     el("circle", { id: "pic-inner", cx: CX, cy: CY, r: ri.toFixed(4),
       fill: "rgb(" + rgb[0] + ", " + rgb[1] + ", " + rgb[2] + ")" }, svg);
 
     // overlays sit under the organism, so no mark recolours the disc
     var g = el("g", { id: "pic-overlays" }, svg);
-    var slot = 0;
     bad.forEach(function (n) {
       var fn = DRAW[n];
       if (!fn) throw new Error("picture: no overlay for line " + n);
       var og = el("g", { id: "pic-ov-" + n, "data-line": n }, g);
-      fn(og, geo, texts[n], n === "BURST" ? 0 : slot++);
+      fn(og, geo, texts[n], n, rep);
     });
 
     var net = rep.lines.STARVE.lhs;
     var sat = Math.max(0, Math.min(1, net / res.org.a_max));
-    el("circle", { id: "pic-organism", cx: CX, cy: CY, r: rOrg.toFixed(2),
+    el("circle", { id: "pic-organism", cx: CX, cy: geo.oy.toFixed(2), r: rOrg.toFixed(2),
       fill: "hsl(120, " + (100 * sat).toFixed(1) + "%, 32%)",
       stroke: net > 0 ? "#1f7a1f" : "#8a8a8a", "stroke-width": 2.5,
       "fill-opacity": rep.lines.STARVE.violated ? 0.35 : 1,
